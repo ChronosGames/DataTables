@@ -1,8 +1,8 @@
-﻿using MasterMemory.Validation;
+﻿using DataTables.Validation;
 using System;
 using System.Linq.Expressions;
 
-namespace MasterMemory
+namespace DataTables
 {
     public interface IValidatable<TSelf>
     {

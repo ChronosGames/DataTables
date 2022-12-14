@@ -10,12 +10,12 @@
 
     <!-- NuGet informations -->
     <PropertyGroup>
-        <PackageId>MasterMemory.Generator</PackageId>
+        <PackageId>DataTables.Generator</PackageId>
         <PackageVersion>$(Version)</PackageVersion>
-        <Authors>Cysharp</Authors>
-        <Copyright>Cysharp</Copyright>
-        <Description>Code Generator of MasterMemory.</Description>
-        <PackageProjectUrl>https://github.com/Cysharp/MasterMemory</PackageProjectUrl>
+        <Authors>PhonixGame</Authors>
+        <Copyright>PhonixGame</Copyright>
+        <Description>Code Generator of DataTables.</Description>
+        <PackageProjectUrl>https://github.com/PhonixGame/DataTables</PackageProjectUrl>
         <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageTags>database, embedded, inmemory, unity</PackageTags>
@@ -27,7 +27,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\MasterMemory.GeneratorCore\DataTables.GeneratorCore.csproj" />
+        <ProjectReference Include="..\DataTables.GeneratorCore\DataTables.GeneratorCore.csproj" />
     </ItemGroup>
 
 </Project>

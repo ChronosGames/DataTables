@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace MasterMemory.Internal
+namespace DataTables.Internal
 {
     internal static class BinarySearch
     {

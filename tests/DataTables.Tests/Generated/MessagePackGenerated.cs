@@ -53,17 +53,17 @@ namespace MessagePack.Resolvers
         {
             lookup = new global::System.Collections.Generic.Dictionary<Type, int>(11)
             {
-                { typeof(global::MasterMemory.Tests.TestStructures.QuestMaster), 0 },
-                { typeof(global::MasterMemory.Tests.TestStructures.ItemMaster), 1 },
-                { typeof(global::MasterMemory.Tests.TestStructures.QuestMasterEmptyValidate), 2 },
-                { typeof(global::MasterMemory.Tests.TestStructures.ItemMasterEmptyValidate), 3 },
-                { typeof(global::MasterMemory.Tests.TestStructures.SequentialCheckMaster), 4 },
-                { typeof(global::MasterMemory.Tests.TestStructures.SingleMaster), 5 },
-                { typeof(global::MasterMemory.Tests.TestStructures.Fail), 6 },
-                { typeof(global::MasterMemory.Tests.Sample), 7 },
-                { typeof(global::MasterMemory.Tests.SkillMaster), 8 },
-                { typeof(global::MasterMemory.Tests.TestStructures.TestMaster), 9 },
-                { typeof(global::MasterMemory.Tests.UserLevel), 10 },
+                { typeof(global::DataTables.Tests.TestStructures.QuestMaster), 0 },
+                { typeof(global::DataTables.Tests.TestStructures.ItemMaster), 1 },
+                { typeof(global::DataTables.Tests.TestStructures.QuestMasterEmptyValidate), 2 },
+                { typeof(global::DataTables.Tests.TestStructures.ItemMasterEmptyValidate), 3 },
+                { typeof(global::DataTables.Tests.TestStructures.SequentialCheckMaster), 4 },
+                { typeof(global::DataTables.Tests.TestStructures.SingleMaster), 5 },
+                { typeof(global::DataTables.Tests.TestStructures.Fail), 6 },
+                { typeof(global::DataTables.Tests.Sample), 7 },
+                { typeof(global::DataTables.Tests.SkillMaster), 8 },
+                { typeof(global::DataTables.Tests.TestStructures.TestMaster), 9 },
+                { typeof(global::DataTables.Tests.UserLevel), 10 },
             };
         }
 
@@ -128,7 +128,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
     using System.Buffers;
     using MessagePack;
 
-    public sealed class QuestMasterFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::MasterMemory.Tests.TestStructures.QuestMaster>
+    public sealed class QuestMasterFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::DataTables.Tests.TestStructures.QuestMaster>
     {
 
 
@@ -154,7 +154,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
             };
         }
 
-        public void Serialize(ref MessagePackWriter writer, global::MasterMemory.Tests.TestStructures.QuestMaster value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref MessagePackWriter writer, global::DataTables.Tests.TestStructures.QuestMaster value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -174,7 +174,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
             writer.Write(value.Cost);
         }
 
-        public global::MasterMemory.Tests.TestStructures.QuestMaster Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::DataTables.Tests.TestStructures.QuestMaster Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -218,7 +218,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
                 }
             }
 
-            var ____result = new global::MasterMemory.Tests.TestStructures.QuestMaster();
+            var ____result = new global::DataTables.Tests.TestStructures.QuestMaster();
             ____result.QuestId = __QuestId__;
             ____result.Name = __Name__;
             ____result.RewardItemId = __RewardItemId__;
@@ -227,7 +227,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
         }
     }
 
-    public sealed class ItemMasterFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::MasterMemory.Tests.TestStructures.ItemMaster>
+    public sealed class ItemMasterFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::DataTables.Tests.TestStructures.ItemMaster>
     {
 
 
@@ -247,7 +247,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
             };
         }
 
-        public void Serialize(ref MessagePackWriter writer, global::MasterMemory.Tests.TestStructures.ItemMaster value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref MessagePackWriter writer, global::DataTables.Tests.TestStructures.ItemMaster value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -261,7 +261,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
             writer.Write(value.ItemId);
         }
 
-        public global::MasterMemory.Tests.TestStructures.ItemMaster Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::DataTables.Tests.TestStructures.ItemMaster Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -293,13 +293,13 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
                 }
             }
 
-            var ____result = new global::MasterMemory.Tests.TestStructures.ItemMaster();
+            var ____result = new global::DataTables.Tests.TestStructures.ItemMaster();
             ____result.ItemId = __ItemId__;
             return ____result;
         }
     }
 
-    public sealed class QuestMasterEmptyValidateFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::MasterMemory.Tests.TestStructures.QuestMasterEmptyValidate>
+    public sealed class QuestMasterEmptyValidateFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::DataTables.Tests.TestStructures.QuestMasterEmptyValidate>
     {
 
 
@@ -325,7 +325,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
             };
         }
 
-        public void Serialize(ref MessagePackWriter writer, global::MasterMemory.Tests.TestStructures.QuestMasterEmptyValidate value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref MessagePackWriter writer, global::DataTables.Tests.TestStructures.QuestMasterEmptyValidate value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -345,7 +345,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
             writer.Write(value.Cost);
         }
 
-        public global::MasterMemory.Tests.TestStructures.QuestMasterEmptyValidate Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::DataTables.Tests.TestStructures.QuestMasterEmptyValidate Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -389,7 +389,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
                 }
             }
 
-            var ____result = new global::MasterMemory.Tests.TestStructures.QuestMasterEmptyValidate();
+            var ____result = new global::DataTables.Tests.TestStructures.QuestMasterEmptyValidate();
             ____result.QuestId = __QuestId__;
             ____result.Name = __Name__;
             ____result.RewardItemId = __RewardItemId__;
@@ -398,7 +398,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
         }
     }
 
-    public sealed class ItemMasterEmptyValidateFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::MasterMemory.Tests.TestStructures.ItemMasterEmptyValidate>
+    public sealed class ItemMasterEmptyValidateFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::DataTables.Tests.TestStructures.ItemMasterEmptyValidate>
     {
 
 
@@ -418,7 +418,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
             };
         }
 
-        public void Serialize(ref MessagePackWriter writer, global::MasterMemory.Tests.TestStructures.ItemMasterEmptyValidate value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref MessagePackWriter writer, global::DataTables.Tests.TestStructures.ItemMasterEmptyValidate value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -432,7 +432,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
             writer.Write(value.ItemId);
         }
 
-        public global::MasterMemory.Tests.TestStructures.ItemMasterEmptyValidate Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::DataTables.Tests.TestStructures.ItemMasterEmptyValidate Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -464,13 +464,13 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
                 }
             }
 
-            var ____result = new global::MasterMemory.Tests.TestStructures.ItemMasterEmptyValidate();
+            var ____result = new global::DataTables.Tests.TestStructures.ItemMasterEmptyValidate();
             ____result.ItemId = __ItemId__;
             return ____result;
         }
     }
 
-    public sealed class SequentialCheckMasterFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::MasterMemory.Tests.TestStructures.SequentialCheckMaster>
+    public sealed class SequentialCheckMasterFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::DataTables.Tests.TestStructures.SequentialCheckMaster>
     {
 
 
@@ -492,7 +492,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
             };
         }
 
-        public void Serialize(ref MessagePackWriter writer, global::MasterMemory.Tests.TestStructures.SequentialCheckMaster value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref MessagePackWriter writer, global::DataTables.Tests.TestStructures.SequentialCheckMaster value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -508,7 +508,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
             writer.Write(value.Cost);
         }
 
-        public global::MasterMemory.Tests.TestStructures.SequentialCheckMaster Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::DataTables.Tests.TestStructures.SequentialCheckMaster Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -544,14 +544,14 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
                 }
             }
 
-            var ____result = new global::MasterMemory.Tests.TestStructures.SequentialCheckMaster();
+            var ____result = new global::DataTables.Tests.TestStructures.SequentialCheckMaster();
             ____result.Id = __Id__;
             ____result.Cost = __Cost__;
             return ____result;
         }
     }
 
-    public sealed class SingleMasterFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::MasterMemory.Tests.TestStructures.SingleMaster>
+    public sealed class SingleMasterFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::DataTables.Tests.TestStructures.SingleMaster>
     {
 
 
@@ -571,7 +571,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
             };
         }
 
-        public void Serialize(ref MessagePackWriter writer, global::MasterMemory.Tests.TestStructures.SingleMaster value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref MessagePackWriter writer, global::DataTables.Tests.TestStructures.SingleMaster value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -585,7 +585,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
             writer.Write(value.Id);
         }
 
-        public global::MasterMemory.Tests.TestStructures.SingleMaster Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::DataTables.Tests.TestStructures.SingleMaster Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -617,13 +617,13 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
                 }
             }
 
-            var ____result = new global::MasterMemory.Tests.TestStructures.SingleMaster();
+            var ____result = new global::DataTables.Tests.TestStructures.SingleMaster();
             ____result.Id = __Id__;
             return ____result;
         }
     }
 
-    public sealed class FailFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::MasterMemory.Tests.TestStructures.Fail>
+    public sealed class FailFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::DataTables.Tests.TestStructures.Fail>
     {
 
 
@@ -643,7 +643,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
             };
         }
 
-        public void Serialize(ref MessagePackWriter writer, global::MasterMemory.Tests.TestStructures.Fail value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref MessagePackWriter writer, global::DataTables.Tests.TestStructures.Fail value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -657,7 +657,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
             writer.Write(value.Id);
         }
 
-        public global::MasterMemory.Tests.TestStructures.Fail Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::DataTables.Tests.TestStructures.Fail Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -689,13 +689,13 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
                 }
             }
 
-            var ____result = new global::MasterMemory.Tests.TestStructures.Fail();
+            var ____result = new global::DataTables.Tests.TestStructures.Fail();
             ____result.Id = __Id__;
             return ____result;
         }
     }
 
-    public sealed class TestMasterFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::MasterMemory.Tests.TestStructures.TestMaster>
+    public sealed class TestMasterFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::DataTables.Tests.TestStructures.TestMaster>
     {
 
 
@@ -717,7 +717,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
             };
         }
 
-        public void Serialize(ref MessagePackWriter writer, global::MasterMemory.Tests.TestStructures.TestMaster value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref MessagePackWriter writer, global::DataTables.Tests.TestStructures.TestMaster value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -733,7 +733,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
             writer.Write(value.Value);
         }
 
-        public global::MasterMemory.Tests.TestStructures.TestMaster Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::DataTables.Tests.TestStructures.TestMaster Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -769,7 +769,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests.TestStructures
                 }
             }
 
-            var ____result = new global::MasterMemory.Tests.TestStructures.TestMaster(__TestID__, __Value__);
+            var ____result = new global::DataTables.Tests.TestStructures.TestMaster(__TestID__, __Value__);
             ____result.TestID = __TestID__;
             ____result.Value = __Value__;
             return ____result;
@@ -811,7 +811,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests
     using System.Buffers;
     using MessagePack;
 
-    public sealed class SampleFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::MasterMemory.Tests.Sample>
+    public sealed class SampleFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::DataTables.Tests.Sample>
     {
 
 
@@ -837,7 +837,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests
             };
         }
 
-        public void Serialize(ref MessagePackWriter writer, global::MasterMemory.Tests.Sample value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref MessagePackWriter writer, global::DataTables.Tests.Sample value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -857,7 +857,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests
             formatterResolver.GetFormatterWithVerify<string>().Serialize(ref writer, value.LastName, options);
         }
 
-        public global::MasterMemory.Tests.Sample Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::DataTables.Tests.Sample Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -901,7 +901,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests
                 }
             }
 
-            var ____result = new global::MasterMemory.Tests.Sample(__Id__, __Age__, __FirstName__, __LastName__);
+            var ____result = new global::DataTables.Tests.Sample(__Id__, __Age__, __FirstName__, __LastName__);
             ____result.Id = __Id__;
             ____result.Age = __Age__;
             ____result.FirstName = __FirstName__;
@@ -910,7 +910,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests
         }
     }
 
-    public sealed class SkillMasterFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::MasterMemory.Tests.SkillMaster>
+    public sealed class SkillMasterFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::DataTables.Tests.SkillMaster>
     {
 
 
@@ -938,7 +938,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests
             };
         }
 
-        public void Serialize(ref MessagePackWriter writer, global::MasterMemory.Tests.SkillMaster value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref MessagePackWriter writer, global::DataTables.Tests.SkillMaster value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -960,7 +960,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests
             formatterResolver.GetFormatterWithVerify<string>().Serialize(ref writer, value.Description, options);
         }
 
-        public global::MasterMemory.Tests.SkillMaster Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::DataTables.Tests.SkillMaster Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -1008,7 +1008,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests
                 }
             }
 
-            var ____result = new global::MasterMemory.Tests.SkillMaster(__SkillId__, __SkillLevel__, __AttackPower__, __SkillName__, __Description__);
+            var ____result = new global::DataTables.Tests.SkillMaster(__SkillId__, __SkillLevel__, __AttackPower__, __SkillName__, __Description__);
             ____result.SkillId = __SkillId__;
             ____result.SkillLevel = __SkillLevel__;
             ____result.AttackPower = __AttackPower__;
@@ -1018,7 +1018,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests
         }
     }
 
-    public sealed class UserLevelFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::MasterMemory.Tests.UserLevel>
+    public sealed class UserLevelFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::DataTables.Tests.UserLevel>
     {
 
 
@@ -1040,7 +1040,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests
             };
         }
 
-        public void Serialize(ref MessagePackWriter writer, global::MasterMemory.Tests.UserLevel value, global::MessagePack.MessagePackSerializerOptions options)
+        public void Serialize(ref MessagePackWriter writer, global::DataTables.Tests.UserLevel value, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (value == null)
             {
@@ -1056,7 +1056,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests
             writer.Write(value.Exp);
         }
 
-        public global::MasterMemory.Tests.UserLevel Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
+        public global::DataTables.Tests.UserLevel Deserialize(ref MessagePackReader reader, global::MessagePack.MessagePackSerializerOptions options)
         {
             if (reader.TryReadNil())
             {
@@ -1092,7 +1092,7 @@ namespace MessagePack.Formatters.MasterMemory.Tests
                 }
             }
 
-            var ____result = new global::MasterMemory.Tests.UserLevel(__Level__, __Exp__);
+            var ____result = new global::DataTables.Tests.UserLevel(__Level__, __Exp__);
             ____result.Level = __Level__;
             ____result.Exp = __Exp__;
             return ____result;

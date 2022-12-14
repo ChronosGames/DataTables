@@ -1,11 +1,11 @@
 ﻿using ConsoleAppFramework;
-using MasterMemory.GeneratorCore;
+using DataTables.GeneratorCore;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 
-namespace MasterMemory.Generator
+namespace DataTables.Generator
 {
     public class Program : ConsoleAppBase
     {
@@ -26,11 +26,11 @@ namespace MasterMemory.Generator
             [Option("f", "Overwrite generated files if the content is unchanged.")]bool forceOverwrite = false)
         {
             var sw = Stopwatch.StartNew();
-            Console.WriteLine("Start MasterMemory CodeGeneration");
+            Console.WriteLine("Start DataTables CodeGeneration");
 
             new CodeGenerator().GenerateFile(usingNamespace, inputDirectory, outputDirectory, prefixClassName, addImmutableConstructor, !returnNullIfKeyNotFound, forceOverwrite, x => Console.WriteLine(x));
 
-            Console.WriteLine("Complete MasterMemory CodeGeneration, elapsed:" + sw.Elapsed);
+            Console.WriteLine("Complete DataTables CodeGeneration, elapsed:" + sw.Elapsed);
         }
     }
 }

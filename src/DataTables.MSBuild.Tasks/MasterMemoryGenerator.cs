@@ -1,9 +1,9 @@
-﻿using MasterMemory.GeneratorCore;
+﻿using DataTables.GeneratorCore;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using System;
 
-namespace MasterMemory.MSBuild.Tasks
+namespace DataTables.MSBuild.Tasks
 {
     public class MasterMemoryGenerator : Task
     {

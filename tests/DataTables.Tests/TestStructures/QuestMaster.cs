@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MasterMemory.Tests.TestStructures
+namespace DataTables.Tests.TestStructures
 {
     [MemoryTable("quest_master"), MessagePackObject(true)]
     public class QuestMaster : IValidatable<QuestMaster>

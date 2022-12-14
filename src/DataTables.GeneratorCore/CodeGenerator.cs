@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace MasterMemory.GeneratorCore
+namespace DataTables.GeneratorCore
 {
     public class CodeGenerator
     {

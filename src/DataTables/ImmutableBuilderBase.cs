@@ -1,8 +1,8 @@
-﻿using MasterMemory.Internal;
+﻿using DataTables.Internal;
 using System;
 using System.Collections.Generic;
 
-namespace MasterMemory
+namespace DataTables
 {
     public abstract class ImmutableBuilderBase
     {

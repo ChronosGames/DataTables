@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
-namespace MasterMemory.Validation
+namespace DataTables.Validation
 {
     internal class ExpressionDumper<T> : ExpressionVisitor
     {

@@ -1,4 +1,4 @@
-﻿using MasterMemory.Tests.TestStructures;
+﻿using DataTables.Tests.TestStructures;
 using FluentAssertions;
 using MessagePack;
 using System;
@@ -7,7 +7,7 @@ using System.Text;
 using Xunit;
 using System.Linq;
 
-namespace MasterMemory.Tests
+namespace DataTables.Tests
 {
     public class ValidatorTest
     {

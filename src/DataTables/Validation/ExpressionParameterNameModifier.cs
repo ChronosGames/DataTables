@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq.Expressions;
 
-namespace MasterMemory.Validation
+namespace DataTables.Validation
 {
     public class ExpressionParameterNameModifier : ExpressionVisitor
     {

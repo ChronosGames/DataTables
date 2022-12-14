@@ -2,8 +2,8 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <RootNamespace>MasterMemory</RootNamespace>
-        <AssemblyName>MasterMemory</AssemblyName>
+        <RootNamespace>DataTables</RootNamespace>
+        <AssemblyName>DataTables</AssemblyName>
 
         <OutputType>Library</OutputType>
         <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
@@ -17,7 +17,7 @@
         <Authors>Cysharp</Authors>
         <Copyright>Cysharp</Copyright>
         <Description>Embedded Typed Readonly In-Memory Document Database for .NET Core and Unity.</Description>
-        <PackageProjectUrl>https://github.com/Cysharp/MasterMemory</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/PhonixGame/DataTables</PackageProjectUrl>
         <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageTags>database, embedded, inmemory, unity</PackageTags>
@@ -29,7 +29,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\MasterMemory.Annotations\DataTables.Annotations.csproj" />
+        <ProjectReference Include="..\DataTables.Annotations\DataTables.Annotations.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -51,13 +51,13 @@
 
     <!-- Copy files for Unity -->
     <PropertyGroup>
-        <DestinationRoot>$(ProjectDir)..\MasterMemory.Unity\Assets\Scripts\MasterMemory\</DestinationRoot>
-        <TestDestination>$(ProjectDir)..\MasterMemory.Unity\Assets\Tests\</TestDestination>
+        <DestinationRoot>$(ProjectDir)..\DataTables.Unity\Assets\Scripts\MasterMemory\</DestinationRoot>
+        <TestDestination>$(ProjectDir)..\DataTables.Unity\Assets\Tests\</TestDestination>
     </PropertyGroup>
     <ItemGroup>
         <TargetFiles1 Include="$(ProjectDir)\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;_InternalVisibleTo.cs" />
-        <TargetFiles2 Include="$(ProjectDir)\..\MasterMemory.Annotations\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;" />
-        <TargetFiles3 Include="$(ProjectDir)\..\..\tests\MasterMemory.Tests\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;" />
+        <TargetFiles2 Include="$(ProjectDir)\..\DataTables.Annotations\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;" />
+        <TargetFiles3 Include="$(ProjectDir)\..\..\tests\DataTables.Tests\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;" />
     </ItemGroup>
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
         <Copy SourceFiles="@(TargetFiles1)" DestinationFiles="$(DestinationRoot)\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" />

@@ -1,6 +1,6 @@
 [![GitHub Actions](https://github.com/Cysharp/MasterMemory/workflows/Build-Debug/badge.svg)](https://github.com/Cysharp/MasterMemory/actions) [![Releases](https://img.shields.io/github/release/Cysharp/MasterMemory.svg)](https://github.com/Cysharp/MasterMemory/releases)
 
-MasterMemory
+DataTables
 ===
 
 Embedded Typed Readonly In-Memory Document Database for .NET Core and Unity. 
@@ -45,11 +45,11 @@ These features are suitable for master data management(write-once, read-heavy) o
 
 Getting Started(.NET Core)
 ---
-MasterMemory uses C# to C# code-generator. Runtime library API is the same but how to code-generate has different way between .NET Core and Unity. This sample is for .NET Core(for Unity is in below sections).
+DataTables uses C# to C# code-generator. Runtime library API is the same but how to code-generate has different way between .NET Core and Unity. This sample is for .NET Core(for Unity is in below sections).
 
-Install the core library(Runtime and [Annotations](https://www.nuget.org/packages/MasterMemory.Annotations)).
+Install the core library(Runtime and [Annotations](https://www.nuget.org/packages/DataTables.Annotations)).
 
-> PM> Install-Package [MasterMemory](https://www.nuget.org/packages/MasterMemory)
+> PM> Install-Package [DataTables](https://www.nuget.org/packages/DataTables)
 
 Prepare the example table definition like following.
 
@@ -81,19 +81,19 @@ public class Person
 }
 ```
 
-Edit the `.csproj`, add [MasterMemory.MSBuild.Tasks](https://www.nuget.org/packages/MasterMemory.MSBuild.Tasks) and add configuration like following.
+Edit the `.csproj`, add [DataTables.MSBuild.Tasks](https://www.nuget.org/packages/DataTables.MSBuild.Tasks) and add configuration like following.
 
 ```xml
 <ItemGroup>
-    <PackageReference Include="MasterMemory" Version="2.1.2" />
+    <PackageReference Include="DataTables" Version="2.1.2" />
     <!-- Install MSBuild Task(with PrivateAssets="All", it means to use dependency only in build time). -->
-    <PackageReference Include="MasterMemory.MSBuild.Tasks" Version="2.1.2" PrivateAssets="All" />
+    <PackageReference Include="DataTables.MSBuild.Tasks" Version="2.1.2" PrivateAssets="All" />
 </ItemGroup>
 
 <!-- Call code generator before-build. -->
-<Target Name="MasterMemoryGen" BeforeTargets="BeforeBuild">
+<Target Name="DataTablesGen" BeforeTargets="BeforeBuild">
     <!-- Configuration of Code-Generator, `UsingNamespace`, `InputDirectory`, `OutputDirectory` and `AddImmutableConstructor`. -->
-    <MasterMemoryGenerator UsingNamespace="$(ProjectName)" InputDirectory="$(ProjectDir)" OutputDirectory="$(ProjectDir)MasterMemory" />
+    <MasterMemoryGenerator UsingNamespace="$(ProjectName)" InputDirectory="$(ProjectDir)" OutputDirectory="$(ProjectDir)DataTables" />
 </Target>
 ```
 
@@ -150,7 +150,7 @@ You can invoke all indexed query by IntelliSense.
 
 Getting Started(Unity)
 ---
-Check the [releases](https://github.com/Cysharp/MasterMemory/releases) page, download `MasterMemory.Unity.unitypackage`(runtime) and `MasterMemory.Generator.zip`(cli code-generator). MasterMemory also depends on MessagePack-CSharp so you have to download `MessagePack.Unity.2.*.*.unitypackage` and `mpc.zip` from [MessagePack-CSharp/releases page](https://github.com/neuecc/MessagePack-CSharp/releases).
+Check the [releases](https://github.com/PhonixGame/DataTables/releases) page, download `DataTables.Unity.unitypackage`(runtime) and `DataTables.Generator.zip`(cli code-generator). DataTables also depends on MessagePack-CSharp so you have to download `MessagePack.Unity.2.*.*.unitypackage` and `mpc.zip` from [MessagePack-CSharp/releases page](https://github.com/neuecc/MessagePack-CSharp/releases).
 
 Prepare the example table definition like following.
 
@@ -182,10 +182,10 @@ public class Person
 }
 ```
 
-use the MasterMemory code generator by commandline. Commandline tool support platforms are `win-x64`, `osx-x64` and `linux-x64`.
+use the DataTables code generator by commandline. Commandline tool support platforms are `win-x64`, `osx-x64` and `linux-x64`.
 
 ```
-Usage: MasterMemory.Generator [options...]
+Usage: DataTables.Generator [options...]
 
 Options:
   -i, -inputDirectory <String>              Input file directory(search recursive). (Required)
@@ -197,7 +197,7 @@ Options:
 ```
 
 ```bash
-MasterMemory.Generator.exe -i "C:\UnitySample" -o "C:\UnitySample\Generated" -n "UnitySample"
+DataTables.Generator.exe -i "C:\UnitySample" -o "C:\UnitySample\Generated" -n "UnitySample"
 ```
 
 Also you need to generated MessagePack-CSharp code generation.

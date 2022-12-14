@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace MasterMemory.GeneratorCore
+namespace DataTables.GeneratorCore
 {
     public partial class DatabaseBuilderTemplate
     {

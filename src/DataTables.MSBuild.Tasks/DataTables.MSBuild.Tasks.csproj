@@ -10,7 +10,7 @@
         <!-- SKD depenencies local copy. -->
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <!-- NuGet Info -->
-        <PackageId>MasterMemory.MSBuild.Tasks</PackageId>
+        <PackageId>DataTables.MSBuild.Tasks</PackageId>
         <PackageVersion>$(Version)</PackageVersion>
         <Authors>PhonixGame</Authors>
         <Copyright>PhonixGame</Copyright>
@@ -24,7 +24,7 @@
 
     <ItemGroup>
         <!-- NuGet Tasks path. -->
-        <Content Include="build\MasterMemory.MSBuild.Tasks.props" PackagePath="build\" />
+        <Content Include="build\DataTables.MSBuild.Tasks.props" PackagePath="build\" />
     </ItemGroup>
 
     <ItemGroup>

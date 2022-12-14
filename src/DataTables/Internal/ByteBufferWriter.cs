@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Buffers;
 
-namespace MasterMemory
+namespace DataTables
 {
     internal class ByteBufferWriter : IBufferWriter<byte>
     {

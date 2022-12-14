@@ -3,7 +3,7 @@ using MessagePack.Formatters;
 using System;
 using System.Collections.Generic;
 
-namespace MasterMemory.Internal
+namespace DataTables.Internal
 {
     // for AOT(IL2CPP) concrete generic formatter.
     internal class HeaderFormatterResolver : IFormatterResolver

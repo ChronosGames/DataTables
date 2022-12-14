@@ -1,12 +1,12 @@
 ﻿using FluentAssertions;
-using MasterMemory.Tests.TestStructures;
+using DataTables.Tests.TestStructures;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Xunit;
 
-namespace MasterMemory.Tests
+namespace DataTables.Tests
 {
     public class IssueTest
     {

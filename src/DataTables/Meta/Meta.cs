@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 
-namespace MasterMemory.Meta
+namespace DataTables.Meta
 {
     public class MetaDatabase
     {

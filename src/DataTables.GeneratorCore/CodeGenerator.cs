@@ -27,6 +27,11 @@ namespace DataTables.GeneratorCore
                 throw new InvalidOperationException("Path must be directory but it is csproj. inputDirectory:" + inputDirectory);
             }
 
+            foreach (var xlsx in Directory.GetFiles(inputDirectory, "*.xlsx", SearchOption.AllDirectories))
+            {
+
+            }
+
             foreach (var item in Directory.GetFiles(inputDirectory, "*.cs", SearchOption.AllDirectories))
             {
                 list.AddRange(CreateGenerationContext(item));

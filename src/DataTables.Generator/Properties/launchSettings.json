@@ -1,8 +1,8 @@
 {
   "profiles": {
-    "MasterMemory.Generator": {
-      "commandName": "Project",
-      "commandLineArgs": "-i \"C:\\GitHubRepositories\\MasterMemory\\sandbox\\COnsoleApp\" -o \"C:\\GitHubRepositories\\MasterMemory\\sandbox\\ConsoleApp\\Generated\" -n ConsoleApp"
+    "DataTables.Generator": {
+        "commandName": "Project",
+        "commandLineArgs": "-i \"X:\\Projects\\PhonixGame\\DataTables\\sandbox\\ConsoleApp\" -o \"X:\\Projects\\PhonixGame\\DataTables\\sandbox\\ConsoleApp\\Generated\" -n ConsoleApp"
     }
   }
 }

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LiteDB" Version="4.1.4" />
+    <PackageReference Include="MessagePack" Version="2.1.90" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.111" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MasterMemory\DataTables.csproj" />
+  </ItemGroup>
+
+</Project>

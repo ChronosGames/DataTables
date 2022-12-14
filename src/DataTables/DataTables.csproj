@@ -1,0 +1,68 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <RootNamespace>MasterMemory</RootNamespace>
+        <AssemblyName>MasterMemory</AssemblyName>
+
+        <OutputType>Library</OutputType>
+        <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+        <Company>Cysharp</Company>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>1701;1702;1705;1591</NoWarn>
+
+        <!-- NuGet -->
+        <PackageId>DataTables</PackageId>
+        <PackageVersion>$(Version)</PackageVersion>
+        <Authors>Cysharp</Authors>
+        <Copyright>Cysharp</Copyright>
+        <Description>Embedded Typed Readonly In-Memory Document Database for .NET Core and Unity.</Description>
+        <PackageProjectUrl>https://github.com/Cysharp/MasterMemory</PackageProjectUrl>
+        <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>database, embedded, inmemory, unity</PackageTags>
+        <IsPackable>true</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MessagePack" Version="2.1.90" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\MasterMemory.Annotations\DataTables.Annotations.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="Validation\ValidatableSet.Sequential.tt">
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <LastGenOutput>ValidatableSet.Sequential.cs</LastGenOutput>
+        </None>
+    </ItemGroup>
+    <ItemGroup>
+        <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Update="Validation\ValidatableSet.Sequential.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>ValidatableSet.Sequential.tt</DependentUpon>
+        </Compile>
+    </ItemGroup>
+
+    <!-- Copy files for Unity -->
+    <PropertyGroup>
+        <DestinationRoot>$(ProjectDir)..\MasterMemory.Unity\Assets\Scripts\MasterMemory\</DestinationRoot>
+        <TestDestination>$(ProjectDir)..\MasterMemory.Unity\Assets\Tests\</TestDestination>
+    </PropertyGroup>
+    <ItemGroup>
+        <TargetFiles1 Include="$(ProjectDir)\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;_InternalVisibleTo.cs" />
+        <TargetFiles2 Include="$(ProjectDir)\..\MasterMemory.Annotations\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;" />
+        <TargetFiles3 Include="$(ProjectDir)\..\..\tests\MasterMemory.Tests\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;" />
+    </ItemGroup>
+    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+        <Copy SourceFiles="@(TargetFiles1)" DestinationFiles="$(DestinationRoot)\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" />
+        <Copy SourceFiles="@(TargetFiles2)" DestinationFiles="$(DestinationRoot)\Annotations\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" />
+        <Copy SourceFiles="@(TargetFiles3)" DestinationFiles="$(TestDestination)\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" />
+    </Target>
+
+</Project>

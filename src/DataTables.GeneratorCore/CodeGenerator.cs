@@ -27,21 +27,16 @@ namespace DataTables.GeneratorCore
                 throw new InvalidOperationException("Path must be directory but it is csproj. inputDirectory:" + inputDirectory);
             }
 
-            foreach (var xlsx in Directory.GetFiles(inputDirectory, "*.xlsx", SearchOption.AllDirectories))
-            {
-
-            }
-
-            foreach (var item in Directory.GetFiles(inputDirectory, "*.cs", SearchOption.AllDirectories))
+            foreach (var item in Directory.GetFiles(inputDirectory, "*.xlsx", SearchOption.AllDirectories))
             {
                 list.AddRange(CreateGenerationContext(item));
             }
 
-            list.Sort((a, b) => string.Compare(a.ClassName, b.ClassName, StringComparison.Ordinal));
+            list.Sort((a, b) => string.Compare(a.SheetName, b.SheetName, StringComparison.Ordinal));
 
             if (list.Count == 0)
             {
-                throw new InvalidOperationException("Not found MemoryTable files, inputDir:" + inputDirectory);
+                throw new InvalidOperationException("Not found Excel files, inputDir:" + inputDirectory);
             }
 
             // Output
@@ -147,7 +142,7 @@ namespace DataTables.GeneratorCore
             var usingStrings = root.DescendantNodes()
                 .OfType<UsingDirectiveSyntax>()
                 .Select(x => x.ToFullString().Trim())
-                .Concat(new[] { "using MasterMemory", "using MasterMemory.Validation", "using System", "using System.Collections.Generic" })
+                .Concat(new[] { "using DataTables", "using DataTables.Validation", "using System", "using System.Collections.Generic" })
                 .Concat(ns)
                 .Select(x => x.Trim(';') + ";")
                 .Distinct()

@@ -3,9 +3,13 @@ using System.Linq;
 
 namespace DataTables.GeneratorCore
 {
-
     public class GenerationContext
     {
+        public string SheetName { get; set; }
+
+        public Property[] Properties { get; set; }
+
+
         public string ClassName { get; set; }
         public string MemoryTableName { get; set; }
         public string[] UsingStrings { get; set; }
@@ -15,7 +19,6 @@ namespace DataTables.GeneratorCore
         public string InputFilePath { get; set; }
         public ClassDeclarationSyntax OriginalClassDeclaration { get; set; }
 
-        public Property[] Properties { get; set; }
         public KeyBase[] Keys => new KeyBase[] { PrimaryKey }.Concat(SecondaryKeys).ToArray();
 
     }
@@ -23,7 +26,10 @@ namespace DataTables.GeneratorCore
     public class Property
     {
         public string Type { get; set; }
+        
         public string Name { get; set; }
+
+        public string Comment { get; set; }
     }
 
     public abstract class KeyBase

@@ -1,10 +1,10 @@
-﻿using MasterMemory.Internal;
-using MasterMemory.Validation;
+﻿using DataTables.Internal;
+using DataTables.Validation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace MasterMemory
+namespace DataTables
 {
     public abstract class TableBase<TElement>
     {

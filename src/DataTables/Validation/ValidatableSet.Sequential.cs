@@ -12,7 +12,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace MasterMemory.Validation
+namespace DataTables.Validation
 {
     public partial class ValidatableSet<TElement>
     {

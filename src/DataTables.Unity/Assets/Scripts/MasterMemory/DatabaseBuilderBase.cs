@@ -1,4 +1,4 @@
-﻿using MasterMemory.Internal;
+﻿using DataTables.Internal;
 using MessagePack;
 using System;
 using System.Collections.Generic;
@@ -6,7 +6,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace MasterMemory
+namespace DataTables
 {
     public abstract class DatabaseBuilderBase
     {

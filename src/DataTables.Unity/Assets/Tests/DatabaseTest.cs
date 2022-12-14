@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace MasterMemory.Tests
+namespace DataTables.Tests
 {
     public class DatabaseTest
     {

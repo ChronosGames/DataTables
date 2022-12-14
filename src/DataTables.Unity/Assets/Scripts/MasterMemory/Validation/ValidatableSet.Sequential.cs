@@ -1,12 +1,22 @@
-﻿ 
+﻿
+
+
+
+
+
+
+
+ 
+
 using System;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace MasterMemory.Validation
+namespace DataTables.Validation
 {
     public partial class ValidatableSet<TElement>
     {
+
         public void Sequential(Expression<Func<TElement, SByte>> selector, bool distinct = false)
         {
             var f = selector.Compile(true);
@@ -40,6 +50,7 @@ namespace MasterMemory.Validation
                 prev = curr;
             }
         }
+
 
         public void Sequential(Expression<Func<TElement, Int16>> selector, bool distinct = false)
         {
@@ -75,6 +86,7 @@ namespace MasterMemory.Validation
             }
         }
 
+
         public void Sequential(Expression<Func<TElement, Int32>> selector, bool distinct = false)
         {
             var f = selector.Compile(true);
@@ -108,6 +120,7 @@ namespace MasterMemory.Validation
                 prev = curr;
             }
         }
+
 
         public void Sequential(Expression<Func<TElement, Int64>> selector, bool distinct = false)
         {
@@ -143,6 +156,7 @@ namespace MasterMemory.Validation
             }
         }
 
+
         public void Sequential(Expression<Func<TElement, Byte>> selector, bool distinct = false)
         {
             var f = selector.Compile(true);
@@ -176,6 +190,7 @@ namespace MasterMemory.Validation
                 prev = curr;
             }
         }
+
 
         public void Sequential(Expression<Func<TElement, UInt16>> selector, bool distinct = false)
         {
@@ -211,6 +226,7 @@ namespace MasterMemory.Validation
             }
         }
 
+
         public void Sequential(Expression<Func<TElement, UInt32>> selector, bool distinct = false)
         {
             var f = selector.Compile(true);
@@ -245,6 +261,7 @@ namespace MasterMemory.Validation
             }
         }
 
+
         public void Sequential(Expression<Func<TElement, UInt64>> selector, bool distinct = false)
         {
             var f = selector.Compile(true);
@@ -278,6 +295,7 @@ namespace MasterMemory.Validation
                 prev = curr;
             }
         }
+
 
     }
 }

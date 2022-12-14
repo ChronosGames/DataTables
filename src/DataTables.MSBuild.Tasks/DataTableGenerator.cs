@@ -5,7 +5,7 @@ using System;
 
 namespace DataTables.MSBuild.Tasks
 {
-    public class MasterMemoryGenerator : Task
+    public class DataTableGenerator : Task
     {
         [Required]
         public string UsingNamespace { get; set; }

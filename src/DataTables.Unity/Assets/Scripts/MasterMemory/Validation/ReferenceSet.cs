@@ -3,7 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
-namespace MasterMemory.Validation
+namespace DataTables.Validation
 {
     public class ReferenceSet<TElement, TReference>
     {

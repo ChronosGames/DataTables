@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
-namespace MasterMemory.Tests
+namespace DataTables.Tests
 {
     public class RangeViewTest
     {

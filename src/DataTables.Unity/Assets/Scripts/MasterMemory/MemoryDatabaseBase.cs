@@ -1,4 +1,4 @@
-﻿using MasterMemory.Internal;
+﻿using DataTables.Internal;
 using MessagePack;
 using MessagePack.Formatters;
 using System;
@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 using System.Buffers;
-using MasterMemory.Validation;
+using DataTables.Validation;
 
-namespace MasterMemory
+namespace DataTables
 {
     public abstract class MemoryDatabaseBase
     {

@@ -2,7 +2,7 @@
 using MessagePack.Formatters;
 using System;
 
-namespace MasterMemory.Internal
+namespace DataTables.Internal
 {
     internal class InternStringResolver : IFormatterResolver, IMessagePackFormatter<string>
     {

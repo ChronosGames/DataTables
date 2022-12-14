@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\MasterMemory\DataTables.csproj" />
+    <ProjectReference Include="..\..\src\DataTables\DataTables.csproj" />
   </ItemGroup>
 
 </Project>

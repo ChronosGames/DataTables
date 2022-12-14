@@ -1,4 +1,4 @@
-﻿using MasterMemory.Internal;
+﻿using DataTables.Internal;
 using MessagePack.Resolvers;
 using System;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using FluentAssertions;
 using Xunit;
 using MessagePack;
 
-namespace MasterMemory.Tests
+namespace DataTables.Tests
 {
     public class BinarySearchTest
     {

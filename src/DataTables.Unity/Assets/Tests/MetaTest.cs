@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using Xunit;
 
-namespace MasterMemory.Tests
+namespace DataTables.Tests
 {
     public class MetaTest
     {

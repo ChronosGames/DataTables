@@ -51,7 +51,7 @@
 
     <!-- Copy files for Unity -->
     <PropertyGroup>
-        <DestinationRoot>$(ProjectDir)..\DataTables.Unity\Assets\Scripts\MasterMemory\</DestinationRoot>
+        <DestinationRoot>$(ProjectDir)..\DataTables.Unity\Assets\Scripts\DataTables\</DestinationRoot>
         <TestDestination>$(ProjectDir)..\DataTables.Unity\Assets\Tests\</TestDestination>
     </PropertyGroup>
     <ItemGroup>

@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using ExcelDataReader;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
@@ -18,6 +19,9 @@ namespace DataTables.GeneratorCore
 
         public void GenerateFile(string usingNamespace, string inputDirectory, string outputDirectory, string prefixClassName, bool addImmutableConstructor, bool throwIfKeyNotFound, bool forceOverwrite, Action<string> logger)
         {
+            // By default, ExcelDataReader throws a NotSupportedException "No data is available for encoding 1252." on .NET Core.
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
             prefixClassName ??= "";
             var list = new List<GenerationContext>();
 
@@ -46,21 +50,25 @@ namespace DataTables.GeneratorCore
                     Directory.CreateDirectory(outputDirectory);
                 }
 
-                var usingStrings = string.Join(Environment.NewLine, list.SelectMany(x => x.UsingStrings).Distinct().OrderBy(x => x, StringComparer.Ordinal));
+                //var usingStrings = string.Join(Environment.NewLine, list.SelectMany(x => x.UsingStrings).Distinct().OrderBy(x => x, StringComparer.Ordinal));
 
-                var builderTemplate = new DatabaseBuilderTemplate();
-                var databaseTemplate = new MemoryDatabaseTemplate();
-                var immutableBuilderTemplate = new ImmutableBuilderTemplate();
-                var resolverTemplate = new MessagePackResolverTemplate();
-                builderTemplate.Namespace = databaseTemplate.Namespace = immutableBuilderTemplate.Namespace = resolverTemplate.Namespace = usingNamespace;
-                builderTemplate.PrefixClassName = databaseTemplate.PrefixClassName = immutableBuilderTemplate.PrefixClassName = resolverTemplate.PrefixClassName = prefixClassName;
-                builderTemplate.Using = databaseTemplate.Using = immutableBuilderTemplate.Using = resolverTemplate.Using = (usingStrings + Environment.NewLine + ("using " + usingNamespace + ".Tables;"));
-                builderTemplate.GenerationContexts = databaseTemplate.GenerationContexts = immutableBuilderTemplate.GenerationContexts = resolverTemplate.GenerationContexts = list.ToArray();
+                //var builderTemplate = new DatabaseBuilderTemplate();
+                //var databaseTemplate = new MemoryDatabaseTemplate();
+                //var immutableBuilderTemplate = new ImmutableBuilderTemplate();
+                //var resolverTemplate = new MessagePackResolverTemplate();
+                //builderTemplate.Namespace = databaseTemplate.Namespace = immutableBuilderTemplate.Namespace = resolverTemplate.Namespace = usingNamespace;
+                //builderTemplate.PrefixClassName = databaseTemplate.PrefixClassName = immutableBuilderTemplate.PrefixClassName = resolverTemplate.PrefixClassName = prefixClassName;
+                //builderTemplate.Using = databaseTemplate.Using = immutableBuilderTemplate.Using = resolverTemplate.Using = (usingStrings + Environment.NewLine + ("using " + usingNamespace + ".Tables;"));
+                //builderTemplate.GenerationContexts = databaseTemplate.GenerationContexts = immutableBuilderTemplate.GenerationContexts = resolverTemplate.GenerationContexts = list.ToArray();
 
-                logger(WriteToFile(outputDirectory, builderTemplate.ClassName, builderTemplate.TransformText(), forceOverwrite));
-                logger(WriteToFile(outputDirectory, immutableBuilderTemplate.ClassName, immutableBuilderTemplate.TransformText(), forceOverwrite));
-                logger(WriteToFile(outputDirectory, databaseTemplate.ClassName, databaseTemplate.TransformText(), forceOverwrite));
-                logger(WriteToFile(outputDirectory, resolverTemplate.ClassName, resolverTemplate.TransformText(), forceOverwrite));
+                //logger(WriteToFile(outputDirectory, builderTemplate.ClassName, builderTemplate.TransformText(), forceOverwrite));
+                //logger(WriteToFile(outputDirectory, immutableBuilderTemplate.ClassName, immutableBuilderTemplate.TransformText(), forceOverwrite));
+                //logger(WriteToFile(outputDirectory, databaseTemplate.ClassName, databaseTemplate.TransformText(), forceOverwrite));
+                //logger(WriteToFile(outputDirectory, resolverTemplate.ClassName, resolverTemplate.TransformText(), forceOverwrite));
+
+
+
+                return;
             }
             {
                 var tableDir = Path.Combine(outputDirectory, "Tables");
@@ -129,6 +137,93 @@ namespace DataTables.GeneratorCore
 
         IEnumerable<GenerationContext> CreateGenerationContext(string filePath)
         {
+            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read))
+            {
+                // Auto-detect format, supports:
+                //  - Binary Excel files (2.0-2003 format; *.xls)
+                //  - OpenXml Excel files (2007 format; *.xlsx, *.xlsb)
+                using (var reader = ExcelReaderFactory.CreateReader(stream))
+                {
+                    var result = reader.AsDataSet(new ExcelDataSetConfiguration()
+                    {
+                        // Gets or sets a value indicating whether to set the DataColumn.DataType 
+                        // property in a second pass.
+                        UseColumnDataType = true,
+
+                        // Gets or sets a callback to determine whether to include the current sheet
+                        // in the DataSet. Called once per sheet before ConfigureDataTable.
+                        FilterSheet = (tableReader, sheetIndex) => true,
+
+                        // Gets or sets a callback to obtain configuration options for a DataTable. 
+                        ConfigureDataTable = (tableReader) => new ExcelDataTableConfiguration()
+                        {
+                            // Gets or sets a value indicating the prefix of generated column names.
+                            EmptyColumnNamePrefix = "Column",
+
+                            // Gets or sets a value indicating whether to use a row from the 
+                            // data as column names.
+                            UseHeaderRow = false,
+
+                            // Gets or sets a callback to determine which row is the header row. 
+                            // Only called when UseHeaderRow = true.
+                            ReadHeaderRow = (rowReader) =>
+                            {
+                                // F.ex skip the first row and use the 2nd row as column headers:
+                                //rowReader.Read();
+                            },
+
+                            // Gets or sets a callback to determine whether to include the 
+                            // current row in the DataTable.
+                            FilterRow = (rowReader) =>
+                            {
+                                return true;
+                            },
+
+                            // Gets or sets a callback to determine whether to include the specific
+                            // column in the DataTable. Called once per column after reading the 
+                            // headers.
+                            FilterColumn = (rowReader, columnIndex) =>
+                            {
+                                return true;
+                            }
+                        }
+                    });
+
+                    // The result of each spreadsheet is in result.Tables
+                    for (int i = 0; i < result.Tables.Count; i++)
+                    {
+                        var table = result.Tables[i];
+                        if (table.Rows.Count <= 3)
+                        {
+                            continue;
+                        }
+
+                        var context = new GenerationContext
+                        {
+                            SheetName = Path.GetFileNameWithoutExtension(filePath),
+                            ClassName = table.TableName,
+                            Properties = new Property[table.Columns.Count],
+                        };
+
+                        // 拼装Meta数据
+                        for (int j = 0; j < table.Columns.Count; j++)
+                        {
+                            context.Properties[j] = new Property
+                            {
+                                Name = table.Rows[1][j].ToString().Trim(),
+                                Type = table.Rows[2][j].ToString().Trim(),
+                                Comment = table.Rows[0][j].ToString().Trim(),
+                            };
+                        }
+
+                        Console.WriteLine($"{table.TableName}, Rows={table.Rows.Count}");
+                        yield return context;
+                    }
+                }
+
+                yield break;
+            }
+
             var syntax = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(File.ReadAllText(filePath));
             var root = syntax.GetRoot();
 

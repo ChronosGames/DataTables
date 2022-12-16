@@ -38,6 +38,16 @@ namespace DataTables.GeneratorCore
                 throw new InvalidOperationException("Not found Excel files, inputDir:" + inputDirectory);
             }
 
+            if (!Directory.Exists(codeOutputDir))
+            {
+                Directory.CreateDirectory(codeOutputDir);
+            }
+
+            if (!Directory.Exists(dataOutputDir))
+            {
+                Directory.CreateDirectory(dataOutputDir);
+            }
+
             foreach (var context in list)
             {
                 // 全局属性赋值

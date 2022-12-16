@@ -16,52 +16,16 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Update="DatabaseBuilderTemplate.cs">
-            <DependentUpon>DatabaseBuilderTemplate.tt</DependentUpon>
+        <Compile Update="CodeTemplate.cs">
+            <DependentUpon>CodeTemplate.tt</DependentUpon>
             <DesignTime>True</DesignTime>
             <AutoGen>True</AutoGen>
-        </Compile>
-        <Compile Update="ImmutableBuilderTemplate.cs">
-            <DesignTime>True</DesignTime>
-            <AutoGen>True</AutoGen>
-            <DependentUpon>ImmutableBuilderTemplate.tt</DependentUpon>
-        </Compile>
-        <Compile Update="MemoryDatabaseTemplate.cs">
-            <DependentUpon>MemoryDatabaseTemplate.tt</DependentUpon>
-            <DesignTime>True</DesignTime>
-            <AutoGen>True</AutoGen>
-        </Compile>
-        <Compile Update="TableTemplate.cs">
-            <DesignTime>True</DesignTime>
-            <AutoGen>True</AutoGen>
-            <DependentUpon>TableTemplate.tt</DependentUpon>
-        </Compile>
-        <Compile Update="MessagePackResolverTemplate.cs">
-            <DesignTime>True</DesignTime>
-            <AutoGen>True</AutoGen>
-            <DependentUpon>MessagePackResolverTemplate.tt</DependentUpon>
         </Compile>
     </ItemGroup>
 
     <ItemGroup>
-        <None Update="DatabaseBuilderTemplate.tt">
-            <LastGenOutput>DatabaseBuilderTemplate.cs</LastGenOutput>
-            <Generator>TextTemplatingFilePreprocessor</Generator>
-        </None>
-        <None Update="ImmutableBuilderTemplate.tt">
-            <LastGenOutput>ImmutableBuilderTemplate.cs</LastGenOutput>
-            <Generator>TextTemplatingFilePreprocessor</Generator>
-        </None>
-        <None Update="MemoryDatabaseTemplate.tt">
-            <LastGenOutput>MemoryDatabaseTemplate.cs</LastGenOutput>
-            <Generator>TextTemplatingFilePreprocessor</Generator>
-        </None>
-        <None Update="TableTemplate.tt">
-            <LastGenOutput>TableTemplate.cs</LastGenOutput>
-            <Generator>TextTemplatingFilePreprocessor</Generator>
-        </None>
-        <None Update="MessagePackResolverTemplate.tt">
-            <LastGenOutput>MessagePackResolverTemplate.cs</LastGenOutput>
+        <None Update="CodeTemplate.tt">
+            <LastGenOutput>CodeTemplate.cs</LastGenOutput>
             <Generator>TextTemplatingFilePreprocessor</Generator>
         </None>
     </ItemGroup>

@@ -5,31 +5,39 @@ namespace DataTables.GeneratorCore
 {
     public class GenerationContext
     {
+        public string FileName { get; set; }
+
         public string SheetName { get; set; }
+
+        public string[] UsingStrings { get; set; }
+
+        public string Namespace { get; set; }
+
+        public string PrefixClassName { get; set; }
+
+        public string ClassName => PrefixClassName + SheetName;
 
         public Property[] Properties { get; set; }
 
-
-        public string ClassName { get; set; }
-        public string MemoryTableName { get; set; }
-        public string[] UsingStrings { get; set; }
-        public PrimaryKey PrimaryKey { get; set; }
-        public SecondaryKey[] SecondaryKeys { get; set; }
-
+        public int CellRow { get; set; }
+        public int CellColumn { get; set; }
+        public object[,] Cells { get; set; }
+        
         public string InputFilePath { get; set; }
-        public ClassDeclarationSyntax OriginalClassDeclaration { get; set; }
-
-        public KeyBase[] Keys => new KeyBase[] { PrimaryKey }.Concat(SecondaryKeys).ToArray();
-
     }
 
     public class Property
     {
         public string Type { get; set; }
-        
+
         public string Name { get; set; }
 
         public string Comment { get; set; }
+
+        /// <summary>
+        /// 当前属于表格的第几列
+        /// </summary>
+        public int Index { get; set; }
     }
 
     public abstract class KeyBase

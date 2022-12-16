@@ -1,5 +1,4 @@
-﻿using DataTables.GeneratorCore;
-using Microsoft.Build.Framework;
+﻿using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using System;
 
@@ -8,16 +7,15 @@ namespace DataTables.MSBuild.Tasks
     public class DataTableGenerator : Task
     {
         [Required]
-        public string UsingNamespace { get; set; }
-        [Required]
         public string InputDirectory { get; set; }
         [Required]
-        public string OutputDirectory { get; set; }
+        public string CodeOutputDirectory { get; set; }
+        [Required]
+        public string DataOutputDirectory { get; set; }
+        [Required]
+        public string UsingNamespace { get; set; }
 
         public string PrefixClassName { get; set; }
-
-        public bool AddImmutableConstructor { get; set; }
-        public bool ReturnNullIfKeyNotFound { get; set; } = true;
 
         public bool ForceOverwrite { get; set; }
 
@@ -25,7 +23,7 @@ namespace DataTables.MSBuild.Tasks
         {
             try
             {
-                new CodeGenerator().GenerateFile(UsingNamespace, InputDirectory, OutputDirectory, PrefixClassName, AddImmutableConstructor, !ReturnNullIfKeyNotFound, ForceOverwrite, x => this.Log.LogMessage(x));
+                new DataTables.GeneratorCore.DataTableGenerator().GenerateFile(InputDirectory, CodeOutputDirectory, DataOutputDirectory, UsingNamespace, PrefixClassName, ForceOverwrite, x => this.Log.LogMessage(x));
             }
             catch (Exception ex)
             {

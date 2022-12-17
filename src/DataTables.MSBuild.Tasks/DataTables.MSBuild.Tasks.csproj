@@ -21,12 +21,12 @@
         <PackageTags>datatable, embedded, inmemory, unity</PackageTags>
         <IsPackable>true</IsPackable>
     </PropertyGroup>
-
-    <ItemGroup>
-        <!-- NuGet Tasks path. -->
-        <Content Include="build\DataTables.MSBuild.Tasks.props" PackagePath="build\" />
-    </ItemGroup>
-
+	
+	<ItemGroup>
+		<!-- NuGet Tasks path. -->
+		<Content Include="build\DataTables.MSBuild.Tasks.props" PackagePath="build\" />
+	</ItemGroup>
+	
     <ItemGroup>
         <PackageReference Include="Microsoft.Build.Framework" Version="16.0.461" />
         <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.0.461" />

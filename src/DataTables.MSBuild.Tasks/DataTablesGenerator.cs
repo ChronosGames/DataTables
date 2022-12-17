@@ -4,7 +4,7 @@ using System;
 
 namespace DataTables.MSBuild.Tasks
 {
-    public class DataTableGenerator : Task
+    public class DataTablesGenerator : Task
     {
         [Required]
         public string InputDirectory { get; set; }

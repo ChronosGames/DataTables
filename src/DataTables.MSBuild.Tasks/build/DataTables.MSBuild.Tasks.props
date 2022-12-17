@@ -1,0 +1,9 @@
+﻿<Project TreatAsLocalProperty="_DataTablesGeneratorTaskFolder;_DataTablesGeneratorTaskAssembly">
+
+	<PropertyGroup>
+		<_DataTablesGeneratorTaskFolder>netstandard2.0</_DataTablesGeneratorTaskFolder>
+		<_DataTablesGeneratorTaskAssembly>$(MSBuildThisFileDirectory)..\tasks\$(_DataTablesGeneratorTaskFolder)\DataTables.MSBuild.Tasks.dll</_DataTablesGeneratorTaskAssembly>
+	</PropertyGroup>
+
+	<UsingTask TaskName="DataTables.MSBuild.Tasks.DataTablesGenerator" AssemblyFile="$(_DataTablesGeneratorTaskAssembly)" />
+</Project>

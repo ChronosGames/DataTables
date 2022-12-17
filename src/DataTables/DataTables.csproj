@@ -12,10 +12,10 @@
         <NoWarn>1701;1702;1705;1591</NoWarn>
 
         <!-- NuGet -->
-        <PackageId>DataTables</PackageId>
+        <PackageId>DataTables.API</PackageId>
         <PackageVersion>$(Version)</PackageVersion>
-        <Authors>Cysharp</Authors>
-        <Copyright>Cysharp</Copyright>
+        <Authors>PhonixGame</Authors>
+        <Copyright>PhonixGame</Copyright>
         <Description>Embedded Typed Readonly In-Memory Document Database for .NET Core and Unity.</Description>
         <PackageProjectUrl>https://github.com/PhonixGame/DataTables</PackageProjectUrl>
         <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>

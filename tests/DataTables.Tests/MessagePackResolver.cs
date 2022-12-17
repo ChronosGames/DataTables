@@ -1,26 +1,26 @@
-﻿using MessagePack;
-using MessagePack.Formatters;
-using MessagePack.Resolvers;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿//using MessagePack;
+//using MessagePack.Formatters;
+//using MessagePack.Resolvers;
+//using System;
+//using System.Collections.Generic;
+//using System.Text;
 
-namespace DataTables.Tests
-{
-    public class MessagePackResolver : IFormatterResolver
-    {
-        public static IFormatterResolver Instance = new MessagePackResolver();
+//namespace DataTables.Tests
+//{
+//    public class MessagePackResolver : IFormatterResolver
+//    {
+//        public static IFormatterResolver Instance = new MessagePackResolver();
 
-        MessagePackResolver()
-        {
+//        MessagePackResolver()
+//        {
 
-        }
+//        }
 
-        public IMessagePackFormatter<T> GetFormatter<T>()
-        {
-            return MasterMemoryResolver.Instance.GetFormatter<T>()
-                ?? GeneratedResolver.Instance.GetFormatter<T>()
-                ?? StandardResolver.Instance.GetFormatter<T>();
-        }
-    }
-}
+//        public IMessagePackFormatter<T> GetFormatter<T>()
+//        {
+//            return MasterMemoryResolver.Instance.GetFormatter<T>()
+//                ?? GeneratedResolver.Instance.GetFormatter<T>()
+//                ?? StandardResolver.Instance.GetFormatter<T>();
+//        }
+//    }
+//}

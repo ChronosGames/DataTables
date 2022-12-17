@@ -1,9 +1,7 @@
 ﻿{
     "name": "DataTables.Tests",
     "references": [
-        "DataTables",
-		"MessagePack",
-		"MessagePack.Annotations"
+        "DataTables"
     ],
     "optionalUnityReferences": [],
     "includePlatforms": [],

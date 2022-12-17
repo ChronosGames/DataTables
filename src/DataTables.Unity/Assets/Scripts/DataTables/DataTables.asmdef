@@ -1,9 +1,6 @@
 {
     "name": "DataTables",
-    "references": [
-        "MessagePack",
-        "MessagePack.Annotations"
-    ],
+    "references": [],
     "optionalUnityReferences": [],
     "includePlatforms": [],
     "excludePlatforms": [],

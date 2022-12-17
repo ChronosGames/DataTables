@@ -219,7 +219,7 @@ namespace DataTables.GeneratorCore
                 GenerationContext = context,
             };
 
-            logger(WriteToFile(outputDir, context.ClassName + "Code.cs", codeTemplate.TransformText(), forceOverwrite));
+            logger(WriteToFile(outputDir, context.ClassName + ".cs", codeTemplate.TransformText(), forceOverwrite));
         }
 
         static string NormalizeNewLines(string content)

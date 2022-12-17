@@ -1,17 +1,11 @@
-﻿//------------------------------------------------------------
-// Game Framework
-// Copyright © 2013-2021 Jiang Yin. All rights reserved.
-// Homepage: https://gameframework.cn/
-// Feedback: mailto:ellan@gameframework.cn
-//------------------------------------------------------------
-
+﻿using System;
 using System.IO;
 
 namespace DataTables.GeneratorCore
 {
     public sealed partial class DataTableProcessor
     {
-        private sealed class Int16Processor : GenericDataProcessor<short>
+        private sealed class EnumProcessor : GenericDataProcessor<string>
         {
             public override bool IsSystem
             {
@@ -25,7 +19,7 @@ namespace DataTables.GeneratorCore
             {
                 get
                 {
-                    return "short";
+                    return "enum";
                 }
             }
 
@@ -33,15 +27,14 @@ namespace DataTables.GeneratorCore
             {
                 return new string[]
                 {
-                    "short",
-                    "int16",
-                    "system.int16"
+                    "enum",
+                    "system.enum"
                 };
             }
 
-            public override short Parse(string value)
+            public override string Parse(string value)
             {
-                return short.Parse(value);
+                return value;
             }
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)
@@ -51,7 +44,17 @@ namespace DataTables.GeneratorCore
 
             public override string GenerateDeserializeCode(GenerationContext context, Property property)
             {
-                return $"{property.Name} = reader.ReadInt16();";
+                return $"Enum.TryParse(reader.ReadString(), out {GetPropertyTypeString(property)} __{property.Name}); {property.Name} = __{property.Name};";
+            }
+
+            internal string GetPropertyTypeString(Property property)
+            {
+                if (property.TypeName.StartsWith("Enum"))
+                {
+                    return property.TypeName.Substring(4);
+                }
+
+                return property.TypeName;
             }
         }
     }

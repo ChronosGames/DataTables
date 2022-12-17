@@ -19,8 +19,8 @@ namespace DataTables.GeneratorCore
 
         public Property[] Properties { get; set; }
 
-        public int CellRow { get; set; }
-        public int CellColumn { get; set; }
+        public int RowCount { get; set; }
+        public int ColumnCount { get; set; }
         public object[,] Cells { get; set; }
         
         public string InputFilePath { get; set; }
@@ -28,16 +28,11 @@ namespace DataTables.GeneratorCore
 
     public class Property
     {
-        public string Type { get; set; }
+        public string TypeName { get; set; }
 
         public string Name { get; set; }
 
         public string Comment { get; set; }
-
-        /// <summary>
-        /// 当前属于表格的第几列
-        /// </summary>
-        public int Index { get; set; }
     }
 
     public abstract class KeyBase
@@ -200,29 +195,6 @@ namespace DataTables.GeneratorCore
                 }
             }
         }
-
-        public bool CanInlineBinarySearch
-        {
-            get
-            {
-                return (this is PrimaryKey) && (IsComparableNumberType) && !IsNonUnique;
-            }
-        }
-    }
-
-    public class PrimaryKey : KeyBase
-    {
-        public override string SelectorName => "primaryIndexSelector";
-        public override string TableName => "data";
-        public override bool IsPrimary => true;
-    }
-
-    public class SecondaryKey : KeyBase
-    {
-        public int IndexNo { get; set; }
-        public override string SelectorName => $"secondaryIndex{IndexNo}Selector";
-        public override string TableName => $"secondaryIndex{IndexNo}";
-        public override bool IsPrimary => false;
     }
 
     public class KeyProperty

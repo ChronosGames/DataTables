@@ -44,7 +44,12 @@ namespace DataTables.GeneratorCore
                 return bool.Parse(value);
             }
 
-            public override void WriteToStream(DataTableProcessor dataTableProcessor, BinaryWriter binaryWriter, string value)
+            public override string GenerateDeserializeCode(GenerationContext context, Property property)
+            {
+                return $"{property.Name} = reader.ReadBoolean();";
+            }
+
+            public override void WriteToStream(BinaryWriter binaryWriter, string value)
             {
                 binaryWriter.Write(Parse(value));
             }

@@ -44,9 +44,14 @@ namespace DataTables.GeneratorCore
                 return ulong.Parse(value);
             }
 
-            public override void WriteToStream(DataTableProcessor dataTableProcessor, BinaryWriter binaryWriter, string value)
+            public override void WriteToStream(BinaryWriter binaryWriter, string value)
             {
                 binaryWriter.Write7BitEncodedUInt64(Parse(value));
+            }
+
+            public override string GenerateDeserializeCode(GenerationContext context, Property property)
+            {
+                return $"{property.Name} = reader.Read7BitEncodedUInt64();";
             }
         }
     }

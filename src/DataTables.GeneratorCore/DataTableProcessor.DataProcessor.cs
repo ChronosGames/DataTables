@@ -18,16 +18,6 @@ namespace DataTables.GeneratorCore
                 get;
             }
 
-            public abstract bool IsId
-            {
-                get;
-            }
-
-            public abstract bool IsComment
-            {
-                get;
-            }
-
             public abstract bool IsSystem
             {
                 get;
@@ -40,7 +30,9 @@ namespace DataTables.GeneratorCore
 
             public abstract string[] GetTypeStrings();
 
-            public abstract void WriteToStream(DataTableProcessor dataTableProcessor, BinaryWriter binaryWriter, string value);
+            public abstract string GenerateDeserializeCode(GenerationContext context, Property property);
+
+            public abstract void WriteToStream(BinaryWriter binaryWriter, string value);
         }
     }
 }

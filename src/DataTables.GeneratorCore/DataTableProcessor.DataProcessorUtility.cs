@@ -45,6 +45,10 @@ namespace DataTables.GeneratorCore
                 {
                     return dataProcessor;
                 }
+                else if (type.ToLowerInvariant().StartsWith("enum", StringComparison.InvariantCulture))
+                {
+                    return s_DataProcessors["enum"];
+                }
 
                 throw new Exception(string.Format("Not supported data processor type '{0}'.", type));
             }

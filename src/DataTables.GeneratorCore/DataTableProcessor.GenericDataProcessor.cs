@@ -19,22 +19,6 @@ namespace DataTables.GeneratorCore
                 }
             }
 
-            public override bool IsId
-            {
-                get
-                {
-                    return false;
-                }
-            }
-
-            public override bool IsComment
-            {
-                get
-                {
-                    return false;
-                }
-            }
-
             public abstract T Parse(string value);
         }
     }

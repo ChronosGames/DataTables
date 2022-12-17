@@ -44,9 +44,14 @@ namespace DataTables.GeneratorCore
                 return ushort.Parse(value);
             }
 
-            public override void WriteToStream(DataTableProcessor dataTableProcessor, BinaryWriter binaryWriter, string value)
+            public override void WriteToStream(BinaryWriter binaryWriter, string value)
             {
                 binaryWriter.Write(Parse(value));
+            }
+
+            public override string GenerateDeserializeCode(GenerationContext context, Property property)
+            {
+                return $"{property.Name} = reader.ReadUInt16();";
             }
         }
     }

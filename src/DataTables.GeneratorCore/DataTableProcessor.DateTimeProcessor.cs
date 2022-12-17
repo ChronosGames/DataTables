@@ -44,7 +44,12 @@ namespace DataTables.GeneratorCore
                 return DateTime.Parse(value);
             }
 
-            public override void WriteToStream(DataTableProcessor dataTableProcessor, BinaryWriter binaryWriter, string value)
+            public override string GenerateDeserializeCode(GenerationContext context, Property property)
+            {
+                return $"{property.Name} = new DateTime(reader.ReadInt64());";
+            }
+
+            public override void WriteToStream(BinaryWriter binaryWriter, string value)
             {
                 binaryWriter.Write(Parse(value).Ticks);
             }

@@ -2,7 +2,7 @@
   "profiles": {
     "DataTables.Generator": {
         "commandName": "Project",
-        "commandLineArgs": "-i \"X:\\Projects\\PhonixGame\\DataTables\\sandbox\\ConsoleApp\" -o \"X:\\Projects\\PhonixGame\\DataTables\\sandbox\\ConsoleApp\\Generated\" -n ConsoleApp"
+        "commandLineArgs": "-i \"X:\\Projects\\PhonixGame\\DataTables\\sandbox\\ConsoleApp\" -co \"X:\\Projects\\PhonixGame\\DataTables\\sandbox\\ConsoleApp\\Generated\" -do \"X:\\Projects\\PhonixGame\\DataTables\\sandbox\\ConsoleApp\\Generated\" -n ConsoleApp"
     }
   }
 }

@@ -50,9 +50,9 @@ namespace DataTables.GeneratorCore
                 binaryWriter.Write7BitEncodedInt32(Parse(value));
             }
 
-            public override string GenerateDeserializeCode(GenerationContext context, Property property)
+            public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
             {
-                return $"{property.Name} = reader.Read7BitEncodedInt32();";
+                return $"{propertyName} = reader.Read7BitEncodedInt32();";
             }
         }
     }

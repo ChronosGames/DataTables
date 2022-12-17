@@ -28,9 +28,14 @@ namespace DataTables.GeneratorCore
                 get;
             }
 
+            protected string Tabs(int depth)
+            {
+                return new string(' ', 4 * (depth + 5));
+            }
+
             public abstract string[] GetTypeStrings();
 
-            public abstract string GenerateDeserializeCode(GenerationContext context, Property property);
+            public abstract string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth);
 
             public abstract void WriteToStream(BinaryWriter binaryWriter, string value);
         }

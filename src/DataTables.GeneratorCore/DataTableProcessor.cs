@@ -406,7 +406,7 @@ namespace DataTables.GeneratorCore
         public static string GetDeserializeMethodString(GenerationContext context, Property property)
         {
             var processor = DataProcessorUtility.GetDataProcessor(property.TypeName);
-            return processor.GenerateDeserializeCode(context, property);
+            return processor.GenerateDeserializeCode(context, property.TypeName, property.Name, 0);
         }
     }
 }

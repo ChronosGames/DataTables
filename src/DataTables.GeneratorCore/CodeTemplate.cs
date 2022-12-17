@@ -49,7 +49,7 @@ namespace DataTables.GeneratorCore
 
         public override bool Deserialize(byte[] raw, int offset, int length)
         {
-            using (MemoryStream stream = new MemoryStream(raw, offset, length))
+            using (MemoryStream stream = new MemoryStream(raw, offset, length, false))
             {
                 using (BinaryReader reader = new BinaryReader(stream))
                 {

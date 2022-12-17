@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -21,6 +21,12 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\DataTables.Annotations\DataTables.Annotations.csproj" />
     <ProjectReference Include="..\..\src\DataTables\DataTables.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Generated\*.bin">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -42,19 +42,19 @@ namespace DataTables.GeneratorCore
                 binaryWriter.Write(Parse(value));
             }
 
-            public override string GenerateDeserializeCode(GenerationContext context, Property property)
+            public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
             {
-                return $"Enum.TryParse(reader.ReadString(), out {GetPropertyTypeString(property)} __{property.Name}); {property.Name} = __{property.Name};";
+                return $"if (Enum.TryParse(reader.ReadString(), out {GetPropertyTypeString(typeName)} __{propertyName}))\n                    {{\n                        {propertyName} = __{propertyName};\n                    }}";
             }
 
-            internal string GetPropertyTypeString(Property property)
+            internal string GetPropertyTypeString(string typeName)
             {
-                if (property.TypeName.StartsWith("Enum"))
+                if (typeName.StartsWith("Enum"))
                 {
-                    return property.TypeName.Substring(4);
+                    return typeName.Substring(4);
                 }
 
-                return property.TypeName;
+                return typeName;
             }
         }
     }

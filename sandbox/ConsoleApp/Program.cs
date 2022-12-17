@@ -1,22 +1,13 @@
-using MasterMemory;
-using System.Linq;
-using MessagePack;
 using System;
-using System.IO;
 using System.Buffers;
-using System.Linq.Expressions;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Reflection;
-using System.Text;
-using System.Globalization;
+using System.IO;
 using DataTables;
 
 namespace ConsoleApp
 {
     public enum CardType
     {
-
+        HQCards,
     }
 
     class ByteBufferWriter : IBufferWriter<byte>
@@ -41,7 +32,7 @@ namespace ConsoleApp
 
         public Memory<byte> GetMemory(int sizeHint = 0)
         {
-        AGAIN:
+            AGAIN:
             var nextSize = index + sizeHint;
             if (buffer.Length < nextSize)
             {
@@ -70,22 +61,6 @@ namespace ConsoleApp
         }
     }
 
-    [MemoryTable(nameof(Test1))]
-    public class Test1
-    {
-        [PrimaryKey]
-        public int Id { get; set; }
-    }
-
-    [MessagePackObject(false)]
-    [MemoryTable(nameof(Test2))]
-    public class Test2
-    {
-        [PrimaryKey]
-        public int Id { get; set; }
-    }
-
-
 
     class Program
     {
@@ -93,10 +68,10 @@ namespace ConsoleApp
         {
             var manager = new DataTableManager();
 
-            var raw = File.ReadAllBytes("card.bin");
-            manager.CreateDataTable<DRCard>("card", raw, 0, raw.Length);
+            var raw = File.ReadAllBytes("Generated\\card.bin");
+            var card = manager.CreateDataTable<Card>("card", raw, 0, raw.Length);
 
-            manager.HasDataTable<DRCard>();
+            manager.HasDataTable<Card>();
 
         }
 

@@ -44,9 +44,9 @@ namespace DataTables.GeneratorCore
                 return DateTime.Parse(value);
             }
 
-            public override string GenerateDeserializeCode(GenerationContext context, Property property)
+            public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
             {
-                return $"{property.Name} = new DateTime(reader.ReadInt64());";
+                return $"{propertyName} = new DateTime(reader.ReadInt64());";
             }
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)

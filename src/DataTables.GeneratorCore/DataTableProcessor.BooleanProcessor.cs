@@ -41,7 +41,22 @@ namespace DataTables.GeneratorCore
 
             public override bool Parse(string value)
             {
-                return bool.Parse(value);
+                if (string.IsNullOrEmpty(value))
+                {
+                    return false;
+                }
+
+                if (value == "0" || string.Compare(value, "n", true) == 0 || string.Compare(value, "no", true) == 0)
+                {
+                    return false;
+                }
+
+                if (value == "1" || string.Compare(value, "y", true) == 0 || string.Compare(value, "yes", true) == 0)
+                {
+                    return true;
+                }
+
+                return bool.Parse(value.ToLowerInvariant());
             }
 
             public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)

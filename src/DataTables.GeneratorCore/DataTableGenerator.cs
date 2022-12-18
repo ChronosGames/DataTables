@@ -50,6 +50,14 @@ namespace DataTables.GeneratorCore
                 Directory.CreateDirectory(dataOutputDir);
             }
 
+            // 生成DataTableManagerExtension代码文件
+            var dataTableManagerExtensionTemplate = new DataTableManagerExtensionTemplate()
+            {
+                Namespace = usingNamespace,
+                ClassNames = list.Select(x => x.ClassName).ToArray(),
+            };
+            logger(WriteToFile(codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
+
             foreach (var context in list)
             {
                 // 全局属性赋值
@@ -213,13 +221,13 @@ namespace DataTables.GeneratorCore
         static void GenerateCodeFile(GenerationContext context, string outputDir, bool forceOverwrite, Action<string> logger)
         {
             // 生成代码文件
-            var codeTemplate = new CodeTemplate()
+            var dataRowTemplate = new DataRowTemplate()
             {
                 Using = string.Join(Environment.NewLine, context.UsingStrings),
                 GenerationContext = context,
             };
 
-            logger(WriteToFile(outputDir, context.ClassName + ".cs", codeTemplate.TransformText(), forceOverwrite));
+            logger(WriteToFile(outputDir, context.ClassName + ".cs", dataRowTemplate.TransformText(), forceOverwrite));
         }
 
         static string NormalizeNewLines(string content)

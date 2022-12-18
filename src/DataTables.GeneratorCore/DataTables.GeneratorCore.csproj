@@ -16,19 +16,28 @@
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     </ItemGroup>
 
-    <ItemGroup>
-        <Compile Update="CodeTemplate.cs">
-            <DependentUpon>CodeTemplate.tt</DependentUpon>
-            <DesignTime>True</DesignTime>
-            <AutoGen>True</AutoGen>
-        </Compile>
-    </ItemGroup>
+	<ItemGroup>
+		<Compile Update="DataRowTemplate.cs">
+			<DependentUpon>DataRowTemplate.tt</DependentUpon>
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+		</Compile>
+		<Compile Update="DataTableManagerExtensionTemplate.cs">
+			<DependentUpon>DataTableManagerExtensionTemplate.tt</DependentUpon>
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+		</Compile>
+	</ItemGroup>
 
     <ItemGroup>
-        <None Update="CodeTemplate.tt">
-            <LastGenOutput>CodeTemplate.cs</LastGenOutput>
+        <None Update="DataRowTemplate.tt">
+            <LastGenOutput>DataRowTemplate.cs</LastGenOutput>
             <Generator>TextTemplatingFilePreprocessor</Generator>
         </None>
+		<None Update="DataTableManagerExtensionTemplate.tt">
+			<LastGenOutput>DataTableManagerExtensionTemplate.cs</LastGenOutput>
+			<Generator>TextTemplatingFilePreprocessor</Generator>
+		</None>
     </ItemGroup>
 
     <ItemGroup>

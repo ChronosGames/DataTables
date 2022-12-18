@@ -4,7 +4,13 @@ using System.Text;
 
 namespace DataTables.GeneratorCore
 {
-    public partial class CodeTemplate
+    public partial class DataTableManagerExtensionTemplate
+    {
+        public string Namespace { get; set; }
+        public string[] ClassNames { get; set; }
+    }
+
+    public partial class DataRowTemplate
     {
         public string Using { get; set; }
 

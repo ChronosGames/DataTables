@@ -9,10 +9,10 @@ public static class PackageExporter
     [MenuItem("Tools/Export Unitypackage")]
     public static void Export()
     {
-        var root = "Scripts/MasterMemory";
+        var root = "Scripts/DataTables";
         var version = GetVersion(root);
 
-        var fileName = string.IsNullOrEmpty(version) ? "MasterMemory.Unity.unitypackage" : $"MasterMemory.Unity.{version}.unitypackage";
+        var fileName = string.IsNullOrEmpty(version) ? "DataTables.Unity.unitypackage" : $"DataTables.Unity.{version}.unitypackage";
         var exportPath = "./" + fileName;
 
         var path = Path.Combine(Application.dataPath, root);

@@ -210,7 +210,7 @@ namespace DataTables
         /// <returns>要创建的数据表。</returns>
         public IDataTable<T> CreateDataTable<T>(string name, byte[] raw, int offset, int length) where T : class, IDataRow, new()
         {
-            TypeNamePair typeNamePair = new TypeNamePair(typeof(T), name);
+            TypeNamePair typeNamePair = new TypeNamePair(typeof(T));
             if (HasDataTable<T>(name))
             {
                 throw new Exception(string.Format("Already exist data table '{0}'.", typeNamePair));

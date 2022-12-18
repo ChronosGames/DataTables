@@ -50,14 +50,6 @@ namespace DataTables.GeneratorCore
                 Directory.CreateDirectory(dataOutputDir);
             }
 
-            // 生成DataTableManagerExtension代码文件
-            var dataTableManagerExtensionTemplate = new DataTableManagerExtensionTemplate()
-            {
-                Namespace = usingNamespace,
-                ClassNames = list.Select(x => x.ClassName).ToArray(),
-            };
-            logger(WriteToFile(codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
-
             foreach (var context in list)
             {
                 // 全局属性赋值
@@ -70,6 +62,14 @@ namespace DataTables.GeneratorCore
                 // 生成二进制文件
                 GenerateDataFile(context, dataOutputDir, forceOverwrite, logger);
             }
+
+            // 生成DataTableManagerExtension代码文件(放在未尾确保类名前缀会正确附加)
+            var dataTableManagerExtensionTemplate = new DataTableManagerExtensionTemplate()
+            {
+                Namespace = usingNamespace,
+                ClassNames = list.Select(x => x.ClassName).ToArray(),
+            };
+            logger(WriteToFile(codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
         }
 
         IEnumerable<GenerationContext> CreateGenerationContext(string filePath, Action<string> logger)

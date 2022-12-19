@@ -3,7 +3,7 @@
 DataTables
 ===
 
-Embedded Typed Readonly In-Memory Document Database for .NET Core and Unity. 
+DataTable Solution for .NET Core and Unity. 
 
 ![image](https://user-images.githubusercontent.com/46207/61031896-61890800-a3fb-11e9-86b7-84c821d347a4.png)
 
@@ -33,13 +33,11 @@ Embedded Typed Readonly In-Memory Document Database for .NET Core and Unity.
 Concept
 ---
 
+* **Support Many Input File**, Support Excel 2007-365(*.xlsx) as input file.
 * **Memory Efficient**, Only use underlying data memory and do aggressively string interning.
 * **Performance**, Similar as dictionary lookup.
 * **TypeSafe**, 100% Type safe by pre code-generation.
-* **Fast load speed**,  MasterMemory save data by [MessagePack for C#, a fastest C# serializer](https://github.com/neuecc/MessagePack-CSharp) so load speed is blazing fast.
-* **Flexible Search**, Supports multiple key, multiple result, range/closest query.
-* **Validator**, You can define custom data validation by C#.
-* **Metadata**, To make custom importer/exporter, get the all database metadata.
+* **Fast load speed**, DataTables Convert Excel files to binary files, so packed files is smaller and load speed is blazing fast.
 
 These features are suitable for master data management(write-once, read-heavy) on embedded application such as role-playing game. MasterMemory has better performance than any other database solutions. [PalDB](https://github.com/linkedin/PalDB) developed by LinkedIn has a similar concept(embeddable write-once key-value store), but the implementation and performance characteristics are completely different.
 
@@ -900,33 +898,31 @@ Code Generator
 ---
 MasterMemory has two kinds of code-generator. `MSBuild Task`, `.NET Core Global/Local Tools`.
 
-MSBuild Task(`MasterMemory.MSBuild.Tasks`) is recommended way to use in .NET Core csproj.
+MSBuild Task(`DataTables.MSBuild.Tasks`) is recommended way to use in .NET Core csproj.
 
 ```xml
-<MasterMemoryGenerator
+<DataTablesGenerator
     UsingNamespace="string:required"
     InputDirectory="string:required"
-    OutputDirectory="string:required"
+    CodeOutputDirectory="string:required"
+    DataOutputDirectory="string:required"
     PrefixClassName="string:optional, default= "
-    AddImmutableConstructor="bool:optional, default=false"
-    ReturnNullIfKeyNotFound="bool:optional, default=false"
 />
 ```
 
-`.NET Core Global/Local Tools` can install from NuGet(`MasterMemory.Generator`), you need to install .NET runtime. Here is the sample command of install global tool.
+`.NET Core Global/Local Tools` can install from NuGet(`DataTables.Generator`), you need to install .NET runtime. Here is the sample command of install global tool.
 
-`dotnet tool install --global MasterMemory.Generator`
+`dotnet tool install --global DataTables.Generator`
 
 ```
-Usage: MasterMemory.Generator [options...]
+Usage: DataTables.Generator [options...]
 
 Options:
   -i, -inputDirectory <String>              Input file directory(search recursive). (Required)
-  -o, -outputDirectory <String>             Output file directory. (Required)
+  -co, -codeOutputDirectory <String>        Code Output file directory. (Required)
+  -do, -dataOutputDirectory <String>        Data Output file directory. (Required)
   -n, -usingNamespace <String>              Namespace of generated files. (Required)
   -p, -prefixClassName <String>             Prefix of class names. (Default: )
-  -c, -addImmutableConstructor <Boolean>    Add immutable constructor to MemoryTable class. (Default: False)
-  -t, -returnNullIfKeyNotFound <Boolean>    Return null if key not found on unique find method. (Default: False)
 ```
 
 After install, you can call by `dotnet mmgen` command. This is useful to use in CI. Here is the sample of CircleCI config.
@@ -941,11 +937,11 @@ executors:
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
       NUGET_XMLDOC_MODE: skip
 jobs:
-  gen-mastermemory:
+  gen-datatables:
     executor: dotnet
     steps:
       - checkout
-      - run: dotnet tool install --global MasterMemory.Generator
+      - run: dotnet tool install --global DataTables.Generator
       - run: dotnet mmgen -i ./ -o ./MasterMemory -n Test
       /* git push or store artifacts or etc...... */
 ```

@@ -1,4 +1,4 @@
-[![GitHub Actions](https://github.com/Cysharp/MasterMemory/workflows/Build-Debug/badge.svg)](https://github.com/Cysharp/MasterMemory/actions) [![Releases](https://img.shields.io/github/release/Cysharp/MasterMemory.svg)](https://github.com/Cysharp/MasterMemory/releases)
+[![GitHub Actions](https://github.com/PhonixGame/DataTables/workflows/Build-Debug/badge.svg)](https://github.com/PhonixGame/DataTables/actions) [![Releases](https://img.shields.io/github/release/PhonixGame/DataTables.svg)](https://github.com/PhonixGame/DataTables/releases)
 
 DataTables
 ===

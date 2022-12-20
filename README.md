@@ -17,14 +17,7 @@ DataTable Solution for .NET Core and Unity.
 - [Getting Started(.NET Core)](#getting-startednet-core)
 - [Getting Started(Unity)](#getting-startedunity)
 - [DataTable configuration](#datatable-configuration)
-- [MemoryDatabase/RangeView](#memorydatabaserangeview)
-- [Extend Table](#extend-table)
-- [ImmutableBuilder](#immutablebuilder)
-- [Immutable Data](#immutable-data)
-- [Validator](#validator)
-- [Metadata](#metadata)
-- [Inheritance](#inheritance)
-- [Optimization](#optimization)
+- [Built-in supported types](#built-in-supported-types)
 - [Code Generator](#code-generator)
 - [License](#license)
 
@@ -143,47 +136,29 @@ DataTables.Generator.exe -i "C:\UnitySample" -co "C:\UnitySample\Generated" -do 
 The rest is the same as .NET Core version.
 
 ```csharp
-// to create database, use DatabaseBuilder and Append method.
-var builder = new DatabaseBuilder();
-builder.Append(new Person[]
-{
-    new Person { PersonId = 0, Age = 13, Gender = Gender.Male,   Name = "Dana Terry" },
-    new Person { PersonId = 1, Age = 17, Gender = Gender.Male,   Name = "Kirk Obrien" },
-    new Person { PersonId = 2, Age = 31, Gender = Gender.Male,   Name = "Wm Banks" },
-    new Person { PersonId = 3, Age = 44, Gender = Gender.Male,   Name = "Karl Benson" },
-    new Person { PersonId = 4, Age = 23, Gender = Gender.Male,   Name = "Jared Holland" },
-    new Person { PersonId = 5, Age = 27, Gender = Gender.Female, Name = "Jeanne Phelps" },
-    new Person { PersonId = 6, Age = 25, Gender = Gender.Female, Name = "Willie Rose" },
-    new Person { PersonId = 7, Age = 11, Gender = Gender.Female, Name = "Shari Gutierrez" },
-    new Person { PersonId = 8, Age = 63, Gender = Gender.Female, Name = "Lori Wilson" },
-    new Person { PersonId = 9, Age = 34, Gender = Gender.Female, Name = "Lena Ramsey" },
-});
+// to load datatables, use DataTableManagerExtension to load all datatables.
+using DataTables;
 
-// build database binary(you can also use `WriteToStream` for save to file).
-byte[] data = builder.Build();
+public static class DataTableManagerHelper
+{
+    public static DataTableManager Configure(this DataTableManager manager, string dataPath)
+    {
+        foreach (var className in DataTableManagerExtension.Names)
+        {
+            var raw = File.ReadAllBytes(Path.Combine(dataPath, className + ".bin"));
+            manager.CreateDataTable(className, raw);
+        }
+    }
+}
 
 // -----------------------
 
-// for query phase, create MemoryDatabase.
-// (MemoryDatabase is recommended to store in singleton container(static field/DI)).
-var db = new MemoryDatabase(data);
+// for query phase, use DataTableManager.
+var manager = new DataTableManager();
+manager.Configure("xxxxx");
+var drScene = manager.GetDataTable<DRScene>().GetDataRow(x => x.Id == 2000);
 
-// .PersonTable.FindByPersonId is fully typed by code-generation.
-Person person = db.PersonTable.FindByPersonId(10);
-
-// Multiple key is also typed(***And * **), Return value is multiple if key is marked with `NonUnique`.
-RangeView<Person> result = db.PersonTable.FindByGenderAndAge((Gender.Female, 23));
-
-// Get nearest value(choose lower(default) or higher).
-RangeView<Person> age1 = db.PersonTable.FindClosestByAge(31);
-
-// Get range(min-max inclusive).
-RangeView<Person> age2 = db.PersonTable.FindRangeByAge(20, 29);
 ```
-
-All table(marked by `MemoryTableAttribute`) and methods(created by `PrimaryKeyAttribute` or `SecondaryKeyAttribute`) are typed.
-
-![image](https://user-images.githubusercontent.com/46207/61035808-cb58e000-a402-11e9-9209-d51665d1cd56.png)
 
 You can invoke all indexed query by IntelliSense.
 
@@ -282,156 +257,41 @@ public class Person
 }
 ```
 
-MemoryDatabase/RangeView
+Built-in supported types
 ---
-In default, `MemoryDatabase` do all string data automatically interning(see: [Wikipedia/String interning](https://en.wikipedia.org/wiki/String_interning)). If multiple same string value exists in database(ex: "goblin","goblin", "goblin", "goblin", "goblin"....), standard database creates string value per query or store multiple same values. But MasterMemory stores single string value reference, it can save much memory if data is denormalized.
+These field types can serialize by default:
 
-Use intern or not is selected in constructor. If you want to disable automatically interning, use `internString:false`.
+* `short`, `int`, `long`, `ushort`, `uint`, `ulong`
+* `Enum` : StartWiths Enum string, like EnumItemType
+* `Array[]` like int[], string[]
+<!-- * Primitives (`int`, `string`, etc...), `Enum`s, `Nullable<>`, `Lazy<>`
+* `TimeSpan`,  `DateTime`, `DateTimeOffset`
+* `Guid`, `Uri`, `Version`, `StringBuilder`
+* `BigInteger`, `Complex`, `Half`
+* `Array[]`, `Array[,]`, `Array[,,]`, `Array[,,,]`, `ArraySegment<>`, `BitArray`
+* `KeyValuePair<,>`, `Tuple<,...>`, `ValueTuple<,...>`
+* `ArrayList`, `Hashtable`
+* `List<>`, `LinkedList<>`, `Queue<>`, `Stack<>`, `HashSet<>`, `ReadOnlyCollection<>`, `SortedList<,>`
+* `IList<>`, `ICollection<>`, `IEnumerable<>`, `IReadOnlyCollection<>`, `IReadOnlyList<>`
+* `Dictionary<,>`, `IDictionary<,>`, `SortedDictionary<,>`, `ILookup<,>`, `IGrouping<,>`, `ReadOnlyDictionary<,>`, `IReadOnlyDictionary<,>`
+* `ObservableCollection<>`, `ReadOnlyObservableCollection<>`
+* `ISet<>`,
+* `ConcurrentBag<>`, `ConcurrentQueue<>`, `ConcurrentStack<>`, `ConcurrentDictionary<,>`
+* Immutable collections (`ImmutableList<>`, etc)
+* Custom implementations of `ICollection<>` or `IDictionary<,>` with a parameterless constructor
+* Custom implementations of `IList` or `IDictionary` with a parameterless constructor
 
-`MemoryDatabase(byte[] databaseBinary, bool internString = true, MessagePack.IFormatterResolver formatterResolver = null, int maxDegreeOfParallelism = 1)`.
 
-MemoryDatabase has three(or four) query methods.
+You can add support for custom types, and there are some official/third-party extension packages for:
 
-* `T|RangeView<T>` FindBy***(TKey key)
-* bool TryFindBy***(TKey key, out T result)
-* `T|RangeView<T>` FindClosestBy***(TKey key, bool selectLower = true)
-* `RangeView<T>` FindRangeBy***(TKey min, TKey max, bool ascendant = true)
+* ReactiveProperty
+* for Unity (`Vector3`, `Quaternion`, etc...)
+* F# (Record, FsList, Discriminated Unions, etc...)
 
-If index key is unique, generates `FindBy***` and `TryFindBy***` methods and then `FindBy***` throws `KeyNotFoundException` when key is not found.
+Please see the [extensions section](#extensions).
 
-`By***` is generated by `PrimaryKey` and `SecondaryKey` defines.
-
-And has some utility properties.
-
-* `int` Count
-* `RangeView<T>` All
-* `RangeView<T>` AllReverse
-* `RangeView<T>` SortBy***
-* `T[] GetRawDataUnsafe()`
-
-`struct RangeView<T> : IEnumerable<T>` is the view of database elements. It has following property/method.
-
-* `T` [int index]
-* `int` Count
-* `T` First
-* `T` Last
-* `RangeView<T>` Reverse
-* `IEnumerator<T>` GetEnumerator()
-
-Extend Table
----
-Generated table class is defined partial class so create same namespace and class name's partial class on another file, you can add your custom method to generated table.
-
-Table class also defined partial `OnAfterConstruct` method, it called after table has been constructed. You can use it to store custom data to field after all data has been constructed.
-
-```csharp
-// create MonsterTable.Partial.cs
-
-public sealed partial class MonsterTable
-{
-    int maxHp;
-#pragma warning disable CS0649
-    readonly int minHp;
-#pragma warning restore CS0649    
-
-    // called after constructed
-    partial void OnAfterConstruct()
-    {
-        maxHp = All.Select(x => x.MaxHp).Max();
-        // you can use Unsafe.AsRef to set readonly field
-        Unsafe.AsRef(minHp) = All.Select(x => x.MaxHp).Min();
-    }
-    
-    // add custom method other than standard Find method
-    public IEnumerable<Monster> GetRangedMonster(int arg1)
-    {
-        return All.Where....();
-    }
-}
-```
-
-ImmutableBuilder
----
-If you want to add/modify data to loaded database, you can use `ToImmutableBuilder` method.
-
-```csharp
-// Create ImmutableBuilder from original database.
-var builder = db.ToImmutableBuilder();
-
-// Add Or Replace compare with PrimaryKey
-builder.Diff(addOrReplaceData);
-
-// Remove by PrimaryKey
-builder.RemovePerson(new[] { 1, 10, 100 });
-
-// Replace all data
-builder.ReplaceAll(newData);
-
-// Finally create new database
-MemoryDatabase newDatabase = builder.Build();
-
-// If you want to save new database, you can convert to MemoryDatabase->DatabaseBuilder
-var newBuilder = newDatabase.ToDatabaseBuilder();
-var newBinary = newBuilder.Build(); // or use WriteToStream
-```
-
-MemoryDatabase's reference can use as snapshot.
-
-```csharp
-// 1 game per 1 instance
-public class GameRoom
-{
-    MemoryDatabase database;
-
-    // The reference is a snapshot of the timing of game begins.
-    public GameRoom(MemoryDatabase database)
-    {
-        this.database = database;
-    }
-}
-```
-
-Immutable Data
----
-Element data is shared in the application so ideally should be immutable. But C# only has a constructor to create immutable data, it is too difficult to create many data tables.
-
-Code generator has `AddImmutableConstructor`(`-c, -addImmutableConstructor`) option. If enabled it, code generator modify orignal file and add immutable constructor in target type. If you define property as `{get; private set;}` or `{get;}`, it will be immutable type.
-
-```csharp
-// For the versioning, MessagePackObject is recommended to use string key.
-[MemoryTable("person"), MessagePackObject(true)]
-public class Person
-{
-    [PrimaryKey]
-    public int PersonId { get; }
-    public int Age { get; }
-    public Gender Gender { get; }
-    public string Name { get; }
-}
-
-// use AddImmutableConstructor="true" or -c option
-<MasterMemoryGenerator UsingNamespace="$(ProjectName)" InputDirectory="$(ProjectDir)" OutputDirectory="$(ProjectDir)MasterMemory" AddImmutableConstructor="true" />
-MasterMemory.Generator.exe -i "C:\UnitySample" -o "C:\UnitySample\Generated" -n "UnitySample" -c
-
-// after generated...
-[MemoryTable("person"), MessagePackObject(true)]
-public class Person
-{
-    [PrimaryKey]
-    public int PersonId { get; }
-    public int Age { get; }
-    public Gender Gender { get; }
-    public string Name { get; }
-
-    public Person(int PersonId, int Age, Gender Gender, string Name)
-    {
-        this.PersonId = PersonId;
-        this.Age = Age;
-        this.Gender = Gender;
-        this.Name = Name;
-    }
-}
-```
+`MessagePack.Nil` is the built-in type representing null/void in MessagePack for C#.
+-->
 
 Validator
 ---

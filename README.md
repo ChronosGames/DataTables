@@ -18,6 +18,10 @@ DataTable Solution for .NET Core and Unity.
 - [Getting Started(Unity)](#getting-startedunity)
 - [DataTable configuration](#datatable-configuration)
 - [Built-in supported types](#built-in-supported-types)
+- [Validator](#validator)
+- [Metadata](#metadata)
+- [Inheritance](#inheritance)
+- [Optimization](#optimization)
 - [Code Generator](#code-generator)
 - [License](#license)
 

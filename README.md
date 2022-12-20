@@ -5,7 +5,7 @@ DataTables
 
 DataTable Solution for .NET Core and Unity. 
 
-![image](https://user-images.githubusercontent.com/46207/61031896-61890800-a3fb-11e9-86b7-84c821d347a4.png)
+<!-- ![image](https://user-images.githubusercontent.com/46207/61031896-61890800-a3fb-11e9-86b7-84c821d347a4.png) -->
 
 **4700** times faster than SQLite and achieves zero allocation per query. Also the DB size is small. When SQLite is 3560kb then MasterMemory is only 222kb.
 
@@ -47,138 +47,81 @@ DataTables uses C# to C# code-generator. Runtime library API is the same but how
 
 Install the core library(Runtime and [Annotations](https://www.nuget.org/packages/DataTables.Annotations)).
 
-> PM> Install-Package [DataTables](https://www.nuget.org/packages/DataTables)
+> PM> Install-Package [DataTables](https://www.nuget.org/packages/DataTables.API)
 
-Prepare the example table definition like following.
+Prepare the example excel table definition like following.
 
-```csharp
-public enum Gender
-{
-    Male, Female, Unknown
-}
-
-// table definition marked by MemoryTableAttribute.
-// database-table must be serializable by MessagePack-CSsharp
-[MemoryTable("person"), MessagePackObject(true)]
-public class Person
-{
-    // index definition by attributes.
-    [PrimaryKey]
-    public int PersonId { get; set; }
-
-    // secondary index can add multiple(discriminated by index-number).
-    [SecondaryKey(0), NonUnique]
-    [SecondaryKey(1, keyOrder: 1), NonUnique]
-    public int Age { get; set; }
-
-    [SecondaryKey(2), NonUnique]
-    [SecondaryKey(1, keyOrder: 0), NonUnique]
-    public Gender Gender { get; set; }
-
-    public string Name { get; set; }
-}
+| 场景编号  |	 #备注	|   资源名称	| 背景音乐编号       |
+| :-------: | :---------: | :-----------: | :---------------: |  
+| Id	    |             |   AssetName   | BackgroundMusicId |
+| int       |             |	  string      | int               |
+| 2000      | 登录        |	Login       | 0                 |
+| 2001	    | 初始化角色  |	Initial	     | 2                 |
+| 2099      | 主界面      | Menu          | 2                 |
+| 2100      | 城镇        | Game          | 2                 |
 ```
 
 Edit the `.csproj`, add [DataTables.MSBuild.Tasks](https://www.nuget.org/packages/DataTables.MSBuild.Tasks) and add configuration like following.
 
 ```xml
 <ItemGroup>
-    <PackageReference Include="DataTables" Version="2.1.2" />
+    <PackageReference Include="DataTables.API" Version="0.2.2" />
     <!-- Install MSBuild Task(with PrivateAssets="All", it means to use dependency only in build time). -->
-    <PackageReference Include="DataTables.MSBuild.Tasks" Version="2.1.2" PrivateAssets="All" />
+    <PackageReference Include="DataTables.MSBuild.Tasks" Version="0.2.2" PrivateAssets="All" />
 </ItemGroup>
 
 <!-- Call code generator before-build. -->
 <Target Name="DataTablesGen" BeforeTargets="BeforeBuild">
-    <!-- Configuration of Code-Generator, `UsingNamespace`, `InputDirectory`, `OutputDirectory` and `AddImmutableConstructor`. -->
-    <MasterMemoryGenerator UsingNamespace="$(ProjectName)" InputDirectory="$(ProjectDir)" OutputDirectory="$(ProjectDir)DataTables" />
+    <!-- Configuration of Code-Generator, `UsingNamespace`, `InputDirectory`, `CodeOutputDirectory`, `DataOutputDirectory` and `PrefixClassName`. -->
+    <DataTablesGenerator UsingNamespace="$(ProjectName)" InputDirectory="$(ProjectDir)" CodeOutputDirectory="$(ProjectDir)Tables" DataOutputDirectory="$(ProjectDir)Datas" PrefixClassName="DR" />
 </Target>
 ```
 
-After the build, generated files(`DatabaseBuilder.cs`, `ImmutableBuilder.cs`, `MasterMemoryResolver.cs`, `MemoryDatabase.cs` and `Tables/***Table.cs`) in OutputDirectory.
-
-![image](https://user-images.githubusercontent.com/46207/61233535-ba460100-a76b-11e9-85d0-c34cb5ce7482.png)
+After the build, generated files(`DataTableManagerExtension.cs` and `Tables/DR***.cs`) in CodeOutputDirectory, generated data files(`Datas/***.bin`) in DataOutputDirectory.
 
 Finally, you can regsiter and query by these files.
 
 ```csharp
-// to create database, use DatabaseBuilder and Append method.
-var builder = new DatabaseBuilder();
-builder.Append(new Person[]
-{
-    new Person { PersonId = 0, Age = 13, Gender = Gender.Male,   Name = "Dana Terry" },
-    new Person { PersonId = 1, Age = 17, Gender = Gender.Male,   Name = "Kirk Obrien" },
-    new Person { PersonId = 2, Age = 31, Gender = Gender.Male,   Name = "Wm Banks" },
-    new Person { PersonId = 3, Age = 44, Gender = Gender.Male,   Name = "Karl Benson" },
-    new Person { PersonId = 4, Age = 23, Gender = Gender.Male,   Name = "Jared Holland" },
-    new Person { PersonId = 5, Age = 27, Gender = Gender.Female, Name = "Jeanne Phelps" },
-    new Person { PersonId = 6, Age = 25, Gender = Gender.Female, Name = "Willie Rose" },
-    new Person { PersonId = 7, Age = 11, Gender = Gender.Female, Name = "Shari Gutierrez" },
-    new Person { PersonId = 8, Age = 63, Gender = Gender.Female, Name = "Lori Wilson" },
-    new Person { PersonId = 9, Age = 34, Gender = Gender.Female, Name = "Lena Ramsey" },
-});
+// to load datatables, use DataTableManagerExtension to load all datatables.
+using DataTables;
 
-// build database binary(you can also use `WriteToStream` for save to file).
-byte[] data = builder.Build();
+public static class DataTableManagerHelper
+{
+    public static DataTableManager Configure(this DataTableManager manager, string dataPath)
+    {
+        foreach (var className in DataTableManagerExtension.Names)
+        {
+            var raw = File.ReadAllBytes(Path.Combine(dataPath, className + ".bin"));
+            manager.CreateDataTable(className, raw);
+        }
+    }
+}
 
 // -----------------------
 
-// for query phase, create MemoryDatabase.
-// (MemoryDatabase is recommended to store in singleton container(static field/DI)).
-var db = new MemoryDatabase(data);
+// for query phase, use DataTableManager.
+var manager = new DataTableManager();
+manager.Configure("xxxxx");
+var drScene = manager.GetDataTable<DRScene>().GetDataRow(x => x.Id == 2000);
 
-// .PersonTable.FindByPersonId is fully typed by code-generation.
-Person person = db.PersonTable.FindByPersonId(10);
-
-// Multiple key is also typed(***And * **), Return value is multiple if key is marked with `NonUnique`.
-RangeView<Person> result = db.PersonTable.FindByGenderAndAge((Gender.Female, 23));
-
-// Get nearest value(choose lower(default) or higher).
-RangeView<Person> age1 = db.PersonTable.FindClosestByAge(31);
-
-// Get range(min-max inclusive).
-RangeView<Person> age2 = db.PersonTable.FindRangeByAge(20, 29);
 ```
-
-All table(marked by `MemoryTableAttribute`) and methods(created by `PrimaryKeyAttribute` or `SecondaryKeyAttribute`) are typed.
-
-![image](https://user-images.githubusercontent.com/46207/61035808-cb58e000-a402-11e9-9209-d51665d1cd56.png)
 
 You can invoke all indexed query by IntelliSense.
 
 Getting Started(Unity)
 ---
-Check the [releases](https://github.com/PhonixGame/DataTables/releases) page, download `DataTables.Unity.unitypackage`(runtime) and `DataTables.Generator.zip`(cli code-generator). DataTables also depends on MessagePack-CSharp so you have to download `MessagePack.Unity.2.*.*.unitypackage` and `mpc.zip` from [MessagePack-CSharp/releases page](https://github.com/neuecc/MessagePack-CSharp/releases).
+Check the [releases](https://github.com/PhonixGame/DataTables/releases) page, download `DataTables.Unity.unitypackage`(runtime) and `DataTables.Generator.zip`(cli code-generator).
 
 Prepare the example table definition like following.
 
-```csharp
-public enum Gender
-{
-    Male, Female, Unknown
-}
-
-// table definition marked by MemoryTableAttribute.
-// database-table must be serializable by MessagePack-CSsharp
-[MemoryTable("person"), MessagePackObject(true)]
-public class Person
-{
-    // index definition by attributes.
-    [PrimaryKey]
-    public int PersonId { get; set; }
-
-    // secondary index can add multiple(discriminated by index-number).
-    [SecondaryKey(0), NonUnique]
-    [SecondaryKey(1, keyOrder: 1), NonUnique]
-    public int Age { get; set; }
-
-    [SecondaryKey(2), NonUnique]
-    [SecondaryKey(1, keyOrder: 0), NonUnique]
-    public Gender Gender { get; set; }
-
-    public string Name { get; set; }
-}
-```
+| 场景编号  |	 #备注	|   资源名称	| 背景音乐编号       |
+| :-------: | :---------: | :-----------: | :---------------: |  
+| Id	    |             |   AssetName   | BackgroundMusicId |
+| int       |             |	  string      | int               |
+| 2000      | 登录        |	Login       | 0                 |
+| 2001	    | 初始化角色  |	Initial	     | 2                 |
+| 2099      | 主界面      | Menu          | 2                 |
+| 2100      | 城镇        | Game          | 2                 |
 
 use the DataTables code generator by commandline. Commandline tool support platforms are `win-x64`, `osx-x64` and `linux-x64`.
 
@@ -187,37 +130,14 @@ Usage: DataTables.Generator [options...]
 
 Options:
   -i, -inputDirectory <String>              Input file directory(search recursive). (Required)
-  -o, -outputDirectory <String>             Output file directory. (Required)
+  -co, -codeOutputDirectory <String>        Code Output file directory. (Required)
+  -do, -dataOutputDirectory <String>        Data Output file directory. (Required)
   -n, -usingNamespace <String>              Namespace of generated files. (Required)
   -p, -prefixClassName <String>             Prefix of class names. (Default: )
-  -c, -addImmutableConstructor <Boolean>    Add immutable constructor to MemoryTable class. (Default: False)
-  -t, -returnNullIfKeyNotFound <Boolean>    Return null if key not found on unique find method. (Default: False)
 ```
 
 ```bash
-DataTables.Generator.exe -i "C:\UnitySample" -o "C:\UnitySample\Generated" -n "UnitySample"
-```
-
-Also you need to generated MessagePack-CSharp code generation.
-
-Additional steps, you have to set up to use generated resolver.
-
-```csharp
-public static class Initializer
-{
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-    public static void SetupMessagePackResolver()
-    {
-        StaticCompositeResolver.Instance.Register(new[]{
-            MasterMemoryResolver.Instance, // set MasterMemory generated resolver
-            GeneratedResolver.Instance,    // set MessagePack generated resolver
-            StandardResolver.Instance      // set default MessagePack resolver
-        });
-
-        var options = MessagePackSerializerOptions.Standard.WithResolver(StaticCompositeResolver.Instance);
-        MessagePackSerializer.DefaultOptions = options;
-    }
-}
+DataTables.Generator.exe -i "C:\UnitySample" -co "C:\UnitySample\Generated" -do "C:\UnitySample\DataTable" -n "UnitySample" -p "DR"
 ```
 
 The rest is the same as .NET Core version.

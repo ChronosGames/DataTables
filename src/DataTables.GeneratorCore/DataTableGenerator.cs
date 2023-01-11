@@ -257,7 +257,7 @@ namespace DataTables.GeneratorCore
 
         static void GenerateDataFile(GenerationContext context, string outputDir, bool forceOverwrite, Action<string> logger)
         {
-            string binaryDataFileName = Path.Combine(outputDir, context.ClassName + ".bin");
+            string binaryDataFileName = Path.Combine(outputDir, context.ClassName + ".bytes");
             if (!DataTableProcessor.GenerateDataFile(context, binaryDataFileName, logger) && File.Exists(binaryDataFileName))
             {
                 File.Delete(binaryDataFileName);

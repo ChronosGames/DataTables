@@ -7,13 +7,6 @@ namespace DataTables.GeneratorCore
     {
         public abstract class ArrayDataProcessor<T> : GenericDataProcessor<T[]>
         {
-            public override System.Type Type
-            {
-                get
-                {
-                    return typeof(T);
-                }
-            }
 
             public override bool IsSystem => false;
 
@@ -49,40 +42,40 @@ namespace DataTables.GeneratorCore
             }
         }
 
-        public class ArrayIntProcessor : ArrayDataProcessor<int>
-        {
-            public override string[] GetTypeStrings()
-            {
-                return new string[] { "int[]" };
-            }
-        }
+        //public class ArrayIntProcessor : ArrayDataProcessor<int>
+        //{
+        //    public override string[] GetTypeStrings()
+        //    {
+        //        return new string[] { "int[]" };
+        //    }
+        //}
 
-        public class ArrayStringProcessor : ArrayDataProcessor<string>
-        {
-            public override string[] GetTypeStrings()
-            {
-                return new string[] { "string[]" };
-            }
-        }
+        //public class ArrayStringProcessor : ArrayDataProcessor<string>
+        //{
+        //    public override string[] GetTypeStrings()
+        //    {
+        //        return new string[] { "string[]" };
+        //    }
+        //}
 
-        public class CharsProcessor : ArrayDataProcessor<char>
-        {
-            public override string[] GetTypeStrings()
-            {
-                return new string[] { "char[]" };
-            }
+        //public class CharsProcessor : ArrayDataProcessor<char>
+        //{
+        //    public override string[] GetTypeStrings()
+        //    {
+        //        return new string[] { "char[]" };
+        //    }
 
-            public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
-            {
-                return $"var __{propertyName}_Count = reader.Read7BitEncodedInt(); {propertyName} = reader.ReadChars(__{propertyName}_Count);";
-            }
+        //    public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
+        //    {
+        //        return $"var __{propertyName}_Count = reader.Read7BitEncodedInt(); {propertyName} = reader.ReadChars(__{propertyName}_Count);";
+        //    }
 
-            public override void WriteToStream(BinaryWriter binaryWriter, string value)
-            {
-                var arr = Parse(value);
-                binaryWriter.Write7BitEncodedInt32(arr.Length);
-                binaryWriter.Write(arr);
-            }
-        }
+        //    public override void WriteToStream(BinaryWriter binaryWriter, string value)
+        //    {
+        //        var arr = Parse(value);
+        //        binaryWriter.Write7BitEncodedInt32(arr.Length);
+        //        binaryWriter.Write(arr);
+        //    }
+        //}
     }
 }

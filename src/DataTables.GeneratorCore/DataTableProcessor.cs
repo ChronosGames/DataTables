@@ -243,16 +243,6 @@ namespace DataTables.GeneratorCore
             return m_DataProcessor[rawColumn].IsSystem;
         }
 
-        public System.Type GetType(int rawColumn)
-        {
-            if (rawColumn < 0 || rawColumn >= RawColumnCount)
-            {
-                throw new Exception(string.Format("Raw column '{0}' is out of range.", rawColumn));
-            }
-
-            return m_DataProcessor[rawColumn].Type;
-        }
-
         public string GetLanguageKeyword(int rawColumn)
         {
             if (rawColumn < 0 || rawColumn >= RawColumnCount)

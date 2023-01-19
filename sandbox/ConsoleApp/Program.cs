@@ -5,9 +5,11 @@ using DataTables;
 
 namespace ConsoleApp
 {
-    public enum CardType
+    public enum ColorT
     {
-        HQCards,
+        Red,
+        Green,
+        Blue
     }
 
     class ByteBufferWriter : IBufferWriter<byte>
@@ -68,10 +70,10 @@ namespace ConsoleApp
         {
             var manager = new DataTableManager();
 
-            var raw = File.ReadAllBytes("Generated\\card.bin");
-            var card = manager.CreateDataTable<Card>("card", raw, 0, raw.Length);
+            //var raw = File.ReadAllBytes("Generated\\card.bin");
+            //var card = manager.CreateDataTable<Card>("card", raw, 0, raw.Length);
 
-            manager.HasDataTable<Card>();
+            //manager.HasDataTable<Card>();
 
         }
 

@@ -82,6 +82,11 @@ namespace DataTables.GeneratorCore
                         abc = new ArrayDataProcessor(keyProcessor);
                         foreach (var ts in abc.GetTypeStrings())
                         {
+                            if (s_DataProcessors.ContainsKey(ts))
+                            {
+                                continue;
+                            }
+
                             s_DataProcessors.Add(ts, abc);
                         }
                         return abc;

@@ -24,13 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Generated\*.bin">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Generated\DataTableSample.bytes">
+    <None Update="Generated\*.bytes">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

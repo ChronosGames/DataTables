@@ -70,10 +70,10 @@ namespace ConsoleApp
         {
             var manager = new DataTableManager();
 
-            //var raw = File.ReadAllBytes("Generated\\card.bin");
-            //var card = manager.CreateDataTable<Card>("card", raw, 0, raw.Length);
+            var raw = File.ReadAllBytes("Generated\\DataTableSample.bytes");
+            var card = manager.CreateDataTable<DataTableSample>("DataTableSample", raw, 0, raw.Length);
 
-            //manager.HasDataTable<Card>();
+            manager.HasDataTable<DataTableSample>();
 
         }
 

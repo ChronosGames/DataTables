@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Newtonsoft.Json;
 
 namespace DataTables.GeneratorCore
 {
@@ -11,30 +12,34 @@ namespace DataTables.GeneratorCore
             {
                 get
                 {
-                    return true;
+                    return false;
                 }
             }
 
-            public override string LanguageKeyword
-            {
-                get
-                {
-                    return "enum";
-                }
-            }
+            public override string LanguageKeyword => m_TypeString;
 
             public override string[] GetTypeStrings()
             {
                 return new string[]
                 {
-                    "enum",
-                    "system.enum"
+                    $"enum<{m_TypeString}>",
                 };
+            }
+
+            public override Type Type => typeof(string);
+
+            private readonly string m_TypeString;
+
+            public EnumProcessor() { }
+
+            public EnumProcessor(string typeString)
+            {
+                m_TypeString = typeString;
             }
 
             public override string Parse(string value)
             {
-                return value;
+                return value.StartsWith("\"") ? JsonConvert.DeserializeObject<string>(value) : value;
             }
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)
@@ -44,17 +49,16 @@ namespace DataTables.GeneratorCore
 
             public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
             {
-                return $"if (Enum.TryParse(reader.ReadString(), out {GetPropertyTypeString(typeName)} __{propertyName}))\n                    {{\n                        {propertyName} = __{propertyName};\n                    }}";
-            }
-
-            internal string GetPropertyTypeString(string typeName)
-            {
-                if (typeName.StartsWith("Enum"))
-                {
-                    return typeName.Substring(4);
-                }
-
-                return typeName;
+                return $"{{\n"
+                    + $"{Tabs(depth + 1)}if (Enum.TryParse(reader.ReadString(), out {m_TypeString} __xxx))\n"
+                    + $"{Tabs(depth + 1)}{{\n"
+                    + $"{Tabs(depth + 2)}{propertyName} = __xxx;\n"
+                    + $"{Tabs(depth + 1)}}}\n"
+                    + $"{Tabs(depth + 1)}else\n"
+                    + $"{Tabs(depth + 1)}{{\n"
+                    + $"{Tabs(depth + 2)}throw new ArgumentException();\n"
+                    + $"{Tabs(depth + 1)}}}\n"
+                    + $"{Tabs(depth)}}}";
             }
         }
     }

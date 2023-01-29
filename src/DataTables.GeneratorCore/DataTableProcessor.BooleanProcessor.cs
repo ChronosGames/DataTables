@@ -1,10 +1,4 @@
-﻿
-
-
-
-
-
-
+﻿using System;
 using System.IO;
 
 namespace DataTables.GeneratorCore
@@ -28,6 +22,8 @@ namespace DataTables.GeneratorCore
                     return "bool";
                 }
             }
+
+            public override Type Type => typeof(bool);
 
             public override string[] GetTypeStrings()
             {

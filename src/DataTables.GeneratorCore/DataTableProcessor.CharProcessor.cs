@@ -1,10 +1,4 @@
-﻿
-
-
-
-
-
-
+﻿using System;
 using System.IO;
 
 namespace DataTables.GeneratorCore
@@ -37,6 +31,8 @@ namespace DataTables.GeneratorCore
                     "system.char"
                 };
             }
+
+            public override Type Type => typeof(char);
 
             public override char Parse(string value)
             {

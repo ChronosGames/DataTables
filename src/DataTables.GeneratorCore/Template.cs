@@ -22,12 +22,7 @@ namespace DataTables.GeneratorCore
 
         internal string GetPropertyTypeString(Property property)
         {
-            if (property.TypeName.StartsWith("Enum"))
-            {
-                return property.TypeName.Substring(4);
-            }
-
-            return property.TypeName;
+            return DataTableProcessor.GetLanguageKeyword(property);
         }
 
         internal string GetDeserializeMethodString(Property property)

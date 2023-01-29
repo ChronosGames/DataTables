@@ -23,8 +23,8 @@ namespace DataTables.GeneratorCore
         private readonly string[][] m_RawValues;
         private readonly string[] m_Strings;
 
-        private string m_CodeTemplate;
-        private DataTableCodeGenerator m_CodeGenerator;
+        //private string m_CodeTemplate;
+        //private DataTableCodeGenerator m_CodeGenerator;
 
         public DataTableProcessor(string dataTableFileName, Encoding encoding, int nameRow, int typeRow, int? defaultValueRow, int? commentRow, int contentStartRow, int idColumn)
         {
@@ -169,8 +169,8 @@ namespace DataTables.GeneratorCore
 
             m_Strings = strings.OrderBy(value => value.Key).OrderByDescending(value => value.Value).Select(value => value.Key).ToArray();
 
-            m_CodeTemplate = null;
-            m_CodeGenerator = null;
+            //m_CodeTemplate = null;
+            //m_CodeGenerator = null;
         }
 
         public int RawRowCount
@@ -338,43 +338,43 @@ namespace DataTables.GeneratorCore
             }
         }
 
-        public bool GenerateCodeFile(string outputFileName, Encoding encoding, object userData = null)
-        {
-            if (string.IsNullOrEmpty(m_CodeTemplate))
-            {
-                throw new Exception("You must set code template first.");
-            }
+        //public bool GenerateCodeFile(string outputFileName, Encoding encoding, object userData = null)
+        //{
+        //    if (string.IsNullOrEmpty(m_CodeTemplate))
+        //    {
+        //        throw new Exception("You must set code template first.");
+        //    }
 
-            if (string.IsNullOrEmpty(outputFileName))
-            {
-                throw new Exception("Output file name is invalid.");
-            }
+        //    if (string.IsNullOrEmpty(outputFileName))
+        //    {
+        //        throw new Exception("Output file name is invalid.");
+        //    }
 
-            try
-            {
-                StringBuilder stringBuilder = new StringBuilder(m_CodeTemplate);
-                if (m_CodeGenerator != null)
-                {
-                    m_CodeGenerator(this, stringBuilder, userData);
-                }
+        //    try
+        //    {
+        //        StringBuilder stringBuilder = new StringBuilder(m_CodeTemplate);
+        //        if (m_CodeGenerator != null)
+        //        {
+        //            m_CodeGenerator(this, stringBuilder, userData);
+        //        }
 
-                using (FileStream fileStream = new FileStream(outputFileName, FileMode.Create, FileAccess.Write))
-                {
-                    using (StreamWriter stream = new StreamWriter(fileStream, encoding))
-                    {
-                        stream.Write(stringBuilder.ToString());
-                    }
-                }
+        //        using (FileStream fileStream = new FileStream(outputFileName, FileMode.Create, FileAccess.Write))
+        //        {
+        //            using (StreamWriter stream = new StreamWriter(fileStream, encoding))
+        //            {
+        //                stream.Write(stringBuilder.ToString());
+        //            }
+        //        }
 
-                //Debug.Log(string.Format("Generate code file '{0}' success.", outputFileName));
-                return true;
-            }
-            catch (Exception exception)
-            {
-                //Debug.LogError(string.Format("Generate code file '{0}' failure, exception is '{1}'.", outputFileName, exception));
-                return false;
-            }
-        }
+        //        //Debug.Log(string.Format("Generate code file '{0}' success.", outputFileName));
+        //        return true;
+        //    }
+        //    catch (Exception exception)
+        //    {
+        //        //Debug.LogError(string.Format("Generate code file '{0}' failure, exception is '{1}'.", outputFileName, exception));
+        //        return false;
+        //    }
+        //}
 
         private static byte[] GetRowBytes(GenerationContext context, int rawRow)
         {
@@ -385,7 +385,16 @@ namespace DataTables.GeneratorCore
                     for (int rawColumn = 0; rawColumn < context.ColumnCount; rawColumn++)
                     {
                         var processor = DataProcessorUtility.GetDataProcessor(context.Properties[rawColumn].TypeName);
-                        processor.WriteToStream(binaryWriter, context.Cells[rawRow, rawColumn].ToString().Trim());
+
+                        try
+                        {
+                            processor.WriteToStream(binaryWriter, context.Cells[rawRow, rawColumn].ToString().Trim());
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine($"{rawRow}, {rawColumn}");
+                            throw e;
+                        }
                     }
 
                     return memoryStream.ToArray();
@@ -396,7 +405,13 @@ namespace DataTables.GeneratorCore
         public static string GetDeserializeMethodString(GenerationContext context, Property property)
         {
             var processor = DataProcessorUtility.GetDataProcessor(property.TypeName);
-            return processor.GenerateDeserializeCode(context, property.TypeName, property.Name, 0);
+            return processor.GenerateDeserializeCode(context, processor.Type.Name, property.Name, 0);
+        }
+
+        public static string GetLanguageKeyword(Property property)
+        {
+            var processor = DataProcessorUtility.GetDataProcessor(property.TypeName);
+            return processor.LanguageKeyword;
         }
     }
 }

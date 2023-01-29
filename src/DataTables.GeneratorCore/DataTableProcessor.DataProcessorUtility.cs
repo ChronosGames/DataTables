@@ -25,6 +25,11 @@ namespace DataTables.GeneratorCore
                     if (dataProcessorBaseType.IsAssignableFrom(types[i]))
                     {
                         DataProcessor dataProcessor = (DataProcessor)Activator.CreateInstance(types[i]);
+                        if (!dataProcessor.IsSystem)
+                        {
+                            continue;
+                        }
+
                         foreach (string typeString in dataProcessor.GetTypeStrings())
                         {
                             s_DataProcessors.Add(typeString.ToLowerInvariant(), dataProcessor);
@@ -47,12 +52,40 @@ namespace DataTables.GeneratorCore
                 }
                 else if (type.StartsWith("enum", StringComparison.InvariantCultureIgnoreCase))
                 {
-
-                    return s_DataProcessors["enum"];
+                    var str1 = FindGenericString(type);
+                    if (s_DataProcessors.TryGetValue($"enum<{str1}>", out var abc))
+                    {
+                        return abc;
+                    }
+                    else
+                    {
+                        abc = new EnumProcessor(str1);
+                        foreach (var ts in abc.GetTypeStrings())
+                        {
+                            s_DataProcessors.Add(ts, abc);
+                        }
+                        return abc;
+                    }
                 }
                 else if (type.StartsWith("array", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    return s_DataProcessors["array"];
+                    var str1 = FindGenericString(type);
+
+                    if (s_DataProcessors.TryGetValue($"array<{str1}>", out var abc))
+                    {
+                        return abc;
+                    }
+                    else
+                    {
+                        var keyProcessor = GetDataProcessor(str1);
+
+                        abc = new ArrayDataProcessor(keyProcessor);
+                        foreach (var ts in abc.GetTypeStrings())
+                        {
+                            s_DataProcessors.Add(ts, abc);
+                        }
+                        return abc;
+                    }
                 }
                 else if (type.StartsWith("map", StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -67,7 +100,7 @@ namespace DataTables.GeneratorCore
                     var keyTypeStr = str1.Substring(0, index).Trim();
                     var valueTypeStr = str1.Substring(index + 1).Trim();
 
-                    if (s_DataProcessors.TryGetValue("map<arr[0],arr[1]>", out var abc))
+                    if (s_DataProcessors.TryGetValue($"map<{keyTypeStr},{valueTypeStr}>", out var abc))
                     {
                         return abc;
                     }
@@ -88,7 +121,7 @@ namespace DataTables.GeneratorCore
                 throw new Exception(string.Format("Not supported data processor type '{0}'.", type));
             }
 
-            private static string FindGenericString(string type)
+            public static string FindGenericString(string type)
             {
                 return type.Substring(type.IndexOf('<') + 1, type.LastIndexOf('>') - type.IndexOf('<') - 1).Trim();
             }

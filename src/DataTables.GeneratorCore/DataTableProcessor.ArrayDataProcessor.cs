@@ -1,81 +1,65 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Collections;
 using Newtonsoft.Json;
 
 namespace DataTables.GeneratorCore
 {
     public sealed partial class DataTableProcessor
     {
-        public abstract class ArrayDataProcessor<T> : GenericDataProcessor<T[]>
+        public class ArrayDataProcessor : DataProcessor
         {
+
+            public override Type Type => typeof(ArrayList);
 
             public override bool IsSystem => false;
 
-            public override string LanguageKeyword => "array";
+            public override string LanguageKeyword => m_LanguageKeyword;
+
+            private readonly string m_KeyTypeStr;
+            private readonly string m_LanguageKeyword;
+            private readonly string[] m_TypeStrings;
+
+            public ArrayDataProcessor()
+            {
+            }
+
+            public ArrayDataProcessor(DataProcessor keyProcessor)
+            {
+                m_KeyTypeStr = keyProcessor.GetTypeStrings()[0];
+                m_LanguageKeyword = $"{keyProcessor.LanguageKeyword}[]";
+                m_TypeStrings = new string[] { $"array<{m_KeyTypeStr}>" };
+            }
 
             public override string[] GetTypeStrings()
             {
-                return new string[] { "array" };
-            }
-
-            public override T[] Parse(string value)
-            {
-                return JsonConvert.DeserializeObject<T[]>(value);
+                return m_TypeStrings;
             }
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)
             {
-                var arr = Parse(value);
-                binaryWriter.Write7BitEncodedInt32(arr.Length);
+                var arr = JsonConvert.DeserializeObject<ArrayList>(value);
+
+                binaryWriter.Write7BitEncodedInt32(arr.Count);
                 foreach (var item in arr)
                 {
-                    DataProcessorUtility.GetDataProcessor(typeof(T).Name).WriteToStream(binaryWriter, JsonConvert.SerializeObject(item));
+                    DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).WriteToStream(binaryWriter, JsonConvert.SerializeObject(item));
                 }
             }
 
             public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
             {
-                return $"{propertyName} = new {typeof(T).Name}[reader.Read7BitEncodedInt32()];\n"
-                     + $"{Tabs(depth)}for (int x{depth + 1} = 0; x{depth + 1} < {propertyName}.Length; x{depth + 1}++)\n"
-                     + $"{Tabs(depth)}{{\n"
-                     + $"{Tabs(depth + 1)}{DataProcessorUtility.GetDataProcessor(typeof(T).Name).GenerateDeserializeCode(context, typeof(T).Name, propertyName + $"[x{depth + 1}]", depth + 1)}\n"
+                return "{\n"
+                     + $"{Tabs(depth + 1)}var __{propertyName}_Count{depth + 1} = reader.Read7BitEncodedInt32();\n"
+                     + $"{Tabs(depth + 1)}{propertyName} = new {LanguageKeyword.Substring(0, LanguageKeyword.Length - 2)}[__{propertyName}_Count{depth + 1}];\n"
+                     + $"{Tabs(depth + 1)}for (int x{depth + 1} = 0; x{depth + 1} < __{propertyName}_Count{depth + 1}; x{depth + 1}++)\n"
+                     + $"{Tabs(depth + 1)}{{\n"
+                     + $"{Tabs(depth + 2)}{DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).LanguageKeyword} key{depth + 1};\n"
+                     + $"{Tabs(depth + 2)}{DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).GenerateDeserializeCode(context, Type.Name, $"key{depth + 1}", depth + 2)}\n"
+                     + $"{Tabs(depth + 2)}{propertyName}[x{depth + 1}] = key{depth + 1};\n"
+                     + $"{Tabs(depth + 1)}}}\n"
                      + $"{Tabs(depth)}}}";
             }
         }
-
-        //public class ArrayIntProcessor : ArrayDataProcessor<int>
-        //{
-        //    public override string[] GetTypeStrings()
-        //    {
-        //        return new string[] { "int[]" };
-        //    }
-        //}
-
-        //public class ArrayStringProcessor : ArrayDataProcessor<string>
-        //{
-        //    public override string[] GetTypeStrings()
-        //    {
-        //        return new string[] { "string[]" };
-        //    }
-        //}
-
-        //public class CharsProcessor : ArrayDataProcessor<char>
-        //{
-        //    public override string[] GetTypeStrings()
-        //    {
-        //        return new string[] { "char[]" };
-        //    }
-
-        //    public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
-        //    {
-        //        return $"var __{propertyName}_Count = reader.Read7BitEncodedInt(); {propertyName} = reader.ReadChars(__{propertyName}_Count);";
-        //    }
-
-        //    public override void WriteToStream(BinaryWriter binaryWriter, string value)
-        //    {
-        //        var arr = Parse(value);
-        //        binaryWriter.Write7BitEncodedInt32(arr.Length);
-        //        binaryWriter.Write(arr);
-        //    }
-        //}
     }
 }

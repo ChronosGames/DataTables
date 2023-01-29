@@ -29,4 +29,10 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Generated\DataTableSample.bytes">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

@@ -1,11 +1,4 @@
-﻿
-
-
-
-
-
-
-using System;
+﻿using System;
 using System.IO;
 
 namespace DataTables.GeneratorCore
@@ -38,6 +31,8 @@ namespace DataTables.GeneratorCore
                     "system.datetime"
                 };
             }
+
+            public override Type Type => typeof(DateTime);
 
             public override DateTime Parse(string value)
             {

@@ -23,6 +23,7 @@ namespace DataTables.GeneratorCore
                 return new string[]
                 {
                     $"enum<{m_TypeString}>",
+                    $"E<{m_TypeString}>",
                 };
             }
 

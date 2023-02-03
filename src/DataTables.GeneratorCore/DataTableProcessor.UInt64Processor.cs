@@ -41,7 +41,7 @@ namespace DataTables.GeneratorCore
 
             public override ulong Parse(string value)
             {
-                return ulong.Parse(value);
+                return string.IsNullOrEmpty(value) ? default : ulong.Parse(value);
             }
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)

@@ -36,7 +36,7 @@ namespace DataTables.GeneratorCore
 
             public override char Parse(string value)
             {
-                return char.Parse(value);
+                return string.IsNullOrEmpty(value) ? default : char.Parse(value);
             }
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)

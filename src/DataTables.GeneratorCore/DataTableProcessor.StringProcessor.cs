@@ -40,7 +40,7 @@ namespace DataTables.GeneratorCore
 
             public override string Parse(string value)
             {
-                return value;
+                return string.IsNullOrEmpty(value) ? string.Empty : value;
             }
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)

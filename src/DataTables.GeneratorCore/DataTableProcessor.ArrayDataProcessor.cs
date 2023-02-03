@@ -9,7 +9,6 @@ namespace DataTables.GeneratorCore
     {
         public class ArrayDataProcessor : DataProcessor
         {
-
             public override Type Type => typeof(ArrayList);
 
             public override bool IsSystem => false;
@@ -18,7 +17,6 @@ namespace DataTables.GeneratorCore
 
             private readonly string m_KeyTypeStr;
             private readonly string m_LanguageKeyword;
-            private readonly string[] m_TypeStrings;
 
             public ArrayDataProcessor()
             {
@@ -28,12 +26,15 @@ namespace DataTables.GeneratorCore
             {
                 m_KeyTypeStr = keyProcessor.GetTypeStrings()[0];
                 m_LanguageKeyword = $"{keyProcessor.LanguageKeyword}[]";
-                m_TypeStrings = new string[] { $"array<{m_KeyTypeStr}>" };
             }
 
             public override string[] GetTypeStrings()
             {
-                return m_TypeStrings;
+                return new string[]
+                {
+                    $"array<{m_KeyTypeStr}>",
+                    $"A<{m_KeyTypeStr}>",
+                };
             }
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)

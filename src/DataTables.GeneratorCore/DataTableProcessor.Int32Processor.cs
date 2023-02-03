@@ -43,7 +43,7 @@ namespace DataTables.GeneratorCore
 
             public override int Parse(string value)
             {
-                return JsonConvert.DeserializeObject<int>(value);
+                return string.IsNullOrEmpty(value) ? default : JsonConvert.DeserializeObject<int>(value);
             }
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)

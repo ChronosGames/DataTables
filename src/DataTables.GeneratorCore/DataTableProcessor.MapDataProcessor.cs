@@ -18,7 +18,6 @@ namespace DataTables.GeneratorCore
             private readonly string m_KeyTypeStr;
             private readonly string m_ValueTypeStr;
             private readonly string m_LanguageKeyword;
-            private readonly string[] m_TypeStrings;
 
             public MapDataProcessor()
             {
@@ -29,12 +28,15 @@ namespace DataTables.GeneratorCore
                 m_KeyTypeStr = keyProcessor.GetTypeStrings()[0];
                 m_ValueTypeStr = valueProcessor.GetTypeStrings()[0];
                 m_LanguageKeyword = $"Dictionary<{keyProcessor.LanguageKeyword}, {valueProcessor.LanguageKeyword}>";
-                m_TypeStrings = new string[] { $"map<{m_KeyTypeStr},{m_ValueTypeStr}>" };
             }
 
             public override string[] GetTypeStrings()
             {
-                return m_TypeStrings;
+                return new string[]
+                {
+                    $"map<{m_KeyTypeStr},{m_ValueTypeStr}>",
+                    $"M<{m_KeyTypeStr},{m_ValueTypeStr}>",
+                };
             }
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)

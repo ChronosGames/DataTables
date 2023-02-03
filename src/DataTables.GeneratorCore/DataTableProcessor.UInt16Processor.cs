@@ -41,7 +41,7 @@ namespace DataTables.GeneratorCore
 
             public override ushort Parse(string value)
             {
-                return ushort.Parse(value);
+                return string.IsNullOrEmpty(value) ? default : ushort.Parse(value);
             }
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)

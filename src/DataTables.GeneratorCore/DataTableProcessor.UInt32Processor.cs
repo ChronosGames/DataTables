@@ -41,7 +41,7 @@ namespace DataTables.GeneratorCore
 
             public override uint Parse(string value)
             {
-                return uint.Parse(value);
+                return string.IsNullOrEmpty(value) ? default : uint.Parse(value);
             }
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)

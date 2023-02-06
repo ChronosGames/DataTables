@@ -51,14 +51,13 @@ namespace DataTables.GeneratorCore
             public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
             {
                 return $"{{\n"
-                    + $"{Tabs(depth + 1)}if (Enum.TryParse(reader.ReadString(), out {m_TypeString} __xxx))\n"
-                    + $"{Tabs(depth + 1)}{{\n"
-                    + $"{Tabs(depth + 2)}{propertyName} = __xxx;\n"
-                    + $"{Tabs(depth + 1)}}}\n"
-                    + $"{Tabs(depth + 1)}else\n"
+                    + $"{Tabs(depth + 1)}{m_TypeString} __enumVal = default;\n"
+                    + $"{Tabs(depth + 1)}var __enumStr = reader.ReadString();\n"
+                    + $"{Tabs(depth + 1)}if (!string.IsNullOrEmpty(__enumStr) && !Enum.TryParse(__enumStr, out __enumVal))\n"
                     + $"{Tabs(depth + 1)}{{\n"
                     + $"{Tabs(depth + 2)}throw new ArgumentException();\n"
                     + $"{Tabs(depth + 1)}}}\n"
+                    + $"{Tabs(depth + 1)}{propertyName} = __enumVal;\n"
                     + $"{Tabs(depth)}}}";
             }
         }

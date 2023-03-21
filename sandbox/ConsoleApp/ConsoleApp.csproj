@@ -15,10 +15,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MessagePack" Version="2.1.90" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\src\DataTables.Annotations\DataTables.Annotations.csproj" />
     <ProjectReference Include="..\..\src\DataTables\DataTables.csproj" />
   </ItemGroup>

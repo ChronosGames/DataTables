@@ -225,12 +225,12 @@ namespace DataTables
                     while (reader.BaseStream.Position < reader.BaseStream.Length)
                     {
                         int dataRowBytesLength = reader.Read7BitEncodedInt32();
-                        if (!dataTable.AddDataRow(raw, (int)reader.BaseStream.Position, dataRowBytesLength))
+                        if (!dataTable.AddDataRow(reader))
                         {
                             return null;
                         }
 
-                        reader.BaseStream.Position += dataRowBytesLength;
+                        //reader.BaseStream.Position += dataRowBytesLength;
                     }
                 }
             }

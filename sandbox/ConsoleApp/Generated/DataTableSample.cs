@@ -25,23 +25,22 @@ namespace ConsoleApp
         /// <summary>枚举数组</summary>
         public ColorT[] EnumArray { get; private set; }
 
-        public override bool Deserialize(byte[] raw, int offset, int length)
+        public override bool Deserialize(BinaryReader reader)
         {
-            using (MemoryStream stream = new MemoryStream(raw, offset, length, false))
+            //using (MemoryStream stream = new MemoryStream(raw, offset, length, false))
             {
-                using (BinaryReader reader = new BinaryReader(stream))
+                //using (BinaryReader reader = new BinaryReader(stream))
                 {
                     Id = reader.Read7BitEncodedInt32();
                     Name = reader.ReadString();
                     {
-                        if (Enum.TryParse(reader.ReadString(), out ColorT __xxx))
-                        {
-                            Color = __xxx;
-                        }
-                        else
+                        ColorT __enumVal = default;
+                        var __enumStr = reader.ReadString();
+                        if (!string.IsNullOrEmpty(__enumStr) && !Enum.TryParse(__enumStr, out __enumVal))
                         {
                             throw new ArgumentException();
                         }
+                        Color = __enumVal;
                     }
                     {
                         var __ArrayValue_Count1 = reader.Read7BitEncodedInt32();
@@ -72,14 +71,13 @@ namespace ConsoleApp
                         {
                             ColorT key1;
                             {
-                                if (Enum.TryParse(reader.ReadString(), out ColorT __xxx))
-                                {
-                                    key1 = __xxx;
-                                }
-                                else
+                                ColorT __enumVal = default;
+                                var __enumStr = reader.ReadString();
+                                if (!string.IsNullOrEmpty(__enumStr) && !Enum.TryParse(__enumStr, out __enumVal))
                                 {
                                     throw new ArgumentException();
                                 }
+                                key1 = __enumVal;
                             }
                             int value1;
                             value1 = reader.Read7BitEncodedInt32();
@@ -93,14 +91,13 @@ namespace ConsoleApp
                         {
                             ColorT key1;
                             {
-                                if (Enum.TryParse(reader.ReadString(), out ColorT __xxx))
-                                {
-                                    key1 = __xxx;
-                                }
-                                else
+                                ColorT __enumVal = default;
+                                var __enumStr = reader.ReadString();
+                                if (!string.IsNullOrEmpty(__enumStr) && !Enum.TryParse(__enumStr, out __enumVal))
                                 {
                                     throw new ArgumentException();
                                 }
+                                key1 = __enumVal;
                             }
                             EnumArray[x1] = key1;
                         }

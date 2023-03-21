@@ -230,7 +230,7 @@ namespace DataTables
                             return null;
                         }
 
-                        reader.BaseStream.Position += dataRowBytesLength;
+                        //reader.BaseStream.Position += dataRowBytesLength;
                     }
                 }
             }

@@ -7,7 +7,7 @@ DataTable Solution for .NET Core and Unity.
 
 <!-- ![image](https://user-images.githubusercontent.com/46207/61031896-61890800-a3fb-11e9-86b7-84c821d347a4.png) -->
 
-**4700** times faster than SQLite and achieves zero allocation per query. Also the DB size is small. When SQLite is 3560kb then MasterMemory is only 222kb.
+<!-- **4700** times faster than SQLite and achieves zero allocation per query. Also the DB size is small. When SQLite is 3560kb then MasterMemory is only 222kb. -->
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -18,9 +18,9 @@ DataTable Solution for .NET Core and Unity.
 - [Getting Started(Unity)](#getting-startedunity)
 - [DataTable configuration](#datatable-configuration)
 - [Built-in supported types](#built-in-supported-types)
-- [Validator](#validator)
-- [Metadata](#metadata)
-- [Inheritance](#inheritance)
+<!-- - [Validator](#validator) -->
+<!-- - [Metadata](#metadata) -->
+<!-- - [Inheritance](#inheritance) -->
 - [Optimization](#optimization)
 - [Code Generator](#code-generator)
 - [License](#license)
@@ -168,7 +168,7 @@ You can invoke all indexed query by IntelliSense.
 
 DataTable configuration
 ---
-Element type of datatable must be marked by `[MemoryTable(tableName)]`, datatable is generated from marked type. `string tableName` is saved in database binary, you can rename class name if tableName is same.
+<!-- Element type of datatable must be marked by `[MemoryTable(tableName)]`, datatable is generated from marked type. `string tableName` is saved in database binary, you can rename class name if tableName is same.
 
 `[PrimaryKey(keyOrder = 0)]`, `[SecondaryKey(indexNo, keyOrder)]`, `[NonUnique]` can add to public property, `[PrimaryKey]` must use in MemoryTable, `[SecondaryKey]` is option.
 
@@ -260,6 +260,7 @@ public class Person
     public string FullName => FirstName + LastName;
 }
 ```
+-->
 
 Built-in supported types
 ---
@@ -297,6 +298,7 @@ Please see the [extensions section](#extensions).
 `MessagePack.Nil` is the built-in type representing null/void in MessagePack for C#.
 -->
 
+<!--
 Validator
 ---
 You can validate data by `MemoryDatabase.Validate` method. In default, it check unique key(data duplicated) and you can define custom validate logics.
@@ -665,9 +667,12 @@ public class BarTable : FooAndBarBase
     public override int Prop2 { get; protected set; }
 }
 ```
+-->
 
 Optimization
 ---
+
+<!--
 When invoking `new MemoryDatabase(byte[] databaseBinary...)`, read and construct database from binary. If binary size is large then construct performance will slow down. `MemoryDatabase` has `ctor(..., int maxDegreeOfParallelism = 1)` option in constructor to construct in parallel.
 
 ```csharp
@@ -677,6 +682,7 @@ var database = new MemoryDatabase(bin, maxDegreeOfParallelism: Environment.Proce
 The use of Parallel can greatly improve the construct performance. Recommend to use `Environment.ProcessorCount`.
 
 If you want to reduce code size of generated code, Validator and MetaDatabase info can omit in runtime. Generated code has two symbols `DISABLE_MASTERMEMORY_VALIDATOR` and `DISABLE_MASTERMEMORY_METADATABASE`.  By defining them, can be erased from the build code.
+-->
 
 Code Generator
 ---

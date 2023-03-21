@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace DataTables
 {
@@ -111,11 +112,9 @@ namespace DataTables
         /// <summary>
         /// 增加数据表行。
         /// </summary>
-        /// <param name="raw">要解析的数据表行二进制流。</param>
-        /// <param name="offset">数据表行二进制流的起始位置。</param>
-        /// <param name="length">数据表行二进制流的长度。</param>
+        /// <param name="reader">要解析的数据表行二进制流。</param>
         /// <returns>是否增加数据表行成功。</returns>
-        bool AddDataRow(byte[] raw, int offset, int length);
+        bool AddDataRow(BinaryReader reader);
 
         /// <summary>
         /// 清空所有数据表行。

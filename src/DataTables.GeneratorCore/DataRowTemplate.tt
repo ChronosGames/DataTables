@@ -20,11 +20,11 @@ namespace <#= Namespace #>
         public <#= GetPropertyTypeString(item) #> <#= item.Name #> { get; private set; }
 <# } #>
 
-        public override bool Deserialize(byte[] raw, int offset, int length)
+        public override bool Deserialize(BinaryReader reader)
         {
-            using (MemoryStream stream = new MemoryStream(raw, offset, length, false))
+            //using (MemoryStream stream = new MemoryStream(raw, offset, length, false))
             {
-                using (BinaryReader reader = new BinaryReader(stream))
+                //using (BinaryReader reader = new BinaryReader(stream))
                 {
 <# foreach(var item in GenerationContext.Properties) { #>
                     <#= GetDeserializeMethodString(item) #>

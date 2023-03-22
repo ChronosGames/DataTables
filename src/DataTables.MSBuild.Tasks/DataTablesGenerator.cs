@@ -17,13 +17,15 @@ namespace DataTables.MSBuild.Tasks
 
         public string PrefixClassName { get; set; }
 
+        public string FilterColumnTags { get; set; }
+
         public bool ForceOverwrite { get; set; }
 
         public override bool Execute()
         {
             try
             {
-                new DataTables.GeneratorCore.DataTableGenerator().GenerateFile(InputDirectory, CodeOutputDirectory, DataOutputDirectory, UsingNamespace, PrefixClassName, ForceOverwrite, x => this.Log.LogMessage(x));
+                new DataTables.GeneratorCore.DataTableGenerator().GenerateFile(InputDirectory, CodeOutputDirectory, DataOutputDirectory, UsingNamespace, PrefixClassName, FilterColumnTags, ForceOverwrite, x => this.Log.LogMessage(x));
             }
             catch (Exception ex)
             {

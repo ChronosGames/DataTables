@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
@@ -13,15 +14,9 @@ namespace DataTables.GeneratorCore
 {
     public sealed class DataTableGenerator
     {
-        private static readonly Regex EndWithNumberRegex = new Regex(@"\d+$");
         private static readonly Regex NameRegex = new Regex(@"^[A-Za-z][A-Za-z0-9_]*$");
-        private const int HeadRowCount = 4;
-        private const int ClassInfoRowIndex = 0;
-        private const int CommentRowIndex = 1;
-        private const int FieldTypeRowIndex = 3;
-        private const int FieldNameRowIndex = 2;
 
-        public void GenerateFile(string inputDirectory, string codeOutputDir, string dataOutputDir, string usingNamespace, string prefixClassName, bool forceOverwrite, Action<string> logger)
+        public void GenerateFile(string inputDirectory, string codeOutputDir, string dataOutputDir, string usingNamespace, string prefixClassName, string filterColumnTags, bool forceOverwrite, Action<string> logger)
         {
             // By default, ExcelDataReader throws a NotSupportedException "No data is available for encoding 1252." on .NET Core.
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -37,7 +32,7 @@ namespace DataTables.GeneratorCore
 
             foreach (var item in Directory.GetFiles(inputDirectory, "*.xlsx", SearchOption.AllDirectories))
             {
-                list.AddRange(CreateGenerationContext(item, logger));
+                list.AddRange(CreateGenerationContext(item, filterColumnTags, logger));
             }
 
             // list.Sort((a, b) => string.Compare(a.FileName + a.SheetName, a.FileName + b.SheetName, StringComparison.Ordinal));
@@ -89,6 +84,8 @@ namespace DataTables.GeneratorCore
                 GenerateDataFile(context, dataOutputDir, forceOverwrite, logger);
             }
 
+            logger("Generate Manager Files:");
+
             // 生成DataTableManagerExtension代码文件(放在未尾确保类名前缀会正确附加)
             var dataTableManagerExtensionTemplate = new DataTableManagerExtensionTemplate()
             {
@@ -98,7 +95,7 @@ namespace DataTables.GeneratorCore
             logger(WriteToFile(codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
         }
 
-        IEnumerable<GenerationContext> CreateGenerationContext(string filePath, Action<string> logger)
+        IEnumerable<GenerationContext> CreateGenerationContext(string filePath, string filterColumnTags, Action<string> logger)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read))
             {
@@ -156,7 +153,7 @@ namespace DataTables.GeneratorCore
                                 ParseSheetInfoRow(context, rowReader);
 
                                 rowReader.Read();
-                                ParseFieldCommentRow(context, rowReader);
+                                ParseFieldCommentRow(context, rowReader, filterColumnTags);
 
                                 rowReader.Read();
                                 ParseFieldNameRow(context, rowReader);
@@ -196,6 +193,10 @@ namespace DataTables.GeneratorCore
                     {
                         // 解析数据
                         var context = pair.Value;
+                        if (context.Properties == null || context.Properties.Length == 0)
+                        {
+                            continue;
+                        }
 
                         // 移除空的Property元素
                         RemoveEmptyProperties(pair.Value);
@@ -236,6 +237,7 @@ namespace DataTables.GeneratorCore
                 if (found != -1)
                 {
                     properties[i] = properties[found];
+                    properties[found] = null;
                 }
                 else
                 {
@@ -251,6 +253,19 @@ namespace DataTables.GeneratorCore
         }
 
         #region 数据表解析过程
+
+        private static bool ContainTags(string text, string tags)
+        {
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (tags.Contains(text[i]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         // 解析第一行的表头信息
         private static void ParseSheetInfoRow(GenerationContext context, IExcelDataReader reader)
@@ -286,7 +301,7 @@ namespace DataTables.GeneratorCore
             }
         }
 
-        private static void ParseFieldCommentRow(GenerationContext context, IExcelDataReader reader)
+        private static void ParseFieldCommentRow(GenerationContext context, IExcelDataReader reader, string filterColumnTags)
         {
             context.Properties = new Property[reader.FieldCount];
             
@@ -296,6 +311,21 @@ namespace DataTables.GeneratorCore
                 if (text.StartsWith("#", StringComparison.Ordinal))
                 {
                     continue;
+                }
+
+                // 是否允许导出
+                if (context.EnableTagsFilter)
+                {
+                    var index = text.LastIndexOf('@');
+                    if (index != -1)
+                    {
+                        if (!string.IsNullOrEmpty(filterColumnTags) && !ContainTags(text.Substring(index + 1), filterColumnTags))
+                        {
+                            continue;
+                        }
+
+                        text = text.Substring(0, index);
+                    }
                 }
 
                 context.Properties[i] = new Property();
@@ -340,6 +370,8 @@ namespace DataTables.GeneratorCore
         {
             int rowCount = table.Rows.Count;
             int columnCount = table.Columns.Count;
+            Debug.Assert(columnCount == context.Properties.Length, "列个数不一致");
+
             object[,] cells = new object[rowCount, columnCount];
 
             for (int i = 0; i < rowCount; i++)

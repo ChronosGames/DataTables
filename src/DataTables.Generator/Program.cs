@@ -22,12 +22,13 @@ namespace DataTables.Generator
             [Option("do", "Data output file directory.")]string dataOutputDir,
             [Option("n", "Namespace of generated files.")]string usingNamespace,
             [Option("p", "Prefix of class names.")]string prefixClassName = "",
+            [Option("t", "Tags of filter columns.")]string filterColumnTags = "",
             [Option("f", "Overwrite generated files if the content is unchanged.")]bool forceOverwrite = false)
         {
             var sw = Stopwatch.StartNew();
             Console.WriteLine("Start DataTables CodeGeneration");
 
-            new DataTableGenerator().GenerateFile(inputDirectory, codeOutputDir, dataOutputDir, usingNamespace, prefixClassName, forceOverwrite, x => Console.WriteLine(x));
+            new DataTableGenerator().GenerateFile(inputDirectory, codeOutputDir, dataOutputDir, usingNamespace, prefixClassName, filterColumnTags, forceOverwrite, x => Console.WriteLine(x));
 
             Console.WriteLine("Complete DataTables CodeGeneration, elapsed:" + sw.Elapsed);
         }

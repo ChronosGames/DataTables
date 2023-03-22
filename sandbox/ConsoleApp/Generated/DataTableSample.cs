@@ -19,8 +19,6 @@ namespace ConsoleApp
         public long Int64Value { get; private set; }
         /// <summary>无符号大整数</summary>
         public ulong UInt64Value { get; private set; }
-        /// <summary>浮点数</summary>
-        public float FloatValue { get; private set; }
         /// <summary>字符串</summary>
         public string Name { get; private set; }
         /// <summary>布尔</summary>
@@ -29,8 +27,6 @@ namespace ConsoleApp
         public ColorT Color { get; private set; }
         /// <summary>数组</summary>
         public int[] ArrayValue { get; private set; }
-        /// <summary>字典</summary>
-        public Dictionary<int, int> MapValue { get; private set; }
         /// <summary>枚举与整形的字典</summary>
         public Dictionary<ColorT, int> MapEnumToInt { get; private set; }
         /// <summary>枚举数组</summary>
@@ -46,7 +42,6 @@ namespace ConsoleApp
                     Int16Value = reader.ReadInt16();
                     Int64Value = reader.Read7BitEncodedInt64();
                     UInt64Value = reader.Read7BitEncodedUInt64();
-                    FloatValue = reader.ReadSingle();
                     Name = reader.ReadString();
                     BoolValue = reader.ReadBoolean();
                     {
@@ -66,18 +61,6 @@ namespace ConsoleApp
                             int key1;
                             key1 = reader.Read7BitEncodedInt32();
                             ArrayValue[x1] = key1;
-                        }
-                    }
-                    {
-                        MapValue = new Dictionary<int, int>();
-                        var __MapValue_Count1 = reader.Read7BitEncodedInt32();
-                        for (int x1 = 0; x1 < __MapValue_Count1; x1++)
-                        {
-                            int key1;
-                            key1 = reader.Read7BitEncodedInt32();
-                            int value1;
-                            value1 = reader.Read7BitEncodedInt32();
-                            MapValue.Add(key1, value1);
                         }
                     }
                     {

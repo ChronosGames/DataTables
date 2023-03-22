@@ -355,10 +355,10 @@ namespace DataTables
 
             private void InternalAddDataRow(T dataRow)
             {
-                if (m_DataSet.Contains(dataRow))
-                {
-                    throw new Exception(string.Format("Already exist in data table '{0}'.", new TypeNamePair(typeof(T), Name)));
-                }
+                //if (m_DataSet.Contains(dataRow))
+                //{
+                //    throw new Exception(string.Format("Already exist in data table '{0}'.", new TypeNamePair(typeof(T), Name)));
+                //}
 
                 m_DataSet.Add(dataRow);
             }

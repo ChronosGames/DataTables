@@ -107,14 +107,7 @@ namespace DataTables.GeneratorCore
                 //  - OpenXml Excel files (2007 format; *.xlsx, *.xlsb)
                 using (var reader = ExcelReaderFactory.CreateReader(stream))
                 {
-                    var context = new GenerationContext
-                    {
-                        FileName = Path.GetFileNameWithoutExtension(filePath),
-                        SheetName = reader.Name,
-                        UsingStrings = Array.Empty<string>(),
-                        InputFilePath = filePath,
-                    };
-
+                    var contexts = new Dictionary<string, GenerationContext>();
                     var result = reader.AsDataSet(new ExcelDataSetConfiguration()
                     {
                         // Gets or sets a value indicating whether to set the DataColumn.DataType 
@@ -123,7 +116,24 @@ namespace DataTables.GeneratorCore
 
                         // Gets or sets a callback to determine whether to include the current sheet
                         // in the DataSet. Called once per sheet before ConfigureDataTable.
-                        FilterSheet = (tableReader, sheetIndex) => !tableReader.Name.StartsWith("#", StringComparison.Ordinal),
+                        FilterSheet = (tableReader, sheetIndex) =>
+                        {
+                            var isCommentSheet = tableReader.Name.StartsWith("#", StringComparison.Ordinal);
+                            if (!isCommentSheet)
+                            {
+                                var context = new GenerationContext
+                                {
+                                    FileName = Path.GetFileNameWithoutExtension(filePath),
+                                    UsingStrings = Array.Empty<string>(),
+                                    InputFilePath = filePath,
+                                    SheetName = tableReader.Name,
+                                };
+
+                                contexts.Add(tableReader.Name, context);
+                            }
+
+                            return !isCommentSheet;
+                        },
 
                         // Gets or sets a callback to obtain configuration options for a DataTable. 
                         ConfigureDataTable = (tableReader) => new ExcelDataTableConfiguration()
@@ -139,6 +149,8 @@ namespace DataTables.GeneratorCore
                             // Only called when UseHeaderRow = true.
                             ReadHeaderRow = (rowReader) =>
                             {
+                                var context = contexts[rowReader.Name];
+
                                 // F.ex skip the first row and use the 2nd row as column headers:
                                 //rowReader.Read();
                                 ParseSheetInfoRow(context, rowReader);
@@ -172,6 +184,7 @@ namespace DataTables.GeneratorCore
                             // headers.
                             FilterColumn = (rowReader, columnIndex) =>
                             {
+                                var context = contexts[rowReader.Name];
                                 // Console.WriteLine($"{rowReader.GetValue(columnIndex)}, Depth={rowReader.Depth}, FieldCount={rowReader.FieldCount}, RowCount={rowReader.RowCount}");
                                 var property = context.Properties[columnIndex];
                                 return property != null;
@@ -179,17 +192,61 @@ namespace DataTables.GeneratorCore
                         }
                     });
 
-                    // 移除空的Property元素
-                    var list = context.Properties.ToList();
-                    list.RemoveAll(x => x == null);
-                    context.Properties = list.ToArray();
+                    foreach (var pair in contexts)
+                    {
+                        // 解析数据
+                        var context = pair.Value;
 
-                    ParseDataSet(context, result);
+                        // 移除空的Property元素
+                        RemoveEmptyProperties(pair.Value);
 
-                    yield return context;
+                        // 解析数据
+                        ParseDataSet(context, result.Tables[pair.Key]);
+
+                        yield return context;
+                    }
                 }
 
                 yield break;
+            }
+        }
+
+        private static void RemoveEmptyProperties(GenerationContext context)
+        {
+            var properties = context.Properties;
+            int i = 0, j = 0;
+            for (; i < properties.Length; i++)
+            {
+                if (properties[i] != null)
+                {
+                    continue;
+                }
+
+                // 寻找下一个非空的
+                var found = -1;
+                for (j = Math.Max(j, i + 1); j < properties.Length; j++)
+                {
+                    if (properties[j] != null)
+                    {
+                        found = j;
+                        break;
+                    }
+                }
+
+                if (found != -1)
+                {
+                    properties[i] = properties[found];
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (i != properties.Length)
+            {
+                Array.Resize(ref properties, i);
+                context.Properties = properties;
             }
         }
 
@@ -279,9 +336,8 @@ namespace DataTables.GeneratorCore
             }
         }
 
-        private static void ParseDataSet(GenerationContext context, DataSet dataSet)
+        private static void ParseDataSet(GenerationContext context, DataTable table)
         {
-            var table = dataSet.Tables[0];
             int rowCount = table.Rows.Count;
             int columnCount = table.Columns.Count;
             object[,] cells = new object[rowCount, columnCount];

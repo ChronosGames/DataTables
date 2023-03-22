@@ -94,6 +94,9 @@ namespace DataTables
         /// </summary>
         /// <typeparam name="T">数据表行的类型。</typeparam>
         /// <param name="name">数据表名称。</param>
+        /// <param name="raw">加载配置文件的字节流</param>
+        /// <param name="offset">加载配置文件的起始字节索引</param>
+        /// <param name="length">加载配置文件的字节长度</param>
         /// <returns>要创建的数据表。</returns>
         IDataTable<T> CreateDataTable<T>(string name, byte[] raw, int offset, int length) where T : class, IDataRow, new();
 

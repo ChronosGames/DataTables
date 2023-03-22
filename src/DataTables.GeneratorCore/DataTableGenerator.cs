@@ -3,16 +3,23 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Text.RegularExpressions;
 using ExcelDataReader;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace DataTables.GeneratorCore
 {
     public sealed class DataTableGenerator
     {
         private static readonly Regex EndWithNumberRegex = new Regex(@"\d+$");
-        private static readonly Regex NameRegex = new Regex(@"^[A-Z][A-Za-z0-9_]*$");
+        private static readonly Regex NameRegex = new Regex(@"^[A-Za-z][A-Za-z0-9_]*$");
+        private const int HeadRowCount = 4;
+        private const int ClassInfoRowIndex = 0;
+        private const int CommentRowIndex = 1;
+        private const int FieldTypeRowIndex = 3;
+        private const int FieldNameRowIndex = 2;
 
         public void GenerateFile(string inputDirectory, string codeOutputDir, string dataOutputDir, string usingNamespace, string prefixClassName, bool forceOverwrite, Action<string> logger)
         {
@@ -67,7 +74,7 @@ namespace DataTables.GeneratorCore
             var dataTableManagerExtensionTemplate = new DataTableManagerExtensionTemplate()
             {
                 Namespace = usingNamespace,
-                ClassNames = list.Select(x => x.ClassName).ToArray(),
+                ClassNames = list.Select(x => x.RealClassName).ToArray(),
             };
             logger(WriteToFile(codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
         }
@@ -81,6 +88,14 @@ namespace DataTables.GeneratorCore
                 //  - OpenXml Excel files (2007 format; *.xlsx, *.xlsb)
                 using (var reader = ExcelReaderFactory.CreateReader(stream))
                 {
+                    var context = new GenerationContext
+                    {
+                        FileName = Path.GetFileNameWithoutExtension(filePath),
+                        SheetName = reader.Name,
+                        UsingStrings = Array.Empty<string>(),
+                        InputFilePath = filePath,
+                    };
+
                     var result = reader.AsDataSet(new ExcelDataSetConfiguration()
                     {
                         // Gets or sets a value indicating whether to set the DataColumn.DataType 
@@ -89,7 +104,7 @@ namespace DataTables.GeneratorCore
 
                         // Gets or sets a callback to determine whether to include the current sheet
                         // in the DataSet. Called once per sheet before ConfigureDataTable.
-                        FilterSheet = (tableReader, sheetIndex) => true,
+                        FilterSheet = (tableReader, sheetIndex) => !tableReader.Name.StartsWith("#", StringComparison.Ordinal),
 
                         // Gets or sets a callback to obtain configuration options for a DataTable. 
                         ConfigureDataTable = (tableReader) => new ExcelDataTableConfiguration()
@@ -99,7 +114,7 @@ namespace DataTables.GeneratorCore
 
                             // Gets or sets a value indicating whether to use a row from the 
                             // data as column names.
-                            UseHeaderRow = false,
+                            UseHeaderRow = true,
 
                             // Gets or sets a callback to determine which row is the header row. 
                             // Only called when UseHeaderRow = true.
@@ -107,6 +122,16 @@ namespace DataTables.GeneratorCore
                             {
                                 // F.ex skip the first row and use the 2nd row as column headers:
                                 //rowReader.Read();
+                                ParseSheetInfoRow(context, rowReader);
+
+                                rowReader.Read();
+                                ParseFieldCommentRow(context, rowReader);
+
+                                rowReader.Read();
+                                ParseFieldNameRow(context, rowReader);
+
+                                rowReader.Read();
+                                ParseFieldTypeRow(context, rowReader);
                             },
 
                             // Gets or sets a callback to determine whether to include the 
@@ -114,7 +139,6 @@ namespace DataTables.GeneratorCore
                             FilterRow = (rowReader) =>
                             {
                                 // Console.WriteLine($"{rowReader.GetValue(0)}, Depth={rowReader.Depth}, FieldCount={rowReader.FieldCount}, RowCount={rowReader.RowCount}");
-
                                 var value = rowReader.GetValue(0);
                                 if (value == null)
                                 {
@@ -130,93 +154,133 @@ namespace DataTables.GeneratorCore
                             FilterColumn = (rowReader, columnIndex) =>
                             {
                                 // Console.WriteLine($"{rowReader.GetValue(columnIndex)}, Depth={rowReader.Depth}, FieldCount={rowReader.FieldCount}, RowCount={rowReader.RowCount}");
-
-                                var value = rowReader.GetValue(columnIndex);
-                                if (value == null)
-                                {
-                                    return false;
-                                }
-
-                                if (string.IsNullOrEmpty(value.ToString()))
-                                {
-                                    return false;
-                                }
-
-                                return !value.ToString().Trim().StartsWith("#");
+                                var property = context.Properties[columnIndex];
+                                return property != null;
                             }
                         }
                     });
 
-                    // The result of each spreadsheet is in result.Tables
-                    for (int i = 0; i < result.Tables.Count; i++)
-                    {
-                        var table = result.Tables[i];
-                        if (!CheckRawData(table))
-                        {
-                            logger($"配置表格式不合法: InputFile={Path.GetFileNameWithoutExtension(filePath)}, Sheet={table.TableName}");
-                            continue;
-                        }
+                    // 移除空的Property元素
+                    var list = context.Properties.ToList();
+                    list.RemoveAll(x => x == null);
+                    context.Properties = list.ToArray();
 
-                        var context = GenerateGenerationContext(filePath, table);
-                        yield return context;
-                    }
+                    ParseDataSet(context, result);
+
+                    yield return context;
                 }
 
                 yield break;
             }
         }
 
-        static bool CheckRawData(DataTable table)
+        #region 数据表解析过程
+
+        // 解析第一行的表头信息
+        private static void ParseSheetInfoRow(GenerationContext context, IExcelDataReader reader)
         {
-            if (table.Rows.Count < 3)
+            var arr = reader.GetString(0).Split(',');
+            foreach (var pair in arr)
             {
-                return false;
+                var properties = pair.Split('=');
+                if (properties.Length == 2)
+                {
+                    switch (properties[0])
+                    {
+                        case "Title":
+                            context.Title = properties[1];
+                            break;
+                        case "Class":
+                            context.ClassName = properties[1];
+                            break;
+                        case "EnableTagsFilter":
+                            context.EnableTagsFilter = bool.Parse(properties[1]);
+                            break;
+                    }
+                }
+                else if (properties.Length == 1)
+                {
+                    switch (properties[0])
+                    {
+                        case "EnableTagsFilter":
+                            context.EnableTagsFilter = true;
+                            break;
+                    }
+                }
             }
+        }
 
-            if (!NameRegex.IsMatch(table.TableName))
+        private static void ParseFieldCommentRow(GenerationContext context, IExcelDataReader reader)
+        {
+            context.Properties = new Property[reader.FieldCount];
+            
+            for (int i = 0; i < reader.FieldCount; i++)
             {
-                return false;
-            }
-
-            for (int i = 0; i < table.Columns.Count; i++)
-            {
-                var column = table.Rows[1][i];
-                if (column == null)
+                var text = reader.GetString(i).Trim();
+                if (text.StartsWith("#", StringComparison.Ordinal))
                 {
                     continue;
                 }
 
-                var columnValue = column.ToString();
-                if (!NameRegex.IsMatch(columnValue))
+                context.Properties[i] = new Property();
+                context.Properties[i].Comment = text;
+            }
+        }
+
+        private static void ParseFieldNameRow(GenerationContext context, IExcelDataReader reader)
+        {
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                if (context.Properties[i] == null)
                 {
-                    return false;
+                    continue;
+                }
+
+                var text = reader.GetString(i).Trim();
+                if (!NameRegex.IsMatch(text))
+                {
+                    context.Properties[i] = null;
+                    continue;
+                }
+
+                context.Properties[i].Name = text;
+            }
+        }
+
+        private static void ParseFieldTypeRow(GenerationContext context, IExcelDataReader reader)
+        {
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                if (context.Properties[i] == null)
+                {
+                    continue;
+                }
+
+                context.Properties[i].TypeName = reader.GetString(i).Trim();
+            }
+        }
+
+        private static void ParseDataSet(GenerationContext context, DataSet dataSet)
+        {
+            var table = dataSet.Tables[0];
+            int rowCount = table.Rows.Count;
+            int columnCount = table.Columns.Count;
+            object[,] cells = new object[rowCount, columnCount];
+
+            for (int i = 0; i < rowCount; i++)
+            {
+                for (int j = 0; j < columnCount; j++)
+                {
+                    cells[i, j] = table.Rows[i][j];
                 }
             }
 
-            return true;
-        }
-
-        static GenerationContext GenerateGenerationContext(string filePath, DataTable table)
-        {
-            var context = new GenerationContext
-            {
-                FileName = Path.GetFileNameWithoutExtension(filePath),
-                SheetName = table.TableName,
-                UsingStrings = Array.Empty<string>(),
-                InputFilePath = filePath,
-                Properties = GenerateDataTablePropertyArray(table),
-            };
-
-            // 拼装值数据
-            var (rowCount, columnCount, cells) = GenerateDataTableDataArray(context.Properties, table);
             context.RowCount = rowCount;
             context.ColumnCount = columnCount;
             context.Cells = cells;
-
-            // Console.WriteLine($"{table.TableName}, Rows={table.Rows.Count}");
-
-            return context;
         }
+
+        #endregion
 
         static void GenerateCodeFile(GenerationContext context, string outputDir, bool forceOverwrite, Action<string> logger)
         {
@@ -227,7 +291,7 @@ namespace DataTables.GeneratorCore
                 GenerationContext = context,
             };
 
-            logger(WriteToFile(outputDir, context.ClassName + ".cs", dataRowTemplate.TransformText(), forceOverwrite));
+            logger(WriteToFile(outputDir, context.RealClassName + ".cs", dataRowTemplate.TransformText(), forceOverwrite));
         }
 
         static string NormalizeNewLines(string content)
@@ -257,47 +321,11 @@ namespace DataTables.GeneratorCore
 
         static void GenerateDataFile(GenerationContext context, string outputDir, bool forceOverwrite, Action<string> logger)
         {
-            string binaryDataFileName = Path.Combine(outputDir, context.ClassName + ".bytes");
+            string binaryDataFileName = Path.Combine(outputDir, context.RealClassName + ".bytes");
             if (!DataTableProcessor.GenerateDataFile(context, binaryDataFileName, logger) && File.Exists(binaryDataFileName))
             {
                 File.Delete(binaryDataFileName);
             }
-        }
-
-        private static Property[] GenerateDataTablePropertyArray(DataTable table)
-        {
-            var properties = new Property[table.Columns.Count];
-
-            for (int i = 0; i < table.Columns.Count; i++)
-            {
-                var property = new Property()
-                {
-                    Comment = table.Rows[0][i].ToString().Trim(),
-                    Name = table.Rows[1][i].ToString().Trim(),
-                    TypeName = table.Rows[2][i].ToString().Trim(),
-                };
-
-                properties[i] = property;
-            }
-
-            return properties;
-        }
-
-        private static (int, int, object[,]) GenerateDataTableDataArray(Property[] properties, DataTable table)
-        {
-            int rowCount = table.Rows.Count - 3;
-            int columnCount = table.Columns.Count;
-            object[,] cells = new object[rowCount, columnCount];
-
-            for (int i = 0; i < rowCount; i++)
-            {
-                for (int j = 0; j < columnCount; j++)
-                {
-                    cells[i, j] = table.Rows[i + 3][j];
-                }
-            }
-
-            return (rowCount, columnCount, cells);
         }
     }
 }

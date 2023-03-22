@@ -18,7 +18,7 @@ namespace DataTables.GeneratorCore
 
         public string Namespace => GenerationContext.Namespace;
 
-        public string ClassName => GenerationContext.ClassName;
+        public string ClassName => GenerationContext.RealClassName;
 
         internal string GetPropertyTypeString(Property property)
         {

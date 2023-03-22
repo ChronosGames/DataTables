@@ -8,12 +8,23 @@ using DataTables;
 
 namespace ConsoleApp
 {
+    /// <summary>示例表</summary>
     public sealed class DataTableSample : DataRowBase
     {
         /// <summary>整数</summary>
         public int Id { get; private set; }
+        /// <summary>小整数</summary>
+        public short Int16Value { get; private set; }
+        /// <summary>大整数</summary>
+        public long Int64Value { get; private set; }
+        /// <summary>无符号大整数</summary>
+        public ulong UInt64Value { get; private set; }
+        /// <summary>浮点数</summary>
+        public float FloatValue { get; private set; }
         /// <summary>字符串</summary>
         public string Name { get; private set; }
+        /// <summary>布尔</summary>
+        public bool BoolValue { get; private set; }
         /// <summary>枚举</summary>
         public ColorT Color { get; private set; }
         /// <summary>数组</summary>
@@ -28,11 +39,16 @@ namespace ConsoleApp
         public override bool Deserialize(BinaryReader reader)
         {
             //using (MemoryStream stream = new MemoryStream(raw, offset, length, false))
-            {
+            //{
                 //using (BinaryReader reader = new BinaryReader(stream))
                 {
                     Id = reader.Read7BitEncodedInt32();
+                    Int16Value = reader.ReadInt16();
+                    Int64Value = reader.Read7BitEncodedInt64();
+                    UInt64Value = reader.Read7BitEncodedUInt64();
+                    FloatValue = reader.ReadSingle();
                     Name = reader.ReadString();
+                    BoolValue = reader.ReadBoolean();
                     {
                         ColorT __enumVal = default;
                         var __enumStr = reader.ReadString();
@@ -103,7 +119,7 @@ namespace ConsoleApp
                         }
                     }
                 }
-            }
+            //}
 
             return true;
         }

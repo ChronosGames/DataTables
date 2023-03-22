@@ -13,7 +13,8 @@ using DataTables;
 
 namespace <#= Namespace #>
 {
-    public sealed class <#= ClassName #> : DataRowBase
+    /// <summary><#= GenerationContext.Title #></summary>
+    public sealed class <#= GenerationContext.ClassName #> : DataRowBase
     {
 <# foreach(var item in GenerationContext.Properties) { #>
         /// <summary><#= item.Comment #></summary>
@@ -23,14 +24,14 @@ namespace <#= Namespace #>
         public override bool Deserialize(BinaryReader reader)
         {
             //using (MemoryStream stream = new MemoryStream(raw, offset, length, false))
-            {
+            //{
                 //using (BinaryReader reader = new BinaryReader(stream))
                 {
 <# foreach(var item in GenerationContext.Properties) { #>
                     <#= GetDeserializeMethodString(item) #>
 <# } #>
                 }
-            }
+            //}
 
             return true;
         }

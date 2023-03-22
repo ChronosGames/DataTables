@@ -30,8 +30,10 @@ namespace DataTables.GeneratorCore
             this.Write("\r\nusing System;\r\nusing System.IO;\r\nusing System.Collections.Generic;\r\nusing DataT" +
                     "ables;\r\n\r\nnamespace ");
             this.Write(this.ToStringHelper.ToStringWithCulture(Namespace));
-            this.Write("\r\n{\r\n    public sealed class ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(ClassName));
+            this.Write("\r\n{\r\n    /// <summary>");
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.Title));
+            this.Write("</summary>\r\n    public sealed class ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write(" : DataRowBase\r\n    {\r\n");
  foreach(var item in GenerationContext.Properties) { 
             this.Write("        /// <summary>");
@@ -46,7 +48,7 @@ namespace DataTables.GeneratorCore
         public override bool Deserialize(BinaryReader reader)
         {
             //using (MemoryStream stream = new MemoryStream(raw, offset, length, false))
-            {
+            //{
                 //using (BinaryReader reader = new BinaryReader(stream))
                 {
 ");
@@ -55,8 +57,8 @@ namespace DataTables.GeneratorCore
             this.Write(this.ToStringHelper.ToStringWithCulture(GetDeserializeMethodString(item)));
             this.Write("\r\n");
  } 
-            this.Write("                }\r\n            }\r\n\r\n            return true;\r\n        }\r\n    }\r\n}" +
-                    "");
+            this.Write("                }\r\n            //}\r\n\r\n            return true;\r\n        }\r\n    }\r" +
+                    "\n}");
             return this.GenerationEnvironment.ToString();
         }
     }

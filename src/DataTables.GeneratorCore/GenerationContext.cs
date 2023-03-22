@@ -1,5 +1,4 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Linq;
+﻿using System.Linq;
 
 namespace DataTables.GeneratorCore
 {
@@ -9,20 +8,26 @@ namespace DataTables.GeneratorCore
 
         public string SheetName { get; set; }
 
+
         public string[] UsingStrings { get; set; }
 
         public string Namespace { get; set; }
 
         public string PrefixClassName { get; set; }
 
-        public string ClassName => PrefixClassName + SheetName;
+        public string Title { get; set; }
+
+        public string ClassName { get; set; }
+
+        public string RealClassName => PrefixClassName + ClassName;
+        public bool EnableTagsFilter { get; set; }
 
         public Property[] Properties { get; set; }
 
         public int RowCount { get; set; }
         public int ColumnCount { get; set; }
         public object[,] Cells { get; set; }
-        
+
         public string InputFilePath { get; set; }
     }
 

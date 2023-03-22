@@ -328,12 +328,12 @@ namespace DataTables.GeneratorCore
                     }
                 }
 
-                logger(string.Format("Parse data table '{0}' success.", outputFileName));
+                logger(string.Format("# Generate {0}.bytes to: {1}.", context.RealClassName, outputFileName));
                 return true;
             }
             catch (Exception exception)
             {
-                logger(string.Format("Parse data table '{0}' failure, exception is '{1}'.", outputFileName, exception));
+                logger(string.Format("# Generate {0}.bytes failure, exception is '{1}'.", context.RealClassName, exception));
                 return false;
             }
         }

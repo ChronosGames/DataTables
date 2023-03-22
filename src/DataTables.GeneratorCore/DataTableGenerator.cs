@@ -63,6 +63,25 @@ namespace DataTables.GeneratorCore
                 context.Namespace = usingNamespace;
                 context.PrefixClassName = prefixClassName;
 
+                // 判断是否存在配置表变更（以修改时间为准），若不存在则直接跳过
+                if (!forceOverwrite)
+                {
+                    var excelFileInfo = new FileInfo(context.InputFilePath);
+
+                    var targetFilePath = Path.Combine(dataOutputDir, context.RealClassName + ".bytes");
+                    if (File.Exists(targetFilePath))
+                    {
+                        var targetFileInfo = new FileInfo(targetFilePath);
+                        if (excelFileInfo.LastWriteTime < targetFileInfo.LastWriteTime)
+                        {
+                            logger(string.Format("Generate Excel File: {0}, Sheet={1} (skiped)", context.InputFilePath, context.SheetName));
+                            continue;
+                        }
+                    }
+                }
+
+                logger(string.Format("Generate Excel File: {0}, Sheet:{1}", context.InputFilePath, context.SheetName));
+
                 // 生成代码文件
                 GenerateCodeFile(context, codeOutputDir, forceOverwrite, logger);
                 
@@ -311,12 +330,12 @@ namespace DataTables.GeneratorCore
             {
                 if (new FileInfo(path).Length == contentBytes.Length && contentBytes.AsSpan().SequenceEqual(File.ReadAllBytes(path)))
                 {
-                    return $"Generate {fileName} to: {path} (Skipped)";
+                    return $"# Generate {fileName} to: {path} (Skipped)";
                 }
             }
 
             File.WriteAllBytes(path, contentBytes);
-            return $"Generate {fileName} to: {path}";
+            return $"# Generate {fileName} to: {path}";
         }
 
         static void GenerateDataFile(GenerationContext context, string outputDir, bool forceOverwrite, Action<string> logger)

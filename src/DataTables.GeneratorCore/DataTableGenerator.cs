@@ -14,6 +14,7 @@ namespace DataTables.GeneratorCore
 {
     public sealed class DataTableGenerator
     {
+        private const int HeadRowCount = 4;
         private static readonly Regex NameRegex = new Regex(@"^[A-Za-z][A-Za-z0-9_]*$");
 
         public void GenerateFile(string inputDirectory, string codeOutputDir, string dataOutputDir, string usingNamespace, string prefixClassName, string filterColumnTags, bool forceOverwrite, Action<string> logger)
@@ -116,20 +117,27 @@ namespace DataTables.GeneratorCore
                         FilterSheet = (tableReader, sheetIndex) =>
                         {
                             var isCommentSheet = tableReader.Name.StartsWith("#", StringComparison.Ordinal);
-                            if (!isCommentSheet)
+                            if (isCommentSheet)
                             {
-                                var context = new GenerationContext
-                                {
-                                    FileName = Path.GetFileNameWithoutExtension(filePath),
-                                    UsingStrings = Array.Empty<string>(),
-                                    InputFilePath = filePath,
-                                    SheetName = tableReader.Name,
-                                };
-
-                                contexts.Add(tableReader.Name, context);
+                                return false;
                             }
 
-                            return !isCommentSheet;
+                            if (tableReader.RowCount < HeadRowCount)
+                            {
+                                return false;
+                            }
+
+                            var context = new GenerationContext
+                            {
+                                FileName = Path.GetFileNameWithoutExtension(filePath),
+                                UsingStrings = Array.Empty<string>(),
+                                InputFilePath = filePath,
+                                SheetName = tableReader.Name,
+                            };
+
+                            contexts.Add(tableReader.Name, context);
+
+                            return true;
                         },
 
                         // Gets or sets a callback to obtain configuration options for a DataTable. 
@@ -150,16 +158,17 @@ namespace DataTables.GeneratorCore
 
                                 // F.ex skip the first row and use the 2nd row as column headers:
                                 //rowReader.Read();
-                                ParseSheetInfoRow(context, rowReader);
+                                if (ParseSheetInfoRow(context, rowReader))
+                                {
+                                    rowReader.Read();
+                                    ParseFieldCommentRow(context, rowReader, filterColumnTags);
 
-                                rowReader.Read();
-                                ParseFieldCommentRow(context, rowReader, filterColumnTags);
+                                    rowReader.Read();
+                                    ParseFieldNameRow(context, rowReader);
 
-                                rowReader.Read();
-                                ParseFieldNameRow(context, rowReader);
-
-                                rowReader.Read();
-                                ParseFieldTypeRow(context, rowReader);
+                                    rowReader.Read();
+                                    ParseFieldTypeRow(context, rowReader);
+                                }
                             },
 
                             // Gets or sets a callback to determine whether to include the 
@@ -182,7 +191,11 @@ namespace DataTables.GeneratorCore
                             FilterColumn = (rowReader, columnIndex) =>
                             {
                                 var context = contexts[rowReader.Name];
-                                // Console.WriteLine($"{rowReader.GetValue(columnIndex)}, Depth={rowReader.Depth}, FieldCount={rowReader.FieldCount}, RowCount={rowReader.RowCount}");
+                                if (context.Properties == null)
+                                {
+                                    return false;
+                                }
+
                                 var property = context.Properties[columnIndex];
                                 return property != null;
                             }
@@ -193,6 +206,11 @@ namespace DataTables.GeneratorCore
                     {
                         // 解析数据
                         var context = pair.Value;
+                        if (string.IsNullOrEmpty(context.ClassName))
+                        {
+                            continue;
+                        }
+
                         if (context.Properties == null || context.Properties.Length == 0)
                         {
                             continue;
@@ -268,8 +286,14 @@ namespace DataTables.GeneratorCore
         }
 
         // 解析第一行的表头信息
-        private static void ParseSheetInfoRow(GenerationContext context, IExcelDataReader reader)
+        private static bool ParseSheetInfoRow(GenerationContext context, IExcelDataReader reader)
         {
+            var value = reader.GetValue(0);
+            if (value == null)
+            {
+                return false;
+            }
+
             var arr = reader.GetString(0).Split(',');
             foreach (var pair in arr)
             {
@@ -299,6 +323,8 @@ namespace DataTables.GeneratorCore
                     }
                 }
             }
+
+            return !string.IsNullOrEmpty(context.ClassName);
         }
 
         private static void ParseFieldCommentRow(GenerationContext context, IExcelDataReader reader, string filterColumnTags)

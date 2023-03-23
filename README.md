@@ -33,7 +33,9 @@ Concept
 * **TypeSafe**, 100% Type safe by pre code-generation.
 * **Fast load speed**, DataTables Convert Excel files to binary files, so packed files is smaller and load speed is blazing fast.
 
+<!--
 These features are suitable for master data management(write-once, read-heavy) on embedded application such as role-playing game. MasterMemory has better performance than any other database solutions. [PalDB](https://github.com/linkedin/PalDB) developed by LinkedIn has a similar concept(embeddable write-once key-value store), but the implementation and performance characteristics are completely different.
+-->
 
 Getting Started(.NET Core)
 ---
@@ -45,15 +47,7 @@ Install the core library(Runtime and [Annotations](https://www.nuget.org/package
 
 Prepare the example excel table definition like following.
 
-| 场景编号  |	 #备注	|   资源名称	| 背景音乐编号       |
-| :-------: | :---------: | :-----------: | :---------------: |  
-| Id	    |             |   AssetName   | BackgroundMusicId |
-| int       |             |	  string      | int               |
-| 2000      | 登录        |	Login       | 0                 |
-| 2001	    | 初始化角色  |	Initial	     | 2                 |
-| 2099      | 主界面      | Menu          | 2                 |
-| 2100      | 城镇        | Game          | 2                 |
-```
+![ExcelSample](https://user-images.githubusercontent.com/5179057/227073069-1cd264bf-d8ca-4b77-9c71-bce0bce66150.PNG)
 
 Edit the `.csproj`, add [DataTables.MSBuild.Tasks](https://www.nuget.org/packages/DataTables.MSBuild.Tasks) and add configuration like following.
 
@@ -108,14 +102,7 @@ Check the [releases](https://github.com/PhonixGame/DataTables/releases) page, do
 
 Prepare the example table definition like following.
 
-| 场景编号  |	 #备注	|   资源名称	| 背景音乐编号       |
-| :-------: | :---------: | :-----------: | :---------------: |  
-| Id	    |             |   AssetName   | BackgroundMusicId |
-| int       |             |	  string      | int               |
-| 2000      | 登录        |	Login       | 0                 |
-| 2001	    | 初始化角色  |	Initial	     | 2                 |
-| 2099      | 主界面      | Menu          | 2                 |
-| 2100      | 城镇        | Game          | 2                 |
+![ExcelSample](https://user-images.githubusercontent.com/5179057/227073069-1cd264bf-d8ca-4b77-9c71-bce0bce66150.PNG)
 
 use the DataTables code generator by commandline. Commandline tool support platforms are `win-x64`, `osx-x64` and `linux-x64`.
 
@@ -128,6 +115,8 @@ Options:
   -do, -dataOutputDirectory <String>        Data Output file directory. (Required)
   -n, -usingNamespace <String>              Namespace of generated files. (Required)
   -p, -prefixClassName <String>             Prefix of class names. (Default: )
+  -t, -filterColumnTags <String>            Tags of filter columns. (Default: )
+  -f, -forceOverwrite <Boolean>             Overwrite generated files if the content is unchanged. (Default: false)
 ```
 
 ```bash
@@ -264,8 +253,12 @@ Built-in supported types
 These field types can serialize by default:
 
 * `short`, `int`, `long`, `ushort`, `uint`, `ulong`
-* `Enum` : StartWiths Enum string, like EnumItemType
-* `Array[]` like int[], string[]
+* `float`, `double`
+* `bool`
+* `DateTime`
+* `Array` : StartWiths Array string, like Array<int>, Array<string>
+* `Enum` : StartWiths Enum string, like Enum<ColorT>
+* `Dictionary` : StartWiths Map string, like Map<int, int>, Map<int, string>
 <!-- * Primitives (`int`, `string`, etc...), `Enum`s, `Nullable<>`, `Lazy<>`
 * `TimeSpan`,  `DateTime`, `DateTimeOffset`
 * `Guid`, `Uri`, `Version`, `StringBuilder`
@@ -683,7 +676,7 @@ If you want to reduce code size of generated code, Validator and MetaDatabase in
 
 Code Generator
 ---
-MasterMemory has two kinds of code-generator. `MSBuild Task`, `.NET Core Global/Local Tools`.
+DataTables has two kinds of code-generator. `MSBuild Task`, `.NET Core Global/Local Tools`.
 
 MSBuild Task(`DataTables.MSBuild.Tasks`) is recommended way to use in .NET Core csproj.
 
@@ -712,7 +705,7 @@ Options:
   -p, -prefixClassName <String>             Prefix of class names. (Default: )
 ```
 
-After install, you can call by `dotnet mmgen` command. This is useful to use in CI. Here is the sample of CircleCI config.
+After install, you can call by `dotnet DataTables.Generator` command. This is useful to use in CI. Here is the sample of CircleCI config.
 
 ```yml
 version: 2.1
@@ -729,7 +722,7 @@ jobs:
     steps:
       - checkout
       - run: dotnet tool install --global DataTables.Generator
-      - run: dotnet mmgen -i ./ -o ./MasterMemory -n Test
+      - run: dotnet DataTables.Generator -i "inputDir" -co "client\Assets\Scripts\Game\DataTables" -do "client\Assets\AssetBundles\DataTables" -n Demo.DataTales
       /* git push or store artifacts or etc...... */
 ```
 

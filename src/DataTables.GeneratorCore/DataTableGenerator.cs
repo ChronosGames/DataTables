@@ -133,6 +133,7 @@ namespace DataTables.GeneratorCore
                                 UsingStrings = Array.Empty<string>(),
                                 InputFilePath = filePath,
                                 SheetName = tableReader.Name,
+                                Indexs = new List<string[]>(),
                             };
 
                             contexts.Add(tableReader.Name, context);
@@ -310,6 +311,9 @@ namespace DataTables.GeneratorCore
                             break;
                         case "EnableTagsFilter":
                             context.EnableTagsFilter = bool.Parse(properties[1]);
+                            break;
+                        case "Index":
+                            context.Indexs.Add(properties[1].Split('&'));
                             break;
                     }
                 }

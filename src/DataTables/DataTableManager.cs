@@ -199,25 +199,15 @@ namespace DataTables
             }
         }
 
-        /// <summary>
-        /// 创建数据表。
-        /// </summary>
-        /// <typeparam name="T">数据表行的类型。</typeparam>
-        /// <param name="name">数据表名称。</param>
-        /// <param name="raw"></param>
-        /// <param name="offset"></param>
-        /// <param name="length"></param>
-        /// <returns>要创建的数据表。</returns>
-        public IDataTable<T> CreateDataTable<T>(string name, byte[] raw, int offset, int length) where T : class, IDataRow, new()
+        public T CreateDataTable<T>(byte[] raw, int offset, int length) where T : DataTableBase, new()
         {
             TypeNamePair typeNamePair = new TypeNamePair(typeof(T));
-            if (HasDataTable<T>(name))
+            if (InternalHasDataTable(typeNamePair))
             {
                 throw new Exception(string.Format("Already exist data table '{0}'.", typeNamePair));
             }
 
-            DataTable<T> dataTable = new DataTable<T>(name);
-
+            var dataTable = new T();
             using (var ms = new MemoryStream(raw, offset, length, false))
             {
                 using (var reader = new BinaryReader(ms, Encoding.UTF8))

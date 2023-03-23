@@ -1,4 +1,8 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text;
 
 namespace DataTables.GeneratorCore
 {
@@ -29,6 +33,58 @@ namespace DataTables.GeneratorCore
         public object[,] Cells { get; set; }
 
         public string InputFilePath { get; set; }
+
+        /// <summary>字段索引列表</summary>
+        public List<string[]> Indexs { get; set; }
+
+        public Property GetField(string field)
+        {
+            return Properties.FirstOrDefault(x => x.Name == field);
+        }
+
+        /// <summary>
+        /// 拼接索引列表的函数参数定义
+        /// </summary>
+        /// <returns></returns>
+        public string GetIndexsMethodDefine(string[] fields)
+        {
+            List<string> result = new List<string>();
+
+            TextInfo myTI = new CultureInfo("en-US", false).TextInfo;
+
+            foreach (var fieldName in fields)
+            {
+                var field = GetField(fieldName);
+                result.Add($"{field.TypeName} {fieldName}");
+            }
+
+            return string.Join(", ", result);
+        }
+
+        public string GetIndexDictDefine(string[] fields)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            if (fields.Length > 1)
+            {
+                sb.Append("MultiDictionary<");
+            }
+            else
+            {
+                sb.Append("Dictionary<");
+            }
+
+            foreach (var fieldName in fields)
+            {
+                sb.Append(GetField(fieldName).TypeName);
+                sb.Append(", ");
+            }
+
+            sb.Append(RealClassName);
+            sb.Append('>');
+
+            return sb.ToString();
+        }
     }
 
     public class Property

@@ -13,6 +13,36 @@ using DataTables;
 
 namespace <#= Namespace #>
 {
+    public sealed class DT<#= GenerationContext.ClassName #> : DataTable<<#= GenerationContext.RealClassName #>>
+    {
+<#
+        for (var i = 0; i < GenerationContext.Indexs.Count; i++)
+        {
+            var item = GenerationContext.Indexs[i];
+#>
+        private <#= GenerationContext.GetIndexDictDefine(item) #> m_Dict<#= i + 1 #> = new <#= GenerationContext.GetIndexDictDefine(item) #>();
+<#      }
+        for (var i = 0; i < GenerationContext.Indexs.Count; i++)
+        {
+            var item = GenerationContext.Indexs[i];
+#>
+        public <#= GenerationContext.RealClassName #> GetDataRow(<#= GenerationContext.GetIndexsMethodDefine(item) #>)
+        {
+            return m_Dict<#= i + 1 #>[<#= string.Join(", ", item) #>];
+        }
+<# } #>
+        protected override void InternalAddDataRow(DataTableSample dataRow)
+        {
+            base.InternalAddDataRow(dataRow);
+<#  for (var i = 0; i < GenerationContext.Indexs.Count; i++)
+    {
+        var item = GenerationContext.Indexs[i];
+#>
+            m_Dict<#= i+1 #>.Add(dataRow.<#= string.Join(", dataRow.", item) #>, dataRow);
+<#  } #>
+        }
+    }
+
     /// <summary><#= GenerationContext.Title #></summary>
     public sealed class <#= GenerationContext.RealClassName #> : DataRowBase
     {

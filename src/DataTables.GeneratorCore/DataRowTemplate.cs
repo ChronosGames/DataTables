@@ -33,7 +33,7 @@ namespace DataTables.GeneratorCore
             this.Write("\r\n{\r\n    /// <summary>");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.Title));
             this.Write("</summary>\r\n    public sealed class ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
             this.Write(" : DataRowBase\r\n    {\r\n");
  foreach(var item in GenerationContext.Properties) { 
             this.Write("        /// <summary>");

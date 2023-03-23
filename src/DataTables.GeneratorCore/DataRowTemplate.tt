@@ -14,7 +14,7 @@ using DataTables;
 namespace <#= Namespace #>
 {
     /// <summary><#= GenerationContext.Title #></summary>
-    public sealed class <#= GenerationContext.ClassName #> : DataRowBase
+    public sealed class <#= GenerationContext.RealClassName #> : DataRowBase
     {
 <# foreach(var item in GenerationContext.Properties) { #>
         /// <summary><#= item.Comment #></summary>

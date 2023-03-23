@@ -687,6 +687,8 @@ MSBuild Task(`DataTables.MSBuild.Tasks`) is recommended way to use in .NET Core 
     CodeOutputDirectory="string:required"
     DataOutputDirectory="string:required"
     PrefixClassName="string:optional, default= "
+    FilterColumnTags="string:optional, default= "
+    ForceOverwrite="bool:optional, default=false"
 />
 ```
 
@@ -703,6 +705,8 @@ Options:
   -do, -dataOutputDirectory <String>        Data Output file directory. (Required)
   -n, -usingNamespace <String>              Namespace of generated files. (Required)
   -p, -prefixClassName <String>             Prefix of class names. (Default: )
+  -t, -filterColumnTags <String>            Tags of filter columns. (Default: )
+  -f, -forceOverwrite <Boolean>             Overwrite generated files if the content is unchanged. (Default: false)
 ```
 
 After install, you can call by `dotnet DataTables.Generator` command. This is useful to use in CI. Here is the sample of CircleCI config.

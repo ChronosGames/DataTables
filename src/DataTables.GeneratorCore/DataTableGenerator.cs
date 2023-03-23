@@ -319,7 +319,7 @@ namespace DataTables.GeneratorCore
                     var index = text.LastIndexOf('@');
                     if (index != -1)
                     {
-                        if (!string.IsNullOrEmpty(filterColumnTags) && !ContainTags(text.Substring(index + 1), filterColumnTags))
+                        if (!string.IsNullOrEmpty(filterColumnTags) && !ContainTags(text.Substring(index + 1).ToUpper(), filterColumnTags.ToUpper()))
                         {
                             continue;
                         }

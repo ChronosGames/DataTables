@@ -41,6 +41,7 @@ namespace DataTables.GeneratorCore
                     "leName)\r\n            {\r\n");
  foreach (var className in DataRowTypeName) { 
             this.Write("                case \"");
+            this.Write(this.ToStringHelper.ToStringWithCulture(DataRowPrefix));
             this.Write(this.ToStringHelper.ToStringWithCulture(className));
             this.Write("\":\r\n                    manager.CreateDataTable<DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(className));

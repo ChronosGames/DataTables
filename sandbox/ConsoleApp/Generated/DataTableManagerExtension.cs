@@ -16,7 +16,7 @@ namespace ConsoleApp
         {
             switch (dataTableName)
             {
-                case "DataTableSample":
+                case "DRDataTableSample":
                     manager.CreateDataTable<DTDataTableSample>(raw, 0, raw.Length);
                     break;
                 default:

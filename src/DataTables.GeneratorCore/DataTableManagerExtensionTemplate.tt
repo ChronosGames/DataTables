@@ -24,7 +24,7 @@ namespace <#= Namespace #>
             switch (dataTableName)
             {
 <# foreach (var className in DataRowTypeName) { #>
-                case "<#= className #>":
+                case "<#= DataRowPrefix #><#= className #>":
                     manager.CreateDataTable<DT<#= className #>>(raw, 0, raw.Length);
                     break;
 <# } #>

@@ -9,7 +9,7 @@ namespace ConsoleApp
     {
         public static string[] Names = new string[]
         {
-            "DataTableSample",
+            "DRDataTableSample",
         };
 
         public static void CreateDataTable(this DataTableManager manager, string dataTableName, byte[] raw)
@@ -17,7 +17,7 @@ namespace ConsoleApp
             switch (dataTableName)
             {
                 case "DataTableSample":
-                    manager.CreateDataTable<DataTableSample>(dataTableName, raw, 0, raw.Length);
+                    manager.CreateDataTable<DTDataTableSample>(raw, 0, raw.Length);
                     break;
                 default:
                     throw new NotImplementedException($"Unknown DataTable: {dataTableName}");

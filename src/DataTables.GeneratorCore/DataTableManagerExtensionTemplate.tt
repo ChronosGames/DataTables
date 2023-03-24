@@ -14,8 +14,8 @@ namespace <#= Namespace #>
     {
         public static string[] Names = new string[]
         {
-<# foreach (var className in ClassNames) { #>
-            "<#= className #>",
+<# foreach (var className in DataRowTypeName) { #>
+            "<#= DataRowPrefix #><#= className #>",
 <# } #>
         };
 
@@ -23,9 +23,9 @@ namespace <#= Namespace #>
         {
             switch (dataTableName)
             {
-<# foreach (var className in ClassNames) { #>
+<# foreach (var className in DataRowTypeName) { #>
                 case "<#= className #>":
-                    manager.CreateDataTable<<#= className #>>(dataTableName, raw, 0, raw.Length);
+                    manager.CreateDataTable<DT<#= className #>>(raw, 0, raw.Length);
                     break;
 <# } #>
                 default:

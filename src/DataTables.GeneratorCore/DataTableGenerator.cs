@@ -91,7 +91,8 @@ namespace DataTables.GeneratorCore
             var dataTableManagerExtensionTemplate = new DataTableManagerExtensionTemplate()
             {
                 Namespace = usingNamespace,
-                ClassNames = list.Select(x => x.RealClassName).ToArray(),
+                DataRowPrefix = prefixClassName,
+                DataRowTypeName = list.Select(x => x.ClassName).ToArray(),
             };
             logger(WriteToFile(codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
         }

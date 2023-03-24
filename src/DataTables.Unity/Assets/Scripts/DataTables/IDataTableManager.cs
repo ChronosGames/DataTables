@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace DataTables
 {
@@ -22,60 +21,28 @@ namespace DataTables
         /// </summary>
         /// <typeparam name="T">数据表行的类型。</typeparam>
         /// <returns>是否存在数据表。</returns>
-        bool HasDataTable<T>() where T : IDataRow;
+        bool HasDataTable<T>() where T : DataTableBase;
 
         /// <summary>
         /// 是否存在数据表。
         /// </summary>
-        /// <param name="dataRowType">数据表行的类型。</param>
+        /// <param name="dataTableType">数据表的类型。</param>
         /// <returns>是否存在数据表。</returns>
-        bool HasDataTable(Type dataRowType);
-
-        /// <summary>
-        /// 是否存在数据表。
-        /// </summary>
-        /// <typeparam name="T">数据表行的类型。</typeparam>
-        /// <param name="name">数据表名称。</param>
-        /// <returns>是否存在数据表。</returns>
-        bool HasDataTable<T>(string name) where T : IDataRow;
-
-        /// <summary>
-        /// 是否存在数据表。
-        /// </summary>
-        /// <param name="dataRowType">数据表行的类型。</param>
-        /// <param name="name">数据表名称。</param>
-        /// <returns>是否存在数据表。</returns>
-        bool HasDataTable(Type dataRowType, string name);
+        bool HasDataTable(Type dataTableType);
 
         /// <summary>
         /// 获取数据表。
         /// </summary>
-        /// <typeparam name="T">数据表行的类型。</typeparam>
+        /// <typeparam name="T">数据表的类型。</typeparam>
         /// <returns>要获取的数据表。</returns>
-        IDataTable<T> GetDataTable<T>() where T : IDataRow;
+        T GetDataTable<T>() where T : DataTableBase;
 
         /// <summary>
         /// 获取数据表。
         /// </summary>
-        /// <param name="dataRowType">数据表行的类型。</param>
+        /// <param name="dataTableType">数据表的类型。</param>
         /// <returns>要获取的数据表。</returns>
-        DataTableBase GetDataTable(Type dataRowType);
-
-        /// <summary>
-        /// 获取数据表。
-        /// </summary>
-        /// <typeparam name="T">数据表行的类型。</typeparam>
-        /// <param name="name">数据表名称。</param>
-        /// <returns>要获取的数据表。</returns>
-        IDataTable<T> GetDataTable<T>(string name) where T : IDataRow;
-
-        /// <summary>
-        /// 获取数据表。
-        /// </summary>
-        /// <param name="dataRowType">数据表行的类型。</param>
-        /// <param name="name">数据表名称。</param>
-        /// <returns>要获取的数据表。</returns>
-        DataTableBase GetDataTable(Type dataRowType, string name);
+        DataTableBase GetDataTable(Type dataTableType);
 
         /// <summary>
         /// 获取所有数据表。
@@ -93,50 +60,25 @@ namespace DataTables
         /// 创建数据表。
         /// </summary>
         /// <typeparam name="T">数据表行的类型。</typeparam>
-        /// <param name="name">数据表名称。</param>
         /// <param name="raw">加载配置文件的字节流</param>
         /// <param name="offset">加载配置文件的起始字节索引</param>
         /// <param name="length">加载配置文件的字节长度</param>
         /// <returns>要创建的数据表。</returns>
-        IDataTable<T> CreateDataTable<T>(string name, byte[] raw, int offset, int length) where T : class, IDataRow, new();
+        T CreateDataTable<T>(byte[] raw, int offset, int length) where T : DataTableBase, new();
 
         /// <summary>
         /// 销毁数据表。
         /// </summary>
-        /// <typeparam name="T">数据表行的类型。</typeparam>
+        /// <typeparam name="T">数据表的类型。</typeparam>
         /// <returns>是否销毁数据表成功。</returns>
-        bool DestroyDataTable<T>() where T : IDataRow;
+        bool DestroyDataTable<T>() where T : DataTableBase;
 
         /// <summary>
         /// 销毁数据表。
         /// </summary>
-        /// <param name="dataRowType">数据表行的类型。</param>
+        /// <param name="dataTableType">数据表行的类型。</param>
         /// <returns>是否销毁数据表成功。</returns>
-        bool DestroyDataTable(Type dataRowType);
-
-        /// <summary>
-        /// 销毁数据表。
-        /// </summary>
-        /// <typeparam name="T">数据表行的类型。</typeparam>
-        /// <param name="name">数据表名称。</param>
-        /// <returns>是否销毁数据表成功。</returns>
-        bool DestroyDataTable<T>(string name) where T : IDataRow;
-
-        /// <summary>
-        /// 销毁数据表。
-        /// </summary>
-        /// <param name="dataRowType">数据表行的类型。</param>
-        /// <param name="name">数据表名称。</param>
-        /// <returns>是否销毁数据表成功。</returns>
-        bool DestroyDataTable(Type dataRowType, string name);
-
-        /// <summary>
-        /// 销毁数据表。
-        /// </summary>
-        /// <typeparam name="T">数据表行的类型。</typeparam>
-        /// <param name="dataTable">要销毁的数据表。</param>
-        /// <returns>是否销毁数据表成功。</returns>
-        bool DestroyDataTable<T>(IDataTable<T> dataTable) where T : IDataRow;
+        bool DestroyDataTable(Type dataTableType);
 
         /// <summary>
         /// 销毁数据表。

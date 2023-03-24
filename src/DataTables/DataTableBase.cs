@@ -42,7 +42,7 @@ namespace DataTables
         {
             get
             {
-                return new TypeNamePair(Type, m_Name).ToString();
+                return Type.ToString();
             }
         }
 

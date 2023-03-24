@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.IO;
 using DataTables;
 
@@ -70,11 +71,10 @@ namespace ConsoleApp
         {
             var manager = new DataTableManager();
 
-            var raw = File.ReadAllBytes("Generated\\DataTableSample.bytes");
-            var card = manager.CreateDataTable<DataTableSample>("DataTableSample", raw, 0, raw.Length);
-
-            manager.HasDataTable<DataTableSample>();
-
+            var raw = File.ReadAllBytes("Generated\\DRDataTableSample.bytes");
+            var card = manager.CreateDataTable<DTDataTableSample>(raw, 0, raw.Length);
+            Debug.Assert(manager.HasDataTable<DTDataTableSample>(), "º”‘ÿ≈‰÷√±Ì ß∞‹");
+            Debug.Assert(card.GetDataRow(1) != null, "º”‘ÿ≈‰÷√±Ì ß∞‹1");
         }
 
     }

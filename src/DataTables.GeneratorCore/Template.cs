@@ -7,7 +7,9 @@ namespace DataTables.GeneratorCore
     public partial class DataTableManagerExtensionTemplate
     {
         public string Namespace { get; set; }
-        public string[] ClassNames { get; set; }
+
+        public string DataRowPrefix { get; set; }
+        public string[] DataRowTypeName { get; set; }
     }
 
     public partial class DataRowTemplate

@@ -28,10 +28,10 @@ namespace <#= Namespace #>
 #>
         public <#= GenerationContext.RealClassName #> GetDataRow(<#= GenerationContext.GetIndexsMethodDefine(item) #>)
         {
-            return m_Dict<#= i + 1 #>[<#= string.Join(", ", item) #>];
+            return m_Dict<#= i + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result) ? result : null;
         }
 <# } #>
-        protected override void InternalAddDataRow(DataTableSample dataRow)
+        protected override void InternalAddDataRow(<#= GenerationContext.RealClassName #> dataRow)
         {
             base.InternalAddDataRow(dataRow);
 <#  for (var i = 0; i < GenerationContext.Indexs.Count; i++)
@@ -53,16 +53,9 @@ namespace <#= Namespace #>
 
         public override bool Deserialize(BinaryReader reader)
         {
-            //using (MemoryStream stream = new MemoryStream(raw, offset, length, false))
-            //{
-                //using (BinaryReader reader = new BinaryReader(stream))
-                {
 <# foreach(var item in GenerationContext.Properties) { #>
                     <#= GetDeserializeMethodString(item) #>
 <# } #>
-                }
-            //}
-
             return true;
         }
     }

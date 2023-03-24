@@ -1,8 +1,8 @@
 {
   "profiles": {
     "DataTables.Generator": {
-        "commandName": "Project",
-        "commandLineArgs": "-i \"X:\\Projects\\PhonixGame\\DataTables\\sandbox\\ConsoleApp\" -co \"X:\\Projects\\PhonixGame\\DataTables\\sandbox\\ConsoleApp\\Generated\" -do \"X:\\Projects\\PhonixGame\\DataTables\\sandbox\\ConsoleApp\\Generated\" -n ConsoleApp"
+      "commandName": "Project",
+      "commandLineArgs": "-i \"E:\\Projects\\GitHub\\DataTables\\sandbox\\ConsoleApp\" -co \"E:\\Projects\\GitHub\\DataTables\\sandbox\\ConsoleApp\\Generated\" -do \"E:\\Projects\\GitHub\\DataTables\\sandbox\\ConsoleApp\\Generated\" -n ConsoleApp -t C -f true -p DR"
     }
   }
 }

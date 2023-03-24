@@ -322,7 +322,7 @@ namespace DataTables
                     throw;
                 }
 
-                throw new Exception(string.Format("Can not parse data row bytes for data table '{0}' with exception '{1}'.", new TypeNamePair(typeof(T), Name), exception), exception);
+                throw new Exception(string.Format("Can not parse data row bytes for data table '{0}' with exception '{1}'.", typeof(T), exception), exception);
             }
         }
 

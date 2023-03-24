@@ -213,13 +213,20 @@ namespace DataTables.GeneratorCore
                             continue;
                         }
 
-                        if (context.Properties == null || context.Properties.Length == 0)
+                        // 忽略无属性的Sheet
+                        if (context.Properties == null)
                         {
                             continue;
                         }
 
                         // 移除空的Property元素
                         RemoveEmptyProperties(pair.Value);
+
+                        // 忽略属性列表个数为零的Sheet
+                        if (context.Properties.Length == 0)
+                        {
+                            continue;
+                        }
 
                         // 解析数据
                         ParseDataSet(context, result.Tables[pair.Key]);

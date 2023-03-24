@@ -12,11 +12,11 @@ namespace ConsoleApp
     {
         private Dictionary<int, DRDataTableSample> m_Dict1 = new Dictionary<int, DRDataTableSample>();
         private MultiDictionary<int, short, DRDataTableSample> m_Dict2 = new MultiDictionary<int, short, DRDataTableSample>();
-        public DRDataTableSample GetDataRow(int Id)
+        public DRDataTableSample GetDataRowById(int Id)
         {
             return m_Dict1.TryGetValue(Id, out var result) ? result : null;
         }
-        public DRDataTableSample GetDataRow(int Id, short Int16Value)
+        public DRDataTableSample GetDataRowByIdAndInt16Value(int Id, short Int16Value)
         {
             return m_Dict2.TryGetValue(Id, Int16Value, out var result) ? result : null;
         }

@@ -26,7 +26,7 @@ namespace <#= Namespace #>
         {
             var item = GenerationContext.Indexs[i];
 #>
-        public <#= GenerationContext.RealClassName #> GetDataRow(<#= GenerationContext.GetIndexsMethodDefine(item) #>)
+        public <#= GenerationContext.RealClassName #> GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.GetIndexsMethodDefine(item) #>)
         {
             return m_Dict<#= i + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result) ? result : null;
         }

@@ -4,11 +4,9 @@ using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Text.RegularExpressions;
 using ExcelDataReader;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace DataTables.GeneratorCore
 {

@@ -54,7 +54,9 @@ namespace DataTables.GeneratorCore
 
             this.Write("        public ");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
-            this.Write(" GetDataRow(");
+            this.Write(" GetDataRowBy");
+            this.Write(this.ToStringHelper.ToStringWithCulture(string.Join("And", item)));
+            this.Write("(");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.GetIndexsMethodDefine(item)));
             this.Write(")\r\n        {\r\n            return m_Dict");
             this.Write(this.ToStringHelper.ToStringWithCulture(i + 1));

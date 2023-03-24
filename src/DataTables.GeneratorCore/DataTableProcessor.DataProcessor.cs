@@ -30,7 +30,7 @@ namespace DataTables.GeneratorCore
 
             protected string Tabs(int depth)
             {
-                return new string(' ', 4 * (depth + 5));
+                return new string(' ', 4 * (depth + 3));
             }
 
             public abstract string[] GetTypeStrings();

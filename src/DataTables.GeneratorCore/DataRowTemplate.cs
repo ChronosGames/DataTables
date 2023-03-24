@@ -91,7 +91,7 @@ namespace DataTables.GeneratorCore
  } 
             this.Write("\r\n        public override bool Deserialize(BinaryReader reader)\r\n        {\r\n");
  foreach(var item in GenerationContext.Properties) { 
-            this.Write("                    ");
+            this.Write("            ");
             this.Write(this.ToStringHelper.ToStringWithCulture(GetDeserializeMethodString(item)));
             this.Write("\r\n");
  } 

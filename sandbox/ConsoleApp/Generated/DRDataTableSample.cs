@@ -54,12 +54,37 @@ namespace ConsoleApp
 
         public override bool Deserialize(BinaryReader reader)
         {
-                    Id = reader.Read7BitEncodedInt32();
-                    Int16Value = reader.ReadInt16();
-                    Int64Value = reader.Read7BitEncodedInt64();
-                    UInt64Value = reader.Read7BitEncodedUInt64();
-                    Name = reader.ReadString();
-                    BoolValue = reader.ReadBoolean();
+            Id = reader.Read7BitEncodedInt32();
+            Int16Value = reader.ReadInt16();
+            Int64Value = reader.Read7BitEncodedInt64();
+            UInt64Value = reader.Read7BitEncodedUInt64();
+            Name = reader.ReadString();
+            BoolValue = reader.ReadBoolean();
+            {
+                ColorT __enumVal = default;
+                var __enumStr = reader.ReadString();
+                if (!string.IsNullOrEmpty(__enumStr) && !Enum.TryParse(__enumStr, out __enumVal))
+                {
+                    throw new ArgumentException();
+                }
+                Color = __enumVal;
+            }
+            {
+                var __ArrayValue_Count1 = reader.Read7BitEncodedInt32();
+                ArrayValue = new int[__ArrayValue_Count1];
+                for (int x1 = 0; x1 < __ArrayValue_Count1; x1++)
+                {
+                    int key1;
+                    key1 = reader.Read7BitEncodedInt32();
+                    ArrayValue[x1] = key1;
+                }
+            }
+            {
+                MapEnumToInt = new Dictionary<ColorT, int>();
+                var __MapEnumToInt_Count1 = reader.Read7BitEncodedInt32();
+                for (int x1 = 0; x1 < __MapEnumToInt_Count1; x1++)
+                {
+                    ColorT key1;
                     {
                         ColorT __enumVal = default;
                         var __enumStr = reader.ReadString();
@@ -67,56 +92,31 @@ namespace ConsoleApp
                         {
                             throw new ArgumentException();
                         }
-                        Color = __enumVal;
+                        key1 = __enumVal;
                     }
+                    int value1;
+                    value1 = reader.Read7BitEncodedInt32();
+                    MapEnumToInt.Add(key1, value1);
+                }
+            }
+            {
+                var __EnumArray_Count1 = reader.Read7BitEncodedInt32();
+                EnumArray = new ColorT[__EnumArray_Count1];
+                for (int x1 = 0; x1 < __EnumArray_Count1; x1++)
+                {
+                    ColorT key1;
                     {
-                        var __ArrayValue_Count1 = reader.Read7BitEncodedInt32();
-                        ArrayValue = new int[__ArrayValue_Count1];
-                        for (int x1 = 0; x1 < __ArrayValue_Count1; x1++)
+                        ColorT __enumVal = default;
+                        var __enumStr = reader.ReadString();
+                        if (!string.IsNullOrEmpty(__enumStr) && !Enum.TryParse(__enumStr, out __enumVal))
                         {
-                            int key1;
-                            key1 = reader.Read7BitEncodedInt32();
-                            ArrayValue[x1] = key1;
+                            throw new ArgumentException();
                         }
+                        key1 = __enumVal;
                     }
-                    {
-                        MapEnumToInt = new Dictionary<ColorT, int>();
-                        var __MapEnumToInt_Count1 = reader.Read7BitEncodedInt32();
-                        for (int x1 = 0; x1 < __MapEnumToInt_Count1; x1++)
-                        {
-                            ColorT key1;
-                            {
-                                ColorT __enumVal = default;
-                                var __enumStr = reader.ReadString();
-                                if (!string.IsNullOrEmpty(__enumStr) && !Enum.TryParse(__enumStr, out __enumVal))
-                                {
-                                    throw new ArgumentException();
-                                }
-                                key1 = __enumVal;
-                            }
-                            int value1;
-                            value1 = reader.Read7BitEncodedInt32();
-                            MapEnumToInt.Add(key1, value1);
-                        }
-                    }
-                    {
-                        var __EnumArray_Count1 = reader.Read7BitEncodedInt32();
-                        EnumArray = new ColorT[__EnumArray_Count1];
-                        for (int x1 = 0; x1 < __EnumArray_Count1; x1++)
-                        {
-                            ColorT key1;
-                            {
-                                ColorT __enumVal = default;
-                                var __enumStr = reader.ReadString();
-                                if (!string.IsNullOrEmpty(__enumStr) && !Enum.TryParse(__enumStr, out __enumVal))
-                                {
-                                    throw new ArgumentException();
-                                }
-                                key1 = __enumVal;
-                            }
-                            EnumArray[x1] = key1;
-                        }
-                    }
+                    EnumArray[x1] = key1;
+                }
+            }
             return true;
         }
     }

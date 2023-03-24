@@ -54,7 +54,7 @@ namespace <#= Namespace #>
         public override bool Deserialize(BinaryReader reader)
         {
 <# foreach(var item in GenerationContext.Properties) { #>
-                    <#= GetDeserializeMethodString(item) #>
+            <#= GetDeserializeMethodString(item) #>
 <# } #>
             return true;
         }

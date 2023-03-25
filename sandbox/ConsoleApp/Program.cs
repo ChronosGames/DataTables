@@ -74,7 +74,7 @@ namespace ConsoleApp
             var raw = File.ReadAllBytes("Generated\\DRDataTableSample.bytes");
             var card = manager.CreateDataTable<DTDataTableSample>(raw, 0, raw.Length);
             Debug.Assert(manager.HasDataTable<DTDataTableSample>(), "º”‘ÿ≈‰÷√±Ì ß∞‹");
-            Debug.Assert(card.GetDataRow(1) != null, "º”‘ÿ≈‰÷√±Ì ß∞‹1");
+            Debug.Assert(card.GetDataRowById(1) != null, "º”‘ÿ≈‰÷√±Ì ß∞‹1");
         }
 
     }

@@ -37,6 +37,11 @@ namespace DataTables.GeneratorCore
         /// <summary>字段索引列表</summary>
         public List<string[]> Indexs { get; set; }
 
+        /// <summary>
+        /// 列分组索引列表
+        /// </summary>
+        public List<string[]> Groups { get; set; }
+
         public Property GetField(string field)
         {
             return Properties.FirstOrDefault(x => x.Name == field);
@@ -82,6 +87,32 @@ namespace DataTables.GeneratorCore
 
             sb.Append(RealClassName);
             sb.Append('>');
+
+            return sb.ToString();
+        }
+
+        public string BuildGroupDictDefine(string[] fields)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            if (fields.Length > 1)
+            {
+                sb.Append("MultiDictionary<");
+            }
+            else
+            {
+                sb.Append("Dictionary<");
+            }
+
+            foreach (var fieldName in fields)
+            {
+                sb.Append(GetField(fieldName).TypeName);
+                sb.Append(", ");
+            }
+
+            sb.Append("List<");
+            sb.Append(RealClassName);
+            sb.Append(">>");
 
             return sb.ToString();
         }

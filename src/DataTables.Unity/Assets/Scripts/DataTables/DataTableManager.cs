@@ -84,7 +84,7 @@ namespace DataTables
         /// <summary>
         /// 获取数据表。
         /// </summary>
-        /// <param name="dataTableType">数据表行的类型。</param>
+        /// <param name="dataTableType">数据表的类型。</param>
         /// <returns>要获取的数据表。</returns>
         public DataTableBase GetDataTable(Type dataTableType)
         {

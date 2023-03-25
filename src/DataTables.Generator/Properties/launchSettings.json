@@ -1,8 +1,8 @@
 {
   "profiles": {
     "DataTables.Generator": {
-      "commandName": "Project",
-      "commandLineArgs": "-i \"E:\\Projects\\GitHub\\DataTables\\sandbox\\ConsoleApp\" -co \"E:\\Projects\\GitHub\\DataTables\\sandbox\\ConsoleApp\\Generated\" -do \"E:\\Projects\\GitHub\\DataTables\\sandbox\\ConsoleApp\\Generated\" -n ConsoleApp -t C -f true -p DR"
+        "commandName": "Project",
+        "commandLineArgs": "-i \"$(SolutionDir)sandbox\\ConsoleApp\" -co \"$(SolutionDir)sandbox\\ConsoleApp\\Generated\" -do \"$(SolutionDir)sandbox\\ConsoleApp\\Generated\" -n ConsoleApp -t C -f true -p DR"
     }
   }
 }

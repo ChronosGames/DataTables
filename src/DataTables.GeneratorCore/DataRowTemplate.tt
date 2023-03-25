@@ -16,21 +16,36 @@ namespace <#= Namespace #>
     public sealed class DT<#= GenerationContext.ClassName #> : DataTable<<#= GenerationContext.RealClassName #>>
     {
 <#
-        for (var i = 0; i < GenerationContext.Indexs.Count; i++)
-        {
-            var item = GenerationContext.Indexs[i];
+    for (var i = 0; i < GenerationContext.Indexs.Count; i++)
+    {
+        var item = GenerationContext.Indexs[i];
 #>
         private <#= GenerationContext.GetIndexDictDefine(item) #> m_Dict<#= i + 1 #> = new <#= GenerationContext.GetIndexDictDefine(item) #>();
-<#      }
-        for (var i = 0; i < GenerationContext.Indexs.Count; i++)
-        {
-            var item = GenerationContext.Indexs[i];
+<#  }
+    for (var j = 0; j < GenerationContext.Groups.Count; j++)
+    {
+        var fieldNames = GenerationContext.Groups[j];
+#>
+        private <#= GenerationContext.BuildGroupDictDefine(fieldNames) #> m_Dict<#= GenerationContext.Indexs.Count + 1 + j #> = new <#= GenerationContext.BuildGroupDictDefine(fieldNames) #>();
+<#  }
+    for (var i = 0; i < GenerationContext.Indexs.Count; i++)
+    {
+        var item = GenerationContext.Indexs[i];
 #>
         public <#= GenerationContext.RealClassName #> GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.GetIndexsMethodDefine(item) #>)
         {
             return m_Dict<#= i + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result) ? result : null;
         }
-<# } #>
+<#  }
+    for (var j = 0; j < GenerationContext.Groups.Count; j++)
+    {
+        var item = GenerationContext.Groups[j];
+#>
+        public List<<#= GenerationContext.RealClassName #>> GetDataRowGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.GetIndexsMethodDefine(item) #>)
+        {
+            return m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result) ? result : null;
+        }
+<#  } #>
         protected override void InternalAddDataRow(<#= GenerationContext.RealClassName #> dataRow)
         {
             base.InternalAddDataRow(dataRow);
@@ -39,6 +54,21 @@ namespace <#= Namespace #>
         var item = GenerationContext.Indexs[i];
 #>
             m_Dict<#= i+1 #>.Add(dataRow.<#= string.Join(", dataRow.", item) #>, dataRow);
+<#  }
+    for (var i = 0; i < GenerationContext.Groups.Count; i++)
+    {
+        var item = GenerationContext.Groups[i];
+#>
+            if (m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.TryGetValue(dataRow.<#= string.Join(", dataRow.", item) #>, out var arr))
+            {
+                arr.Add(dataRow);
+            }
+            else
+            {
+                arr = new List<<#= GenerationContext.RealClassName #>>();
+                arr.Add(dataRow);
+                m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.Add(dataRow.<#= string.Join(", dataRow.", item) #>, arr);
+            }
 <#  } #>
         }
     }

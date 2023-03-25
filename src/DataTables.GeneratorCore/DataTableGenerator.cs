@@ -133,6 +133,7 @@ namespace DataTables.GeneratorCore
                                 InputFilePath = filePath,
                                 SheetName = tableReader.Name,
                                 Indexs = new List<string[]>(),
+                                Groups = new List<string[]>(),
                             };
 
                             contexts.Add(tableReader.Name, context);
@@ -320,6 +321,9 @@ namespace DataTables.GeneratorCore
                             break;
                         case "Index":
                             context.Indexs.Add(properties[1].Split('&'));
+                            break;
+                        case "Group":
+                            context.Groups.Add(properties[1].Split('&'));
                             break;
                     }
                 }

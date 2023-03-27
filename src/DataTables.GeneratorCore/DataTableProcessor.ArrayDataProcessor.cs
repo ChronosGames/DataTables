@@ -39,6 +39,12 @@ namespace DataTables.GeneratorCore
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)
             {
+                // 默认为空时自动补齐为空数组
+                if (string.IsNullOrEmpty(value) || value == "0")
+                {
+                    value = "[]";
+                }
+
                 var arr = JsonConvert.DeserializeObject<ArrayList>(value);
 
                 binaryWriter.Write7BitEncodedInt32(arr.Count);

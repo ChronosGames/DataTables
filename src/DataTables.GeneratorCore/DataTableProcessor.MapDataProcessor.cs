@@ -41,6 +41,12 @@ namespace DataTables.GeneratorCore
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)
             {
+                // 空的单元格时，自动补齐为空字母
+                if (string.IsNullOrEmpty(value))
+                {
+                    value = "{}";
+                }
+
                 var dict = JsonConvert.DeserializeObject<Hashtable>(value);
 
                 binaryWriter.Write7BitEncodedInt32(dict.Count);

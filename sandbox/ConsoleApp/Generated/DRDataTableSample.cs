@@ -21,7 +21,7 @@ namespace ConsoleApp
         {
             return m_Dict2.TryGetValue(Id, Int16Value, out var result) ? result : null;
         }
-        public List<DRDataTableSample> GetDataRowGroupByNameAndBoolValue(string Name, bool BoolValue)
+        public List<DRDataTableSample> GetDataRowsGroupByNameAndBoolValue(string Name, bool BoolValue)
         {
             return m_Dict3.TryGetValue(Name, BoolValue, out var result) ? result : null;
         }

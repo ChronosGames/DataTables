@@ -12,7 +12,7 @@ namespace DataTables.MSBuild.Tasks
         public string CodeOutputDirectory { get; set; }
         [Required]
         public string DataOutputDirectory { get; set; }
-        [Required]
+
         public string UsingNamespace { get; set; }
 
         public string PrefixClassName { get; set; }

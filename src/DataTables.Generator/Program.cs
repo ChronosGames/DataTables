@@ -20,7 +20,7 @@ namespace DataTables.Generator
             [Option("i", "Input file directory(search recursive).")]string inputDirectory,
             [Option("co", "Code output file directory.")]string codeOutputDir,
             [Option("do", "Data output file directory.")]string dataOutputDir,
-            [Option("n", "Namespace of generated files.")]string usingNamespace,
+            [Option("n", "Namespace of generated files.")]string usingNamespace = "",
             [Option("p", "Prefix of class names.")]string prefixClassName = "",
             [Option("t", "Tags of filter columns.")]string filterColumnTags = "",
             [Option("f", "Overwrite generated files if the content is unchanged.")]bool forceOverwrite = false)

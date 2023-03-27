@@ -11,8 +11,10 @@ using System.IO;
 using System.Collections.Generic;
 using DataTables;
 
+<# if (!string.IsNullOrEmpty(Namespace)) { #>
 namespace <#= Namespace #>
 {
+<# } #>
     public sealed class DT<#= GenerationContext.ClassName #> : DataTable<<#= GenerationContext.RealClassName #>>
     {
 <#
@@ -89,4 +91,7 @@ namespace <#= Namespace #>
             return true;
         }
     }
+    
+<# if (!string.IsNullOrEmpty(Namespace)) { #>
 }
+<# } #>

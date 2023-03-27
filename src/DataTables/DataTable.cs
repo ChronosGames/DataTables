@@ -53,6 +53,13 @@ namespace DataTables
         }
 
         /// <summary>
+        /// 获取第几行的数据表行。
+        /// </summary>
+        /// <param name="key">指定的行数，必须在[0, Count)范围内</param>
+        /// <returns></returns>
+        public T this[int key] => m_DataSet[key];
+
+        /// <summary>
         /// 检查是否存在数据表行。
         /// </summary>
         /// <param name="condition">要检查的条件。</param>

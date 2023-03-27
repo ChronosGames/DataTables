@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace DataTables
@@ -110,16 +111,7 @@ namespace DataTables
                 throw new Exception("Condition is invalid.");
             }
 
-            List<T> results = new List<T>();
-            foreach (var dataRow in m_DataSet)
-            {
-                if (condition(dataRow))
-                {
-                    results.Add(dataRow);
-                }
-            }
-
-            return results.ToArray();
+            return m_DataSet.Where(x => condition(x)).ToArray();
         }
 
         /// <summary>
@@ -161,12 +153,7 @@ namespace DataTables
                 throw new Exception("Comparison is invalid.");
             }
 
-            List<T> results = new List<T>();
-            foreach (var dataRow in m_DataSet)
-            {
-                results.Add(dataRow);
-            }
-
+            List<T> results = new List<T>(m_DataSet);
             results.Sort(comparison);
             return results.ToArray();
         }
@@ -189,11 +176,7 @@ namespace DataTables
             }
 
             results.Clear();
-            foreach (var dataRow in m_DataSet)
-            {
-                results.Add(dataRow);
-            }
-
+            results.AddRange(m_DataSet);
             results.Sort(comparison);
         }
 
@@ -215,17 +198,9 @@ namespace DataTables
                 throw new Exception("Comparison is invalid.");
             }
 
-            List<T> results = new List<T>();
-            foreach (var dataRow in m_DataSet)
-            {
-                if (condition(dataRow))
-                {
-                    results.Add(dataRow);
-                }
-            }
-
-            results.Sort(comparison);
-            return results.ToArray();
+            var results = m_DataSet.Where(x => condition(x)).ToArray();
+            Array.Sort(results, comparison);
+            return results;
         }
 
         /// <summary>
@@ -252,13 +227,7 @@ namespace DataTables
             }
 
             results.Clear();
-            foreach (var dataRow in m_DataSet)
-            {
-                if (condition(dataRow))
-                {
-                    results.Add(dataRow);
-                }
-            }
+            results.AddRange(m_DataSet.Where(x => condition(x)));
 
             results.Sort(comparison);
         }
@@ -269,14 +238,7 @@ namespace DataTables
         /// <returns>所有数据表行。</returns>
         public T[] GetAllDataRows()
         {
-            int index = 0;
-            T[] results = new T[m_DataSet.Count];
-            foreach (var dataRow in m_DataSet)
-            {
-                results[index++] = dataRow;
-            }
-
-            return results;
+            return m_DataSet.ToArray();
         }
 
         /// <summary>
@@ -291,10 +253,7 @@ namespace DataTables
             }
 
             results.Clear();
-            foreach (var dataRow in m_DataSet)
-            {
-                results.Add(dataRow);
-            }
+            results.AddRange(m_DataSet);
         }
 
         /// <summary>

@@ -159,16 +159,23 @@ namespace DataTables.GeneratorCore
 
                                 // F.ex skip the first row and use the 2nd row as column headers:
                                 //rowReader.Read();
-                                if (ParseSheetInfoRow(context, rowReader))
+                                try
                                 {
-                                    rowReader.Read();
-                                    ParseFieldCommentRow(context, rowReader, filterColumnTags);
+                                    if (ParseSheetInfoRow(context, rowReader))
+                                    {
+                                        rowReader.Read();
+                                        ParseFieldCommentRow(context, rowReader, filterColumnTags);
 
-                                    rowReader.Read();
-                                    ParseFieldNameRow(context, rowReader);
+                                        rowReader.Read();
+                                        ParseFieldNameRow(context, rowReader);
 
-                                    rowReader.Read();
-                                    ParseFieldTypeRow(context, rowReader);
+                                        rowReader.Read();
+                                        ParseFieldTypeRow(context, rowReader);
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    throw new Exception($"Parse {filePath}'s '{rowReader.Name}' exception.", e);
                                 }
                             },
 
@@ -228,7 +235,14 @@ namespace DataTables.GeneratorCore
                         }
 
                         // 解析数据
-                        ParseDataSet(context, result.Tables[pair.Key]);
+                        try
+                        {
+                            ParseDataSet(context, result.Tables[pair.Key]);
+                        }
+                        catch (Exception e)
+                        {
+                            throw new Exception($"Parse {filePath}'s {pair.Value.SheetName} exception.", e);
+                        }
 
                         yield return context;
                     }
@@ -347,6 +361,12 @@ namespace DataTables.GeneratorCore
             
             for (int i = 0; i < reader.FieldCount; i++)
             {
+                // 修正列名行文本为空时解析报错
+                if (reader.GetValue(i) == null)
+                {
+                    continue;
+                }
+
                 var text = reader.GetString(i).Trim();
                 if (text.StartsWith("#", StringComparison.Ordinal))
                 {

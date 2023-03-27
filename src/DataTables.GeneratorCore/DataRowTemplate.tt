@@ -43,7 +43,7 @@ namespace <#= Namespace #>
     {
         var item = GenerationContext.Groups[j];
 #>
-        public List<<#= GenerationContext.RealClassName #>> GetDataRowGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.GetIndexsMethodDefine(item) #>)
+        public List<<#= GenerationContext.RealClassName #>> GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.GetIndexsMethodDefine(item) #>)
         {
             return m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result) ? result : null;
         }

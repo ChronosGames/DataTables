@@ -43,7 +43,10 @@ namespace DataTables.GeneratorCore
                 throw new InvalidOperationException("Path must be directory but it is csproj. inputDirectory:" + inputDirectory);
             }
 
-            foreach (var item in Directory.GetFiles(inputDirectory, "*.xlsx", SearchOption.AllDirectories))
+            var files = Directory.EnumerateFiles(inputDirectory, "*.*", SearchOption.AllDirectories)
+                        .Where(s => s.EndsWith(".xlsx") || s.EndsWith(".xlsb") || s.EndsWith(".xls") || s.EndsWith(".csv"));
+
+            foreach (var item in files)
             {
                 list.AddRange(CreateGenerationContext(item, filterColumnTags, logger));
             }

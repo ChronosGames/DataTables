@@ -49,8 +49,7 @@ namespace DataTables.GeneratorCore
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine($"{rawRow}, {rawColumn}");
-                            throw e;
+                            throw new Exception($"解析单元格内容时出错: Row={rawRow}, Col={rawColumn}", e);
                         }
                     }
 

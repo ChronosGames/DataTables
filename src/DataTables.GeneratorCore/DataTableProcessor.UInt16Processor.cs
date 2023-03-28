@@ -5,7 +5,9 @@
 
 
 
+using System;
 using System.IO;
+using Newtonsoft.Json;
 
 namespace DataTables.GeneratorCore
 {
@@ -41,7 +43,13 @@ namespace DataTables.GeneratorCore
 
             public override ushort Parse(string value)
             {
-                return string.IsNullOrEmpty(value) ? default : ushort.Parse(value);
+                if (string.IsNullOrEmpty(value))
+                {
+                    return 0;
+                }
+
+                object v = JsonConvert.DeserializeObject(value);
+                return Convert.ToUInt16(v);
             }
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)

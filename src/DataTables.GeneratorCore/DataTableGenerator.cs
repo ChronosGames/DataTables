@@ -15,13 +15,27 @@ namespace DataTables.GeneratorCore
         private const int HeadRowCount = 4;
         private static readonly Regex NameRegex = new Regex(@"^[A-Za-z][A-Za-z0-9_]*$");
 
-        public void GenerateFile(string inputDirectory, string codeOutputDir, string dataOutputDir, string usingNamespace, string prefixClassName, string filterColumnTags, bool forceOverwrite, Action<string> logger)
+        public void GenerateFile(string inputDirectory, string codeOutputDir, string dataOutputDir, string usingNamespace, string prefixClassName, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger)
         {
             // By default, ExcelDataReader throws a NotSupportedException "No data is available for encoding 1252." on .NET Core.
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
             prefixClassName ??= "";
             var list = new List<GenerationContext>();
+
+            // 拼接Import的命名空间
+            string[] usingStrings = string.IsNullOrEmpty(importNamespaces) ? Array.Empty<string>() : importNamespaces.Split('&');
+            if (usingStrings.Length == 0)
+            { 
+            }
+            else if (usingStrings.Length == 1 && string.IsNullOrEmpty(usingStrings[0]))
+            {
+                usingStrings = Array.Empty<string>();
+            }
+            else
+            {
+                usingStrings = usingStrings.Select(x => "using " + x + ';').ToArray();
+            }
 
             // Collect
             if (inputDirectory.EndsWith(".csproj"))
@@ -56,6 +70,7 @@ namespace DataTables.GeneratorCore
                 // 全局属性赋值
                 context.Namespace = usingNamespace;
                 context.PrefixClassName = prefixClassName;
+                context.UsingStrings = usingStrings;
 
                 // 判断是否存在配置表变更（以修改时间为准），若不存在则直接跳过
                 if (!forceOverwrite)

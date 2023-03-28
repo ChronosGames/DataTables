@@ -58,7 +58,7 @@ namespace DataTables.GeneratorCore
             {
                 return "{\n"
                      + $"{Tabs(depth + 1)}var __{propertyName}_Count{depth + 1} = reader.Read7BitEncodedInt32();\n"
-                     + $"{Tabs(depth + 1)}{propertyName} = new {LanguageKeyword.Substring(0, LanguageKeyword.Length - 2)}[__{propertyName}_Count{depth + 1}];\n"
+                     + $"{Tabs(depth + 1)}{propertyName} = new {BuildArrayInitString(LanguageKeyword, $"__{propertyName}_Count{depth + 1}")};\n"
                      + $"{Tabs(depth + 1)}for (int x{depth + 1} = 0; x{depth + 1} < __{propertyName}_Count{depth + 1}; x{depth + 1}++)\n"
                      + $"{Tabs(depth + 1)}{{\n"
                      + $"{Tabs(depth + 2)}{DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).LanguageKeyword} key{depth + 1};\n"
@@ -66,6 +66,35 @@ namespace DataTables.GeneratorCore
                      + $"{Tabs(depth + 2)}{propertyName}[x{depth + 1}] = key{depth + 1};\n"
                      + $"{Tabs(depth + 1)}}}\n"
                      + $"{Tabs(depth)}}}";
+            }
+
+            /// <summary>
+            /// 获取数组后缀
+            /// </summary>
+            /// <param name="text"></param>
+            /// <returns></returns>
+            private int GetIndexOfFirstArrayLabelPairSuffix(string text)
+            {
+                int index = -1;
+
+                for (int i = text.Length - 2; i >= 0; i -= 2)
+                {
+                    if (text[i] == '[' && text[i + 1] == ']')
+                    {
+                        index = i;
+                        continue;
+                    }
+
+                    break;
+                }
+
+                return index;
+            }
+
+            private string BuildArrayInitString(string text, string propertyName)
+            {
+                int index = GetIndexOfFirstArrayLabelPairSuffix(text);
+                return text.Substring(0, index + 1) + propertyName + text.Substring(index + 1);
             }
         }
     }

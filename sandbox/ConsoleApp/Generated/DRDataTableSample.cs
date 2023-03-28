@@ -62,6 +62,10 @@ namespace ConsoleApp
         public ColorT Color { get; private set; }
         /// <summary>数组</summary>
         public int[] ArrayValue { get; private set; }
+        /// <summary>二维数组</summary>
+        public int[][] Array2DValue { get; private set; }
+        /// <summary>三维数组</summary>
+        public int[][][] Array3DValue { get; private set; }
         /// <summary>枚举与整形的字典</summary>
         public Dictionary<ColorT, int> MapEnumToInt { get; private set; }
         /// <summary>枚举数组</summary>
@@ -92,6 +96,53 @@ namespace ConsoleApp
                     int key1;
                     key1 = reader.Read7BitEncodedInt32();
                     ArrayValue[x1] = key1;
+                }
+            }
+            {
+                var __Array2DValue_Count1 = reader.Read7BitEncodedInt32();
+                Array2DValue = new int[__Array2DValue_Count1][];
+                for (int x1 = 0; x1 < __Array2DValue_Count1; x1++)
+                {
+                    int[] key1;
+                    {
+                        var __key1_Count3 = reader.Read7BitEncodedInt32();
+                        key1 = new int[__key1_Count3];
+                        for (int x3 = 0; x3 < __key1_Count3; x3++)
+                        {
+                            int key3;
+                            key3 = reader.Read7BitEncodedInt32();
+                            key1[x3] = key3;
+                        }
+                    }
+                    Array2DValue[x1] = key1;
+                }
+            }
+            {
+                var __Array3DValue_Count1 = reader.Read7BitEncodedInt32();
+                Array3DValue = new int[__Array3DValue_Count1][][];
+                for (int x1 = 0; x1 < __Array3DValue_Count1; x1++)
+                {
+                    int[][] key1;
+                    {
+                        var __key1_Count3 = reader.Read7BitEncodedInt32();
+                        key1 = new int[__key1_Count3][];
+                        for (int x3 = 0; x3 < __key1_Count3; x3++)
+                        {
+                            int[] key3;
+                            {
+                                var __key3_Count5 = reader.Read7BitEncodedInt32();
+                                key3 = new int[__key3_Count5];
+                                for (int x5 = 0; x5 < __key3_Count5; x5++)
+                                {
+                                    int key5;
+                                    key5 = reader.Read7BitEncodedInt32();
+                                    key3[x5] = key5;
+                                }
+                            }
+                            key1[x3] = key3;
+                        }
+                    }
+                    Array3DValue[x1] = key1;
                 }
             }
             {

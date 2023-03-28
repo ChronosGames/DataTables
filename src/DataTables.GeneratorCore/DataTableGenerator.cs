@@ -340,30 +340,30 @@ namespace DataTables.GeneratorCore
                 var properties = pair.Split('=');
                 if (properties.Length == 2)
                 {
-                    switch (properties[0])
+                    switch (properties[0].Trim().ToLower())
                     {
-                        case "Title":
-                            context.Title = properties[1];
+                        case "title":
+                            context.Title = properties[1].Trim();
                             break;
-                        case "Class":
-                            context.ClassName = properties[1];
+                        case "class":
+                            context.ClassName = properties[1].Trim();
                             break;
-                        case "EnableTagsFilter":
-                            context.EnableTagsFilter = bool.Parse(properties[1]);
+                        case "enabletagsfilter":
+                            context.EnableTagsFilter = bool.Parse(properties[1].Trim());
                             break;
-                        case "Index":
-                            context.Indexs.Add(properties[1].Split('&'));
+                        case "index":
+                            context.Indexs.Add(properties[1].Trim().Split('&'));
                             break;
-                        case "Group":
-                            context.Groups.Add(properties[1].Split('&'));
+                        case "group":
+                            context.Groups.Add(properties[1].Trim().Split('&'));
                             break;
                     }
                 }
                 else if (properties.Length == 1)
                 {
-                    switch (properties[0])
+                    switch (properties[0].Trim().ToLower())
                     {
-                        case "EnableTagsFilter":
+                        case "enabletagsfilter":
                             context.EnableTagsFilter = true;
                             break;
                     }

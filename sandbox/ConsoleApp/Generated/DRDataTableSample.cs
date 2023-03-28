@@ -25,9 +25,11 @@ namespace ConsoleApp
         {
             return m_Dict3.TryGetValue(Name, BoolValue, out var result) ? result : null;
         }
-        protected override void InternalAddDataRow(DRDataTableSample dataRow)
+
+        protected override void InternalAddDataRow(int index, DRDataTableSample dataRow)
         {
-            base.InternalAddDataRow(dataRow);
+            base.InternalAddDataRow(index, dataRow);
+
             m_Dict1.Add(dataRow.Id, dataRow);
             m_Dict2.Add(dataRow.Id, dataRow.Int16Value, dataRow);
             if (m_Dict3.TryGetValue(dataRow.Name, dataRow.BoolValue, out var arr))

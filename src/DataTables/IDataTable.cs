@@ -110,13 +110,6 @@ namespace DataTables
         void GetAllDataRows(List<T> results);
 
         /// <summary>
-        /// 增加数据表行。
-        /// </summary>
-        /// <param name="reader">要解析的数据表行二进制流。</param>
-        /// <returns>是否增加数据表行成功。</returns>
-        bool AddDataRow(BinaryReader reader);
-
-        /// <summary>
         /// 清空所有数据表行。
         /// </summary>
         void RemoveAllDataRows();

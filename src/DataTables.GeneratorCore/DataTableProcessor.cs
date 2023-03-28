@@ -14,10 +14,13 @@ namespace DataTables.GeneratorCore
                 {
                     using (BinaryWriter binaryWriter = new BinaryWriter(fileStream, Encoding.UTF8))
                     {
+                        // 写入行数
+                        binaryWriter.Write7BitEncodedInt32(context.RowCount);
+
                         for (int i = 0; i < context.RowCount; i++)
                         {
                             byte[] bytes = GetRowBytes(context, i);
-                            binaryWriter.Write7BitEncodedInt32(bytes.Length);
+                            //binaryWriter.Write7BitEncodedInt32(bytes.Length);
                             binaryWriter.Write(bytes);
                         }
                     }

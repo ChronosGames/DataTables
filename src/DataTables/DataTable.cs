@@ -3,13 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace DataTables
 {
     public abstract class DataTable<T> : DataTableBase, IDataTable<T> where T : class, IDataRow, new()
     {
-        private readonly List<T> m_DataSet;
+        private T[] m_DataSet;
 
         /// <summary>
         /// 初始化数据表的新实例。
@@ -17,7 +16,7 @@ namespace DataTables
         public DataTable()
             : base(string.Empty)
         {
-            m_DataSet = new List<T>();
+            m_DataSet = Array.Empty<T>();
         }
 
         /// <summary>
@@ -27,7 +26,7 @@ namespace DataTables
         public DataTable(string name)
             : base(name)
         {
-            m_DataSet = new List<T>();
+            m_DataSet = Array.Empty<T>();
         }
 
         /// <summary>
@@ -48,7 +47,7 @@ namespace DataTables
         {
             get
             {
-                return m_DataSet.Count;
+                return m_DataSet.Length;
             }
         }
 
@@ -245,7 +244,7 @@ namespace DataTables
         /// <returns>所有数据表行。</returns>
         public T[] GetAllDataRows()
         {
-            return m_DataSet.ToArray();
+            return m_DataSet;
         }
 
         /// <summary>
@@ -263,12 +262,18 @@ namespace DataTables
             results.AddRange(m_DataSet);
         }
 
+        internal override void InitDataSet(int capacity)
+        {
+            m_DataSet = new T[capacity];
+        }
+
         /// <summary>
         /// 增加数据表行。
         /// </summary>
+        /// <param name="index">将要设置的数据表所在行索引。</param>
         /// <param name="binaryReader">要解析的数据表行二进制流。</param>
         /// <returns>是否增加数据表行成功。</returns>
-        public override bool AddDataRow(BinaryReader binaryReader)
+        internal override bool SetDataRow(int index, BinaryReader binaryReader)
         {
             try
             {
@@ -278,7 +283,7 @@ namespace DataTables
                     return false;
                 }
 
-                InternalAddDataRow(dataRow);
+                InternalAddDataRow(index, dataRow);
                 return true;
             }
             catch (Exception exception)
@@ -297,7 +302,7 @@ namespace DataTables
         /// </summary>
         public override void RemoveAllDataRows()
         {
-            m_DataSet.Clear();
+            m_DataSet = Array.Empty<T>();
         }
 
         /// <summary>
@@ -306,7 +311,7 @@ namespace DataTables
         /// <returns>循环访问集合的枚举数。</returns>
         public IEnumerator<T> GetEnumerator()
         {
-            return m_DataSet.GetEnumerator();
+            return ((IEnumerable<T>)m_DataSet).GetEnumerator();
         }
 
         /// <summary>
@@ -323,17 +328,12 @@ namespace DataTables
         /// </summary>
         internal override void Shutdown()
         {
-            m_DataSet.Clear();
+            m_DataSet = null;
         }
 
-        protected virtual void InternalAddDataRow(T dataRow)
+        protected virtual void InternalAddDataRow(int index, T dataRow)
         {
-            //if (m_DataSet.Contains(dataRow))
-            //{
-            //    throw new Exception(string.Format("Already exist in data table '{0}'.", new TypeNamePair(typeof(T), Name)));
-            //}
-
-            m_DataSet.Add(dataRow);
+            m_DataSet[index] = dataRow;
         }
     }
 }

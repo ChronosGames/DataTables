@@ -63,11 +63,18 @@ namespace DataTables
         }
 
         /// <summary>
+        /// 初始化数据集。
+        /// </summary>
+        /// <param name="capacity">将要初始化的数据值容量大小</param>
+        internal abstract void InitDataSet(int capacity);
+
+        /// <summary>
         /// 增加数据表行。
         /// </summary>
+        /// <param name="index">将要增加的数据表行的索引值。</param>
         /// <param name="binaryReader">要解析的数据表行二进制流。</param>
         /// <returns>是否增加数据表行成功。</returns>
-        public abstract bool AddDataRow(BinaryReader binaryReader);
+        internal abstract bool SetDataRow(int index, BinaryReader binaryReader);
 
         /// <summary>
         /// 清空所有数据表行。

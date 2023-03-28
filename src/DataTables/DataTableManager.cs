@@ -148,15 +148,14 @@ namespace DataTables
             {
                 using (var reader = new BinaryReader(ms, Encoding.UTF8))
                 {
-                    while (reader.BaseStream.Position < reader.BaseStream.Length)
+                    var rowCount = reader.Read7BitEncodedInt32();
+                    dataTable.InitDataSet(rowCount);
+                    for (int i = 0; i < rowCount; i++)
                     {
-                        int dataRowBytesLength = reader.Read7BitEncodedInt32();
-                        if (!dataTable.AddDataRow(reader))
+                        if (!dataTable.SetDataRow(i, reader))
                         {
                             return null;
                         }
-
-                        //reader.BaseStream.Position += dataRowBytesLength;
                     }
                 }
             }

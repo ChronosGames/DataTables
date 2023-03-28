@@ -48,9 +48,11 @@ namespace <#= Namespace #>
             return m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result) ? result : null;
         }
 <#  } #>
-        protected override void InternalAddDataRow(<#= GenerationContext.RealClassName #> dataRow)
+
+        protected override void InternalAddDataRow(int index, <#= GenerationContext.RealClassName #> dataRow)
         {
-            base.InternalAddDataRow(dataRow);
+            base.InternalAddDataRow(index, dataRow);
+
 <#  for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {
         var item = GenerationContext.Indexs[i];

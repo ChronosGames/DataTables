@@ -96,9 +96,9 @@ namespace DataTables.GeneratorCore
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", ", item)));
             this.Write(", out var result) ? result : null;\r\n        }\r\n");
   } 
-            this.Write("        protected override void InternalAddDataRow(");
+            this.Write("\r\n        protected override void InternalAddDataRow(int index, ");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
-            this.Write(" dataRow)\r\n        {\r\n            base.InternalAddDataRow(dataRow);\r\n");
+            this.Write(" dataRow)\r\n        {\r\n            base.InternalAddDataRow(index, dataRow);\r\n\r\n");
   for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {
         var item = GenerationContext.Indexs[i];

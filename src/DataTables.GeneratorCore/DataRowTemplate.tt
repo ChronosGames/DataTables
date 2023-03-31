@@ -15,7 +15,7 @@ using DataTables;
 namespace <#= Namespace #>
 {
 <# } #>
-    public sealed class DT<#= GenerationContext.ClassName #> : DataTable<<#= GenerationContext.RealClassName #>>
+    public sealed partial class DT<#= GenerationContext.ClassName #> : DataTable<<#= GenerationContext.RealClassName #>>
     {
 <#
     for (var i = 0; i < GenerationContext.Indexs.Count; i++)
@@ -78,7 +78,7 @@ namespace <#= Namespace #>
     }
 
     /// <summary><#= GenerationContext.Title #></summary>
-    public sealed class <#= GenerationContext.RealClassName #> : DataRowBase
+    public sealed partial class <#= GenerationContext.RealClassName #> : DataRowBase
     {
 <# foreach(var item in GenerationContext.Properties) { #>
         /// <summary><#= item.Comment #></summary>

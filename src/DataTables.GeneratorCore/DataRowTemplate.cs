@@ -34,7 +34,7 @@ namespace DataTables.GeneratorCore
             this.Write(this.ToStringHelper.ToStringWithCulture(Namespace));
             this.Write("\r\n{\r\n");
  } 
-            this.Write("    public sealed class DT");
+            this.Write("    public sealed partial class DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write(" : DataTable<");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
@@ -128,7 +128,7 @@ namespace DataTables.GeneratorCore
   } 
             this.Write("        }\r\n    }\r\n\r\n    /// <summary>");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.Title));
-            this.Write("</summary>\r\n    public sealed class ");
+            this.Write("</summary>\r\n    public sealed partial class ");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
             this.Write(" : DataRowBase\r\n    {\r\n");
  foreach(var item in GenerationContext.Properties) { 

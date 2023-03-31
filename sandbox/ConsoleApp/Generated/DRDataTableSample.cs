@@ -8,7 +8,7 @@ using DataTables;
 
 namespace ConsoleApp
 {
-    public sealed class DTDataTableSample : DataTable<DRDataTableSample>
+    public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     {
         private Dictionary<int, DRDataTableSample> m_Dict1 = new Dictionary<int, DRDataTableSample>();
         private MultiDictionary<int, short, DRDataTableSample> m_Dict2 = new MultiDictionary<int, short, DRDataTableSample>();
@@ -46,7 +46,7 @@ namespace ConsoleApp
     }
 
     /// <summary>示例表</summary>
-    public sealed class DRDataTableSample : DataRowBase
+    public sealed partial class DRDataTableSample : DataRowBase
     {
         /// <summary>整数</summary>
         public int Id { get; private set; }

@@ -86,13 +86,13 @@ namespace DataTables.GeneratorCore
                         var targetFileInfo = new FileInfo(targetFilePath);
                         if (excelFileInfo.LastWriteTime < targetFileInfo.LastWriteTime)
                         {
-                            logger(string.Format("Generate Excel File: {0}, Sheet={1} (skiped)", context.InputFilePath, context.SheetName));
+                            logger(string.Format("Generate Excel File: [{0}]({1}) (skiped)", context.InputFilePath.Replace(inputDirectory, "").Trim('\\'), context.SheetName));
                             continue;
                         }
                     }
                 }
 
-                logger(string.Format("Generate Excel File: {0}, Sheet:{1}", context.InputFilePath, context.SheetName));
+                logger(string.Format("Generate Excel File: [{0}]({1})", context.InputFilePath.Replace(inputDirectory, "").Trim('\\'), context.SheetName));
 
                 // 生成代码文件
                 GenerateCodeFile(context, codeOutputDir, forceOverwrite, logger);

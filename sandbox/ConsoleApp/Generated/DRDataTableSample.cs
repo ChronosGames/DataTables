@@ -72,6 +72,8 @@ namespace ConsoleApp
         public Dictionary<ColorT, int> MapEnumToInt { get; private set; }
         /// <summary>枚举数组</summary>
         public ColorT[] EnumArray { get; private set; }
+        /// <summary>自定义类</summary>
+        public SampleParent CustomJSON { get; private set; }
 
         public override bool Deserialize(BinaryReader reader)
         {
@@ -184,6 +186,10 @@ namespace ConsoleApp
                     }
                     EnumArray[x1] = key1;
                 }
+            }
+            {
+                var __jsonStr = reader.ReadString();
+                CustomJSON = Utility.Json.ToObject<SampleParent>(__jsonStr);
             }
             return true;
         }

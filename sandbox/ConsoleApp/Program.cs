@@ -70,6 +70,7 @@ namespace ConsoleApp
         static void Main(string[] args)
         {
             var manager = new DataTableManager();
+            Utility.Json.SetJsonHelper(new JsonHelper());
 
             var raw = File.ReadAllBytes("Generated\\DRDataTableSample.bytes");
             var card = manager.CreateDataTable<DTDataTableSample>(raw, 0, raw.Length);

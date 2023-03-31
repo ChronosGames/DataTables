@@ -122,6 +122,24 @@ namespace DataTables.GeneratorCore
                         return abc;
                     }
                 }
+                else if (type.StartsWith("json", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    var str1 = FindGenericString(type);
+
+                    if (s_DataProcessors.TryGetValue($"json<{str1}>", out var abc))
+                    {
+                        return abc;
+                    }
+                    else
+                    {
+                        abc = new JSONProcessor(str1);
+                        foreach (var ts in abc.GetTypeStrings())
+                        {
+                            s_DataProcessors.Add(ts, abc);
+                        }
+                        return abc;
+                    }
+                }
 
                 throw new Exception(string.Format("Not supported data processor type '{0}'.", type));
             }

@@ -160,6 +160,9 @@ namespace DataTables
                 }
             }
 
+            // 触发加载完成事件
+            dataTable.OnLoadCompleted();
+
             m_DataTables.Add(dataTableType, dataTable);
             return dataTable;
         }

@@ -77,6 +77,12 @@ namespace DataTables
         internal abstract bool SetDataRow(int index, BinaryReader binaryReader);
 
         /// <summary>
+        /// 配置表加载完成
+        /// <para>可重载该方法以便自定义一些额外的操作</para>
+        /// </summary>
+        public virtual void OnLoadCompleted() { }
+
+        /// <summary>
         /// 清空所有数据表行。
         /// </summary>
         public abstract void RemoveAllDataRows();

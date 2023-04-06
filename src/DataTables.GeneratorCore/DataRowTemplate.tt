@@ -22,7 +22,7 @@ namespace <#= Namespace #>
     {
         var item = GenerationContext.Indexs[i];
 #>
-        private <#= GenerationContext.GetIndexDictDefine(item) #> m_Dict<#= i + 1 #> = new <#= GenerationContext.GetIndexDictDefine(item) #>();
+        private <#= GenerationContext.BuildIndexDictDefine(item) #> m_Dict<#= i + 1 #> = new <#= GenerationContext.BuildIndexDictDefine(item) #>();
 <#  }
     for (var j = 0; j < GenerationContext.Groups.Count; j++)
     {
@@ -34,7 +34,7 @@ namespace <#= Namespace #>
     {
         var item = GenerationContext.Indexs[i];
 #>
-        public <#= GenerationContext.RealClassName #> GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.GetIndexsMethodDefine(item) #>)
+        public <#= GenerationContext.RealClassName #> GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
         {
             return m_Dict<#= i + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result) ? result : null;
         }
@@ -43,7 +43,7 @@ namespace <#= Namespace #>
     {
         var item = GenerationContext.Groups[j];
 #>
-        public List<<#= GenerationContext.RealClassName #>> GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.GetIndexsMethodDefine(item) #>)
+        public List<<#= GenerationContext.RealClassName #>> GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
         {
             return m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result) ? result : null;
         }

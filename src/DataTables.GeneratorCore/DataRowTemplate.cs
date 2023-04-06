@@ -45,11 +45,11 @@ namespace DataTables.GeneratorCore
         var item = GenerationContext.Indexs[i];
 
             this.Write("        private ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.GetIndexDictDefine(item)));
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildIndexDictDefine(item)));
             this.Write(" m_Dict");
             this.Write(this.ToStringHelper.ToStringWithCulture(i + 1));
             this.Write(" = new ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.GetIndexDictDefine(item)));
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildIndexDictDefine(item)));
             this.Write("();\r\n");
   }
     for (var j = 0; j < GenerationContext.Groups.Count; j++)
@@ -73,7 +73,7 @@ namespace DataTables.GeneratorCore
             this.Write(" GetDataRowBy");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join("And", item)));
             this.Write("(");
-            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.GetIndexsMethodDefine(item)));
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildMethodParameters(item)));
             this.Write(")\r\n        {\r\n            return m_Dict");
             this.Write(this.ToStringHelper.ToStringWithCulture(i + 1));
             this.Write(".TryGetValue(");
@@ -89,7 +89,7 @@ namespace DataTables.GeneratorCore
             this.Write("> GetDataRowsGroupBy");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join("And", item)));
             this.Write("(");
-            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.GetIndexsMethodDefine(item)));
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildMethodParameters(item)));
             this.Write(")\r\n        {\r\n            return m_Dict");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.Indexs.Count + j + 1));
             this.Write(".TryGetValue(");

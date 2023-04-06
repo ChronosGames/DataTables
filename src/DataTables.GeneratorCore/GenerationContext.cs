@@ -48,25 +48,23 @@ namespace DataTables.GeneratorCore
         }
 
         /// <summary>
-        /// 拼接索引列表的函数参数定义
+        /// 拼接索引列表的函数形参定义
         /// </summary>
         /// <returns></returns>
-        public string GetIndexsMethodDefine(string[] fields)
+        public string BuildMethodParameters(string[] fields)
         {
             List<string> result = new List<string>();
-
-            TextInfo myTI = new CultureInfo("en-US", false).TextInfo;
 
             foreach (var fieldName in fields)
             {
                 var field = GetField(fieldName);
-                result.Add($"{field.TypeName} {fieldName}");
+                result.Add($"{DataTableProcessor.GetLanguageKeyword(field)} {fieldName}");
             }
 
             return string.Join(", ", result);
         }
 
-        public string GetIndexDictDefine(string[] fields)
+        public string BuildIndexDictDefine(string[] fields)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -81,7 +79,7 @@ namespace DataTables.GeneratorCore
 
             foreach (var fieldName in fields)
             {
-                sb.Append(GetField(fieldName).TypeName);
+                sb.Append(DataTableProcessor.GetLanguageKeyword(GetField(fieldName)));
                 sb.Append(", ");
             }
 
@@ -106,7 +104,7 @@ namespace DataTables.GeneratorCore
 
             foreach (var fieldName in fields)
             {
-                sb.Append(GetField(fieldName).TypeName);
+                sb.Append(DataTableProcessor.GetLanguageKeyword(GetField(fieldName)));
                 sb.Append(", ");
             }
 

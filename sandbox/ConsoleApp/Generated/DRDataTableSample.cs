@@ -11,19 +11,24 @@ namespace ConsoleApp
     public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     {
         private Dictionary<int, DRDataTableSample> m_Dict1 = new Dictionary<int, DRDataTableSample>();
-        private MultiDictionary<int, short, DRDataTableSample> m_Dict2 = new MultiDictionary<int, short, DRDataTableSample>();
-        private MultiDictionary<string, bool, List<DRDataTableSample>> m_Dict3 = new MultiDictionary<string, bool, List<DRDataTableSample>>();
+        private Dictionary<ConsoleApp.ColorT, DRDataTableSample> m_Dict2 = new Dictionary<ConsoleApp.ColorT, DRDataTableSample>();
+        private MultiDictionary<int, short, DRDataTableSample> m_Dict3 = new MultiDictionary<int, short, DRDataTableSample>();
+        private MultiDictionary<string, bool, List<DRDataTableSample>> m_Dict4 = new MultiDictionary<string, bool, List<DRDataTableSample>>();
         public DRDataTableSample GetDataRowById(int Id)
         {
             return m_Dict1.TryGetValue(Id, out var result) ? result : null;
         }
+        public DRDataTableSample GetDataRowByColor(ConsoleApp.ColorT Color)
+        {
+            return m_Dict2.TryGetValue(Color, out var result) ? result : null;
+        }
         public DRDataTableSample GetDataRowByIdAndInt16Value(int Id, short Int16Value)
         {
-            return m_Dict2.TryGetValue(Id, Int16Value, out var result) ? result : null;
+            return m_Dict3.TryGetValue(Id, Int16Value, out var result) ? result : null;
         }
         public List<DRDataTableSample> GetDataRowsGroupByNameAndBoolValue(string Name, bool BoolValue)
         {
-            return m_Dict3.TryGetValue(Name, BoolValue, out var result) ? result : null;
+            return m_Dict4.TryGetValue(Name, BoolValue, out var result) ? result : null;
         }
 
         protected override void InternalAddDataRow(int index, DRDataTableSample dataRow)
@@ -31,8 +36,9 @@ namespace ConsoleApp
             base.InternalAddDataRow(index, dataRow);
 
             m_Dict1.Add(dataRow.Id, dataRow);
-            m_Dict2.Add(dataRow.Id, dataRow.Int16Value, dataRow);
-            if (m_Dict3.TryGetValue(dataRow.Name, dataRow.BoolValue, out var arr))
+            m_Dict2.Add(dataRow.Color, dataRow);
+            m_Dict3.Add(dataRow.Id, dataRow.Int16Value, dataRow);
+            if (m_Dict4.TryGetValue(dataRow.Name, dataRow.BoolValue, out var arr))
             {
                 arr.Add(dataRow);
             }
@@ -40,7 +46,7 @@ namespace ConsoleApp
             {
                 arr = new List<DRDataTableSample>();
                 arr.Add(dataRow);
-                m_Dict3.Add(dataRow.Name, dataRow.BoolValue, arr);
+                m_Dict4.Add(dataRow.Name, dataRow.BoolValue, arr);
             }
         }
     }

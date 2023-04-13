@@ -16,15 +16,45 @@ namespace ConsoleApp
         private MultiDictionary<string, bool, List<DRDataTableSample>> m_Dict4 = new MultiDictionary<string, bool, List<DRDataTableSample>>();
         public DRDataTableSample GetDataRowById(int Id)
         {
-            return m_Dict1.TryGetValue(Id, out var result) ? result : null;
+            if (m_Dict1.TryGetValue(Id, out var result))
+            {
+                return result;
+            }
+            else
+            {
+#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
+                UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: Id={0}", Id);
+#endif
+                return null;
+            }
         }
         public DRDataTableSample GetDataRowByColor(ConsoleApp.ColorT Color)
         {
-            return m_Dict2.TryGetValue(Color, out var result) ? result : null;
+            if (m_Dict2.TryGetValue(Color, out var result))
+            {
+                return result;
+            }
+            else
+            {
+#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
+                UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: Color={0}", Color);
+#endif
+                return null;
+            }
         }
         public DRDataTableSample GetDataRowByIdAndInt16Value(int Id, short Int16Value)
         {
-            return m_Dict3.TryGetValue(Id, Int16Value, out var result) ? result : null;
+            if (m_Dict3.TryGetValue(Id, Int16Value, out var result))
+            {
+                return result;
+            }
+            else
+            {
+#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
+                UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: Id={0}, Int16Value={1}", Id, Int16Value);
+#endif
+                return null;
+            }
         }
         public List<DRDataTableSample> GetDataRowsGroupByNameAndBoolValue(string Name, bool BoolValue)
         {

@@ -36,7 +36,17 @@ namespace <#= Namespace #>
 #>
         public <#= GenerationContext.RealClassName #> GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
         {
-            return m_Dict<#= i + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result) ? result : null;
+            if (m_Dict<#= i + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result))
+            {
+                return result;
+            }
+            else
+            {
+#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
+                UnityEngine.Debug.LogWarningFormat("DT<#= GenerationContext.ClassName #> not found index: <#= GenerationContext.BuildIndexsLogFormat(item) #>", <#= string.Join(", ", item) #>);
+#endif
+                return null;
+            }
         }
 <#  }
     for (var j = 0; j < GenerationContext.Groups.Count; j++)

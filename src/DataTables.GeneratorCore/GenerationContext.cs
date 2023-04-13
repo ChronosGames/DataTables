@@ -48,17 +48,38 @@ namespace DataTables.GeneratorCore
         }
 
         /// <summary>
+        /// 拼接索引列表的日志输出格式串
+        /// </summary>
+        /// <param name="fields"></param>
+        /// <returns></returns>
+        public string BuildIndexsLogFormat(string[] fields)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = 0; i < fields.Length; i++)
+            {
+                if (i > 0)
+                {
+                    sb.Append(", ");
+                }
+
+                sb.AppendFormat("{0}={{{1}}}", fields[i], i);
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
         /// 拼接索引列表的函数形参定义
         /// </summary>
         /// <returns></returns>
         public string BuildMethodParameters(string[] fields)
         {
-            List<string> result = new List<string>();
+            string[] result = new string[fields.Length];
 
-            foreach (var fieldName in fields)
+            for (int i = 0; i < fields.Length; i++)
             {
-                var field = GetField(fieldName);
-                result.Add($"{DataTableProcessor.GetLanguageKeyword(field)} {fieldName}");
+                result[i] = $"{DataTableProcessor.GetLanguageKeyword(GetField(fields[i]))} {fields[i]}";
             }
 
             return string.Join(", ", result);

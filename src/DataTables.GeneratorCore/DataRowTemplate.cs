@@ -74,11 +74,19 @@ namespace DataTables.GeneratorCore
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join("And", item)));
             this.Write("(");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildMethodParameters(item)));
-            this.Write(")\r\n        {\r\n            return m_Dict");
+            this.Write(")\r\n        {\r\n            if (m_Dict");
             this.Write(this.ToStringHelper.ToStringWithCulture(i + 1));
             this.Write(".TryGetValue(");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", ", item)));
-            this.Write(", out var result) ? result : null;\r\n        }\r\n");
+            this.Write(", out var result))\r\n            {\r\n                return result;\r\n            }\r" +
+                    "\n            else\r\n            {\r\n#if DT_CHECK_NOT_FOUND && UNITY_EDITOR\r\n      " +
+                    "          UnityEngine.Debug.LogWarningFormat(\"DT");
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
+            this.Write(" not found index: ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildIndexsLogFormat(item)));
+            this.Write("\", ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", ", item)));
+            this.Write(");\r\n#endif\r\n                return null;\r\n            }\r\n        }\r\n");
   }
     for (var j = 0; j < GenerationContext.Groups.Count; j++)
     {

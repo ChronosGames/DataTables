@@ -121,18 +121,19 @@ namespace DataTables.GeneratorCore
     {
         var item = GenerationContext.Groups[i];
 
-            this.Write("            if (m_Dict");
+            this.Write("            {\r\n                if (m_Dict");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.Indexs.Count + i + 1));
             this.Write(".TryGetValue(dataRow.");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", dataRow.", item)));
-            this.Write(", out var arr))\r\n            {\r\n                arr.Add(dataRow);\r\n            }\r" +
-                    "\n            else\r\n            {\r\n                arr = new List<");
+            this.Write(", out var arr))\r\n                {\r\n                    arr.Add(dataRow);\r\n      " +
+                    "          }\r\n                else\r\n                {\r\n                    arr = " +
+                    "new List<");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
-            this.Write(">();\r\n                arr.Add(dataRow);\r\n                m_Dict");
+            this.Write(">();\r\n                    arr.Add(dataRow);\r\n                    m_Dict");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.Indexs.Count + i + 1));
             this.Write(".Add(dataRow.");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", dataRow.", item)));
-            this.Write(", arr);\r\n            }\r\n");
+            this.Write(", arr);\r\n                }\r\n            }\r\n");
   } 
             this.Write("        }\r\n    }\r\n\r\n    /// <summary>");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.Title));

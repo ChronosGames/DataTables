@@ -68,15 +68,17 @@ namespace ConsoleApp
             m_Dict1.Add(dataRow.Id, dataRow);
             m_Dict2.Add(dataRow.Color, dataRow);
             m_Dict3.Add(dataRow.Id, dataRow.Int16Value, dataRow);
-            if (m_Dict4.TryGetValue(dataRow.Name, dataRow.BoolValue, out var arr))
             {
-                arr.Add(dataRow);
-            }
-            else
-            {
-                arr = new List<DRDataTableSample>();
-                arr.Add(dataRow);
-                m_Dict4.Add(dataRow.Name, dataRow.BoolValue, arr);
+                if (m_Dict4.TryGetValue(dataRow.Name, dataRow.BoolValue, out var arr))
+                {
+                    arr.Add(dataRow);
+                }
+                else
+                {
+                    arr = new List<DRDataTableSample>();
+                    arr.Add(dataRow);
+                    m_Dict4.Add(dataRow.Name, dataRow.BoolValue, arr);
+                }
             }
         }
     }

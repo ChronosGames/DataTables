@@ -73,15 +73,17 @@ namespace <#= Namespace #>
     {
         var item = GenerationContext.Groups[i];
 #>
-            if (m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.TryGetValue(dataRow.<#= string.Join(", dataRow.", item) #>, out var arr))
             {
-                arr.Add(dataRow);
-            }
-            else
-            {
-                arr = new List<<#= GenerationContext.RealClassName #>>();
-                arr.Add(dataRow);
-                m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.Add(dataRow.<#= string.Join(", dataRow.", item) #>, arr);
+                if (m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.TryGetValue(dataRow.<#= string.Join(", dataRow.", item) #>, out var arr))
+                {
+                    arr.Add(dataRow);
+                }
+                else
+                {
+                    arr = new List<<#= GenerationContext.RealClassName #>>();
+                    arr.Add(dataRow);
+                    m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.Add(dataRow.<#= string.Join(", dataRow.", item) #>, arr);
+                }
             }
 <#  } #>
         }

@@ -14,6 +14,7 @@ namespace ConsoleApp
         private Dictionary<ConsoleApp.ColorT, DRDataTableSample> m_Dict2 = new Dictionary<ConsoleApp.ColorT, DRDataTableSample>();
         private MultiDictionary<int, short, DRDataTableSample> m_Dict3 = new MultiDictionary<int, short, DRDataTableSample>();
         private MultiDictionary<string, bool, List<DRDataTableSample>> m_Dict4 = new MultiDictionary<string, bool, List<DRDataTableSample>>();
+        private Dictionary<string, List<DRDataTableSample>> m_Dict5 = new Dictionary<string, List<DRDataTableSample>>();
         public DRDataTableSample GetDataRowById(int Id)
         {
             if (m_Dict1.TryGetValue(Id, out var result))
@@ -60,6 +61,10 @@ namespace ConsoleApp
         {
             return m_Dict4.TryGetValue(Name, BoolValue, out var result) ? result : null;
         }
+        public List<DRDataTableSample> GetDataRowsGroupByName(string Name)
+        {
+            return m_Dict5.TryGetValue(Name, out var result) ? result : null;
+        }
 
         protected override void InternalAddDataRow(int index, DRDataTableSample dataRow)
         {
@@ -78,6 +83,18 @@ namespace ConsoleApp
                     arr = new List<DRDataTableSample>();
                     arr.Add(dataRow);
                     m_Dict4.Add(dataRow.Name, dataRow.BoolValue, arr);
+                }
+            }
+            {
+                if (m_Dict5.TryGetValue(dataRow.Name, out var arr))
+                {
+                    arr.Add(dataRow);
+                }
+                else
+                {
+                    arr = new List<DRDataTableSample>();
+                    arr.Add(dataRow);
+                    m_Dict5.Add(dataRow.Name, arr);
                 }
             }
         }

@@ -89,11 +89,11 @@ namespace <#= Namespace #>
         }
     }
 
-    /// <summary><#= GenerationContext.Title #></summary>
+    /// <summary><#= BuildSummary(GenerationContext.Title) #></summary>
     public sealed partial class <#= GenerationContext.RealClassName #> : DataRowBase
     {
 <# foreach(var item in GenerationContext.Properties) { #>
-        /// <summary><#= item.Comment #></summary>
+        /// <summary><#= BuildSummary(item.Comment) #></summary>
         public <#= GetPropertyTypeString(item) #> <#= item.Name #> { get; private set; }
 <# } #>
 

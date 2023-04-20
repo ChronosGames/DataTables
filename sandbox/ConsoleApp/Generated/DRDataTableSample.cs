@@ -119,7 +119,11 @@ namespace ConsoleApp
         public ConsoleApp.ColorT Color { get; private set; }
         /// <summary>数组</summary>
         public int[] ArrayValue { get; private set; }
-        /// <summary>二维数组</summary>
+        /// <summary>
+        /// 二维数组
+        /// <para>使用标准JSON格式串</para>
+        /// <para>备注1字符串</para>
+        /// </summary>
         public int[][] Array2DValue { get; private set; }
         /// <summary>三维数组</summary>
         public int[][][] Array3DValue { get; private set; }

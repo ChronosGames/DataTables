@@ -78,13 +78,15 @@ namespace DataTables.GeneratorCore
                 // 判断是否存在配置表变更（以修改时间为准），若不存在则直接跳过
                 if (!forceOverwrite)
                 {
-                    var excelFileInfo = new FileInfo(context.InputFilePath);
+                    var processPath = Process.GetCurrentProcess().MainModule.FileName;
+                    var processLastWriteTime = File.GetLastWriteTime(processPath);
+                    var excelLastWriteTime = File.GetLastWriteTime(context.InputFilePath);
 
                     var targetFilePath = Path.Combine(dataOutputDir, context.RealClassName + ".bytes");
                     if (File.Exists(targetFilePath))
                     {
-                        var targetFileInfo = new FileInfo(targetFilePath);
-                        if (excelFileInfo.LastWriteTime < targetFileInfo.LastWriteTime)
+                        var dataLastWriteTime = File.GetLastWriteTime(targetFilePath);
+                        if (dataLastWriteTime > excelLastWriteTime && dataLastWriteTime > processLastWriteTime)
                         {
                             logger(string.Format("Generate Excel File: [{0}]({1}) (skiped)", context.InputFilePath.Replace(inputDirectory, "").Trim('\\'), context.SheetName));
                             continue;

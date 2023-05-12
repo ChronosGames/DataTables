@@ -1,12 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data.SQLite;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using LiteDB;
-using System.IO;
 
 // based test code -> https://github.com/mbdavid/LiteDB-Perf
 

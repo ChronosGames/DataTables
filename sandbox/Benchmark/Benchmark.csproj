@@ -17,7 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\DataTables.Annotations\DataTables.Annotations.csproj" />
     <ProjectReference Include="..\..\src\DataTables\DataTables.csproj" />
   </ItemGroup>
 

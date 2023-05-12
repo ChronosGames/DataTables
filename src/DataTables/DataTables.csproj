@@ -25,10 +25,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\DataTables.Annotations\DataTables.Annotations.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
         <None Update="Validation\ValidatableSet.Sequential.tt">
             <Generator>TextTemplatingFileGenerator</Generator>
             <LastGenOutput>ValidatableSet.Sequential.cs</LastGenOutput>

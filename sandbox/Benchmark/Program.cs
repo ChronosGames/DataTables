@@ -1,5 +1,8 @@
-﻿using BenchmarkDotNet.Attributes;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.SQLite;
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Environments;
@@ -7,22 +10,11 @@ using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Exporters.Csv;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
-using LiteDB;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.SQLite;
-using System.IO;
 //using TestPerfLiteDB;
-using Enyim.Caching;
 using Enyim.Caching.Configuration;
 using Enyim.Caching.Memcached;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
-using Enyim.Caching.Memcached.Transcoders;
-using RocksDbSharp;
-using MessagePack;
-using System.Text;
+using Microsoft.Extensions.Options;
 
 namespace Benchmark
 {

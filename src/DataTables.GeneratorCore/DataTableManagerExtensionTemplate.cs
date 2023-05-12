@@ -50,8 +50,25 @@ namespace DataTables.GeneratorCore
             this.Write(this.ToStringHelper.ToStringWithCulture(className));
             this.Write(">(raw, 0, raw.Length);\r\n                    break;\r\n");
  } 
-            this.Write("                default:\r\n                    throw new NotImplementedException($" +
-                    "\"Unknown DataTable: {dataTableName}\");\r\n            }\r\n        }\r\n    }\r\n");
+            this.Write(@"                default:
+                    throw new NotImplementedException($""Unknown DataTable: {dataTableName}"");
+            }
+        }
+
+        public static DataTableManager Create(string dataPath)
+        {
+            var manager = new DataTableManager();
+
+            foreach (var className in Names)
+            {
+                var raw = File.ReadAllBytes(Path.Combine(dataPath, className + "".bytes""));
+                manager.CreateDataTable(className, raw);
+            }
+
+            return manager;
+        }
+    }
+");
  if (!string.IsNullOrEmpty(Namespace)) { 
             this.Write("}\r\n");
  } 

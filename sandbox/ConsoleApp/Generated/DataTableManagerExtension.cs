@@ -23,5 +23,18 @@ namespace ConsoleApp
                     throw new NotImplementedException($"Unknown DataTable: {dataTableName}");
             }
         }
+
+        public static DataTableManager Create(string dataPath)
+        {
+            var manager = new DataTableManager();
+
+            foreach (var className in Names)
+            {
+                var raw = File.ReadAllBytes(Path.Combine(dataPath, className + ".bytes"));
+                manager.CreateDataTable(className, raw);
+            }
+
+            return manager;
+        }
     }
 }

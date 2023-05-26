@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -11,7 +10,6 @@ namespace DataTables.GeneratorCore
         public string FileName { get; set; }
 
         public string SheetName { get; set; }
-
 
         public string[] UsingStrings { get; set; }
 
@@ -24,6 +22,7 @@ namespace DataTables.GeneratorCore
         public string ClassName { get; set; }
 
         public string RealClassName => PrefixClassName + ClassName;
+
         public bool EnableTagsFilter { get; set; }
 
         public Property[] Properties { get; set; }
@@ -35,12 +34,22 @@ namespace DataTables.GeneratorCore
         public string InputFilePath { get; set; }
 
         /// <summary>字段索引列表</summary>
-        public List<string[]> Indexs { get; set; }
+        public List<string[]> Indexs { get; private set; } = new List<string[]>();
 
         /// <summary>
         /// 列分组索引列表
         /// </summary>
-        public List<string[]> Groups { get; set; }
+        public List<string[]> Groups { get; private set; } = new List<string[]>();
+
+        /// <summary>
+        /// 子表的名称
+        /// </summary>
+        public string Child = string.Empty;
+
+        /// <summary>
+        /// 全部子表的名称
+        /// </summary>
+        public string[] Children = Array.Empty<string>();
 
         public Property GetField(string field)
         {

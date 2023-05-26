@@ -15,6 +15,10 @@ namespace ConsoleApp
         private MultiDictionary<int, short, DRDataTableSample> m_Dict3 = new MultiDictionary<int, short, DRDataTableSample>();
         private MultiDictionary<string, bool, List<DRDataTableSample>> m_Dict4 = new MultiDictionary<string, bool, List<DRDataTableSample>>();
         private Dictionary<string, List<DRDataTableSample>> m_Dict5 = new Dictionary<string, List<DRDataTableSample>>();
+
+        public DTDataTableSample(string name) : base(name)
+        { }
+
         public DRDataTableSample GetDataRowById(int Id)
         {
             if (m_Dict1.TryGetValue(Id, out var result))

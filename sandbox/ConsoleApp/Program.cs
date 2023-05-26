@@ -1,7 +1,6 @@
 using System;
 using System.Buffers;
 using System.Diagnostics;
-using System.IO;
 using DataTables;
 
 namespace ConsoleApp
@@ -69,13 +68,15 @@ namespace ConsoleApp
     {
         static void Main(string[] args)
         {
-            var manager = new DataTableManager();
             Utility.Json.SetJsonHelper(new JsonHelper());
 
-            var raw = File.ReadAllBytes("Generated\\DRDataTableSample.bytes");
-            var card = manager.CreateDataTable<DTDataTableSample>(raw, 0, raw.Length);
+            var manager = new DataTableManager();
+            manager.SetDataTableHelper(new DefaultDataTableHelper("Generated"));
+
+            var card = manager.CreateDataTable<DTDataTableSample>();
             Debug.Assert(manager.HasDataTable<DTDataTableSample>(), "º”‘ÿ≈‰÷√±Ì ß∞‹");
             Debug.Assert(card.GetDataRowById(1) != null, "º”‘ÿ≈‰÷√±Ì ß∞‹1");
+            manager.DestroyDataTable(card);
         }
 
     }

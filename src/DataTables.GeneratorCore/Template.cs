@@ -10,7 +10,8 @@ namespace DataTables.GeneratorCore
         public string Namespace { get; set; }
 
         public string DataRowPrefix { get; set; }
-        public string[] DataRowTypeName { get; set; }
+
+        public Dictionary<string, string[]> DataTables { get; set; }
     }
 
     public partial class DataRowTemplate

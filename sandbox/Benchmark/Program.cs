@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SQLite;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
@@ -10,7 +9,6 @@ using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Exporters.Csv;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
-//using TestPerfLiteDB;
 using Enyim.Caching.Configuration;
 using Enyim.Caching.Memcached;
 using Microsoft.Extensions.Logging;
@@ -202,78 +200,78 @@ namespace Benchmark
     }
 
 
-    public class SQLite_Test
-    {
-        private string _filename;
-        public SQLiteConnection _db;
-        private int _count;
+    //public class SQLite_Test
+    //{
+    //    private string _filename;
+    //    public SQLiteConnection _db;
+    //    private int _count;
 
-        public int Count { get { return _count; } }
+    //    public int Count { get { return _count; } }
 
-        public SQLite_Test(int count, string password, bool journal, bool memory = false)
-        {
-            _count = count;
-            _filename = "sqlite-" + Guid.NewGuid().ToString("n") + ".db";
+    //    public SQLite_Test(int count, string password, bool journal, bool memory = false)
+    //    {
+    //        _count = count;
+    //        _filename = "sqlite-" + Guid.NewGuid().ToString("n") + ".db";
 
-            if (memory)
-            {
-                var cs = "Data Source=:memory:;New=True;";
-                _db = new SQLiteConnection(cs);
-            }
-            else
-            {
-                var cs = "Data Source=" + _filename;
-                if (password != null) cs += "; Password=" + password;
-                if (journal == false) cs += "; Journal Mode=Off";
-                _db = new SQLiteConnection(cs);
-            }
-        }
+    //        if (memory)
+    //        {
+    //            var cs = "Data Source=:memory:;New=True;";
+    //            _db = new SQLiteConnection(cs);
+    //        }
+    //        else
+    //        {
+    //            var cs = "Data Source=" + _filename;
+    //            if (password != null) cs += "; Password=" + password;
+    //            if (journal == false) cs += "; Journal Mode=Off";
+    //            _db = new SQLiteConnection(cs);
+    //        }
+    //    }
 
-        public void Prepare()
-        {
-            _db.Open();
+    //    public void Prepare()
+    //    {
+    //        _db.Open();
 
-            var table = new SQLiteCommand("CREATE TABLE col (id INTEGER NOT NULL PRIMARY KEY, name TEXT, lorem TEXT)", _db);
-            table.ExecuteNonQuery();
+    //        var table = new SQLiteCommand("CREATE TABLE col (id INTEGER NOT NULL PRIMARY KEY, name TEXT, lorem TEXT)", _db);
+    //        table.ExecuteNonQuery();
 
-            var table2 = new SQLiteCommand("CREATE TABLE col_bulk (id INTEGER NOT NULL PRIMARY KEY, name TEXT, lorem TEXT)", _db);
-            table2.ExecuteNonQuery();
-        }
+    //        var table2 = new SQLiteCommand("CREATE TABLE col_bulk (id INTEGER NOT NULL PRIMARY KEY, name TEXT, lorem TEXT)", _db);
+    //        table2.ExecuteNonQuery();
+    //    }
 
-        public void CreateIndex()
-        {
-            var cmd = new SQLiteCommand("CREATE INDEX idx1 ON col (name)", _db);
+    //    public void CreateIndex()
+    //    {
+    //        var cmd = new SQLiteCommand("CREATE INDEX idx1 ON col (name)", _db);
 
-            cmd.ExecuteNonQuery();
-        }
+    //        cmd.ExecuteNonQuery();
+    //    }
 
-        public void Query()
-        {
-            var cmd = new SQLiteCommand("SELECT * FROM col WHERE id = @id", _db);
+    //    public void Query()
+    //    {
+    //        var cmd = new SQLiteCommand("SELECT * FROM col WHERE id = @id", _db);
 
-            cmd.Parameters.Add(new SQLiteParameter("id", DbType.Int32));
+    //        cmd.Parameters.Add(new SQLiteParameter("id", DbType.Int32));
 
-            for (var i = 0; i < _count; i++)
-            {
-                cmd.Parameters["id"].Value = i;
+    //        for (var i = 0; i < _count; i++)
+    //        {
+    //            cmd.Parameters["id"].Value = i;
 
-                var r = cmd.ExecuteReader();
+    //            var r = cmd.ExecuteReader();
 
-                r.Read();
+    //            r.Read();
 
-                var name = r.GetString(1);
-                var lorem = r.GetString(2);
+    //            var name = r.GetString(1);
+    //            var lorem = r.GetString(2);
 
-                r.Close();
-            }
-        }
+    //            r.Close();
+    //        }
+    //    }
 
 
-        public void Dispose()
-        {
-            _db.Dispose();
-        }
-    }
+    //    public void Dispose()
+    //    {
+    //        _db.Dispose();
+    //    }
+    //}
 
     class Dummy : IOptions<MemcachedClientOptions>
     {

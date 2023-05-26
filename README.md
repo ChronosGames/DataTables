@@ -3,7 +3,7 @@
 DataTables
 ===
 
-DataTable Solution for .NET Core and Unity. 
+专注于Excel配置表的导出：目前支持.NET Core的服务端与Unity客户端。
 
 <!-- ![image](https://user-images.githubusercontent.com/46207/61031896-61890800-a3fb-11e9-86b7-84c821d347a4.png) -->
 
@@ -17,7 +17,6 @@ DataTable Solution for .NET Core and Unity.
 - [Getting Started(.NET Core)](#getting-startednet-core)
 - [Getting Started(Unity)](#getting-startedunity)
 - [DataTable configuration](#datatable-configuration)
-- [Built-in supported types](#built-in-supported-types)
 - [Optimization](#optimization)
 - [Code Generator](#code-generator)
 - [License](#license)
@@ -154,104 +153,40 @@ You can invoke all indexed query by IntelliSense.
 
 DataTable configuration
 ---
-<!-- Element type of datatable must be marked by `[MemoryTable(tableName)]`, datatable is generated from marked type. `string tableName` is saved in database binary, you can rename class name if tableName is same.
 
-`[PrimaryKey(keyOrder = 0)]`, `[SecondaryKey(indexNo, keyOrder)]`, `[NonUnique]` can add to public property, `[PrimaryKey]` must use in MemoryTable, `[SecondaryKey]` is option.
+标签页定义格式：
+* 标签页名称以`#`开头将不会导出；
 
-Both `PrimaryKey` and `SecondaryKey` can add to multiple properties, it will be generated `***And***And***...`. `keyOrder` is order of column names, default is zero(sequential in which they appear).
+配置表定义格式：
+* 第一行：表头格式定义行，使用`DataTabeGenerator`开头，主要定义表级别的一些配置
+* 第二行：列名称定义行，支持列注释、标签过滤等功能
+* 第三行：字段名称定义行
+* 第四行：字段类型定义行
 
-```csharp
-[MemoryTable("sample"), MessagePackObject(true)]
-public class Sample
-{
-    [PrimaryKey]
-    public int Foo { get; set; }
-    [PrimaryKey]
-    public int Bar { get; set; }
-}
+## 表头格式定义行
 
-db.Sample.FindByFooAndBar((int Foo, int Bar))
+以`,`分隔的参数定义，大小写不敏感，支持以下功能：
+* DataTabeGenerator: 标识该Sheet支持导出（实际可有可无，不强制要求）；
+* Title: 该Sheet的中文名称，将出现在类定义的注释栏里；
+* Class: 该Sheet的类名称，同时正确的格式才会导出该Sheet；
+* Split: 支持按Sheet进行分表，即同一个Class的若存在SubTitle定义，将会导出成多个数据文件，加载时单次仅仅加载一个文件；
+* EnableTagsFilter: 启用对各列按标签进行导出，输入标签由导出工具运行时提供；
+* Index: 对指定列进行索引，导出后将提供快捷接口进行查询，查询结果为单个记录；支持同时配置多个Index；支持同时配置多个列，以`&`拼接；
+* Group: 对指定列进行分组，导出后将提供快捷接口进行查询，查询结果为多个记录；支持同时配置多个Group；支持同时配置多个列，以`&`拼接；
 
-// ----
+## 列名称定义行
 
-[MemoryTable("sample"), MessagePackObject(true)]
-public class Sample
-{
-    [PrimaryKey(keyOrder: 1)]
-    public int Foo { get; set; }
-    [PrimaryKey(keyOrder: 0)]
-    public int Bar { get; set; }
-}
+功能支持：
+* 支持在列字段文本以`#`字符开头，代表该列注释，不再参与后续的导出；
+* 支持在列字段文本以`@ + 大写英文字母`结尾，代表该列支持按标签导出，一个英文字母代表一个标签，具体导出哪些标签由命令行运行时指定；
 
-db.Sample.FindByBarAndFoo((int Bar, int Foo))
-```
+## 字段名称定义行
 
-Default of `FindBy***` return type is single(if not found, returns `null`). It means key is unique by default. If mark `[NonUnique]` in same AttributeList, return type is `RangeView<T>`(if not found, return empty).
+由英文字母数字与下划线组成，同时不能以数字开头；大小写敏感；
 
-```csharp
-[MemoryTable("sample"), MessagePackObject(true)]
-public class Sample
-{
-    [PrimaryKey, NonUnique]
-    public int Foo { get; set; }
-    [PrimaryKey, NonUnique]
-    public int Bar { get; set; }
-}
+## 字段类型定义行
 
-RangeView<Sample> q = db.Sample.FindByFooAndBar((int Foo, int Bar))
-```
-
-```csharp
-[MemoryTable("sample"), MessagePackObject(true)]
-public class Sample
-{
-    [PrimaryKey]
-    [SecondaryKey(0)]
-    public int Foo { get; set; }
-    [SecondaryKey(0)]
-    [SecondaryKey(1)]
-    public int Bar { get; set; }
-}
-
-db.Sample.FindByFoo(int Foo)
-db.Sample.FindByFooAndBar((int Foo, int Bar))
-db.Sample.FindByBar(int Bar)
-```
-
-`[StringComparisonOption]` allow to configure how compare if key is string. Default is `Ordinal`.
-
-```csharp
-[MemoryTable("sample"), MessagePackObject(true)]
-public class Sample
-{
-    [PrimaryKey]
-    [StringComparisonOption(StringComparison.InvariantCultureIgnoreCase)]
-    public string Foo { get; set; }
-}
-```
-
-If computation property exists, add `[IgnoreMember]` of MessagePack should mark.
-
-```csharp
-[MemoryTable("person"), MessagePackObject(true)]
-public class Person
-{
-    [PrimaryKey]
-    public int Id { get;}
-
-    public string FirstName { get; }
-    public string LastName { get; }
-
-    [IgnoreMember]
-    public string FullName => FirstName + LastName;
-}
-```
--->
-
-Built-in supported types
----
-These field types can serialize by default:
-
+支持以下字段定义：
 * `short`, `int`, `long`, `ushort`, `uint`, `ulong`
 * `float`, `double`
 * `bool`
@@ -259,405 +194,7 @@ These field types can serialize by default:
 * `Array` : StartWiths Array string, like Array<int>, Array<string>
 * `Enum` : StartWiths Enum string, like Enum<ColorT>
 * `Dictionary` : StartWiths Map string, like Map<int, int>, Map<int, string>
-<!-- * Primitives (`int`, `string`, etc...), `Enum`s, `Nullable<>`, `Lazy<>`
-* `TimeSpan`,  `DateTime`, `DateTimeOffset`
-* `Guid`, `Uri`, `Version`, `StringBuilder`
-* `BigInteger`, `Complex`, `Half`
-* `Array[]`, `Array[,]`, `Array[,,]`, `Array[,,,]`, `ArraySegment<>`, `BitArray`
-* `KeyValuePair<,>`, `Tuple<,...>`, `ValueTuple<,...>`
-* `ArrayList`, `Hashtable`
-* `List<>`, `LinkedList<>`, `Queue<>`, `Stack<>`, `HashSet<>`, `ReadOnlyCollection<>`, `SortedList<,>`
-* `IList<>`, `ICollection<>`, `IEnumerable<>`, `IReadOnlyCollection<>`, `IReadOnlyList<>`
-* `Dictionary<,>`, `IDictionary<,>`, `SortedDictionary<,>`, `ILookup<,>`, `IGrouping<,>`, `ReadOnlyDictionary<,>`, `IReadOnlyDictionary<,>`
-* `ObservableCollection<>`, `ReadOnlyObservableCollection<>`
-* `ISet<>`,
-* `ConcurrentBag<>`, `ConcurrentQueue<>`, `ConcurrentStack<>`, `ConcurrentDictionary<,>`
-* Immutable collections (`ImmutableList<>`, etc)
-* Custom implementations of `ICollection<>` or `IDictionary<,>` with a parameterless constructor
-* Custom implementations of `IList` or `IDictionary` with a parameterless constructor
-
-
-You can add support for custom types, and there are some official/third-party extension packages for:
-
-* ReactiveProperty
-* for Unity (`Vector3`, `Quaternion`, etc...)
-* F# (Record, FsList, Discriminated Unions, etc...)
-
-Please see the [extensions section](#extensions).
-
-`MessagePack.Nil` is the built-in type representing null/void in MessagePack for C#.
--->
-
-<!--
-Validator
----
-You can validate data by `MemoryDatabase.Validate` method. In default, it check unique key(data duplicated) and you can define custom validate logics.
-
-```csharp
-// Implements IValidatable<T> to targeted validation
-[MemoryTable("quest_master"), MessagePackObject(true)]
-public class Quest : IValidatable<Quest>
-{
-    // If index is Unique, validate duplicate in default.
-    [PrimaryKey]
-    public int Id { get; }
-    public string Name { get; }
-    public int RewardId { get; }
-    public int Cost { get; }
-
-    void IValidatable<Quest>.Validate(IValidator<Quest> validator)
-    {
-        // get the external reference table
-        var items = validator.GetReferenceSet<Item>();
-
-        // Custom if logics.
-        if (this.RewardId > 0)
-        {
-            // RewardId must exists in Item.ItemId
-            items.Exists(x => x.RewardId, x => x.ItemId);
-        }
-
-        // Range check, Cost must be 10..20
-        validator.Validate(x => x.Cost >= 10);
-        validator.Validate(x => x.Cost <= 20);
-
-        // In this region, only called once so enable to validate overall of tables.
-        if (validator.CallOnce())
-        {
-            var quests = validator.GetTableSet();
-            // Check unique othe than index property.
-            quests.Where(x => x.RewardId != 0).Unique(x => x.RewardId);
-        }
-    }
-}
-
-[MemoryTable("item_master"), MessagePackObject(true)]
-public class Item
-{
-    [PrimaryKey]
-    public int ItemId { get; }
-}
-
-void Main()
-{
-    var db = new MemoryDatabase(bin);
-
-    // Get the validate result.
-    var validateResult = db.Validate();
-    if (validateResult.IsValidationFailed)
-    {
-        // Output string format.
-        Console.WriteLine(validateResult.FormatFailedResults());
-
-        // Get the raw FaildItem[]. (.Type, .Message, .Data)
-        // validateResult.FailedResults
-    }
-}
-```
-
-Following is list of validation methods.
-
-```csharp
-// all void methods are assert function, it stores message to ValidateResult if failed.
-interface IValidator<T>
-{
-    ValidatableSet<T> GetTableSet();
-    ReferenceSet<T, TRef> GetReferenceSet<TRef>();
-    void Validate(Expression<Func<T, bool>> predicate);
-    void Validate(Func<T, bool> predicate, string message);
-    void ValidateAction(Expression<Func<bool>> predicate);
-    void ValidateAction(Func<bool> predicate, string message);
-    void Fail(string message);
-    bool CallOnce();
-}
-
-class ReferenceSet<TElement, TReference>
-{
-    IReadOnlyList<TReference> TableData { get; }
-    void Exists<TProperty>(Expression<Func<TElement, TProperty>> elementSelector, Expression<Func<TReference, TProperty>> referenceElementSelector);
-    void Exists<TProperty>(Expression<Func<TElement, TProperty>> elementSelector, Expression<Func<TReference, TProperty>> referenceElementSelector, EqualityComparer<TProperty> equalityComparer);
-}
-
-class ValidatableSet<TElement>
-{
-    IReadOnlyList<TElement> TableData { get; }
-    void Unique<TProperty>(Expression<Func<TElement, TProperty>> selector);
-    void Unique<TProperty>(Expression<Func<TElement, TProperty>> selector, IEqualityComparer<TProperty> equalityComparer);
-    void Unique<TProperty>(Func<TElement, TProperty> selector, string message);
-    void Unique<TProperty>(Func<TElement, TProperty> selector, IEqualityComparer<TProperty> equalityComparer, string message);
-    void Sequential(Expression<Func<TElement, SByte|Int16|Int32|...>> selector, bool distinct = false);
-    ValidatableSet<TElement> Where(Func<TElement, bool> predicate);
-}
-```
-
-Metadata
----
-You can get the table-info, properties, indexes by metadata api. It helps to make custom importer/exporter application.
-
-```csharp
-var metaDb = MemoryDatabase.GetMetaDatabase();
-foreach (var table in metaDb.GetTableInfos())
-{
-    // for example, generate CSV header
-    var sb = new StringBuilder();
-    foreach (var prop in table.Properties)
-    {
-        if (sb.Length != 0) sb.Append(",");
-
-        // Name can convert to LowerCamelCase or SnakeCase.
-        sb.Append(prop.NameSnakeCase);
-    }
-    File.WriteAllText(table.TableName + ".csv", sb.ToString(), new UTF8Encoding(false));
-}
-```
-
-If creates console-app, our [ConsoleAppFramework](https://github.com/Cysharp/ConsoleAppFramework/) can easy to make helper applications.
-
-Here is sample of reading and creating dynamic from csv. `builder.AppendDynamic` and `System.Runtime.Serialization.FormatterServices.GetUninitializedObject` will help it.
-
-```csharp
-class Program
-{
-    static void Main(string[] args)
-    {
-        var csv = @"monster_id,name,max_hp
-1,foo,100
-2,bar,200";
-        var fileName = "monster";
-
-        var builder = new DatabaseBuilder();
-
-        var meta = MemoryDatabase.GetMetaDatabase();
-        var table = meta.GetTableInfo(fileName);
-
-        var tableData = new List<object>();
-
-        using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(csv)))
-        using (var sr = new StreamReader(ms, Encoding.UTF8))
-        using (var reader = new TinyCsvReader(sr))
-        {
-            while ((reader.ReadValuesWithHeader() is Dictionary<string, string> values))
-            {
-                // create data without call constructor
-                var data = System.Runtime.Serialization.FormatterServices.GetUninitializedObject(table.DataType);
-
-                foreach (var prop in table.Properties)
-                {
-                    if (values.TryGetValue(prop.NameSnakeCase, out var rawValue))
-                    {
-                        var value = ParseValue(prop.PropertyInfo.PropertyType, rawValue);
-                        if (prop.PropertyInfo.SetMethod == null)
-                        {
-                            throw new Exception("Target property does not exists set method. If you use {get;}, please change to { get; private set; }, Type:" + prop.PropertyInfo.DeclaringType + " Prop:" + prop.PropertyInfo.Name);
-                        }
-                        prop.PropertyInfo.SetValue(data, value);
-                    }
-                    else
-                    {
-                        throw new KeyNotFoundException($"Not found \"{prop.NameSnakeCase}\" in \"{fileName}.csv\" header.");
-                    }
-                }
-
-                tableData.Add(data);
-            }
-        }
-
-        // add dynamic collection.
-        builder.AppendDynamic(table.DataType, tableData);
-
-        var bin = builder.Build();
-        var database = new MemoryDatabase(bin);
-    }
-
-    static object ParseValue(Type type, string rawValue)
-    {
-        if (type == typeof(string)) return rawValue;
-
-        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
-        {
-            if (string.IsNullOrWhiteSpace(rawValue)) return null;
-            return ParseValue(type.GenericTypeArguments[0], rawValue);
-        }
-
-        if (type.IsEnum)
-        {
-            var value = Enum.Parse(type, rawValue);
-            return value;
-        }
-
-        switch (Type.GetTypeCode(type))
-        {
-            case TypeCode.Boolean:
-                // True/False or 0,1
-                if (int.TryParse(rawValue, out var intBool))
-                {
-                    return Convert.ToBoolean(intBool);
-                }
-                return Boolean.Parse(rawValue);
-            case TypeCode.Char:
-                return Char.Parse(rawValue);
-            case TypeCode.SByte:
-                return SByte.Parse(rawValue, CultureInfo.InvariantCulture);
-            case TypeCode.Byte:
-                return Byte.Parse(rawValue, CultureInfo.InvariantCulture);
-            case TypeCode.Int16:
-                return Int16.Parse(rawValue, CultureInfo.InvariantCulture);
-            case TypeCode.UInt16:
-                return UInt16.Parse(rawValue, CultureInfo.InvariantCulture);
-            case TypeCode.Int32:
-                return Int32.Parse(rawValue, CultureInfo.InvariantCulture);
-            case TypeCode.UInt32:
-                return UInt32.Parse(rawValue, CultureInfo.InvariantCulture);
-            case TypeCode.Int64:
-                return Int64.Parse(rawValue, CultureInfo.InvariantCulture);
-            case TypeCode.UInt64:
-                return UInt64.Parse(rawValue, CultureInfo.InvariantCulture);
-            case TypeCode.Single:
-                return Single.Parse(rawValue, CultureInfo.InvariantCulture);
-            case TypeCode.Double:
-                return Double.Parse(rawValue, CultureInfo.InvariantCulture);
-            case TypeCode.Decimal:
-                return Decimal.Parse(rawValue, CultureInfo.InvariantCulture);
-            case TypeCode.DateTime:
-                return DateTime.Parse(rawValue, CultureInfo.InvariantCulture);
-            default:
-                if (type == typeof(DateTimeOffset))
-                {
-                    return DateTimeOffset.Parse(rawValue, CultureInfo.InvariantCulture);
-                }
-                else if (type == typeof(TimeSpan))
-                {
-                    return TimeSpan.Parse(rawValue, CultureInfo.InvariantCulture);
-                }
-                else if (type == typeof(Guid))
-                {
-                    return Guid.Parse(rawValue);
-                }
-
-                // or other your custom parsing.
-                throw new NotSupportedException();
-        }
-    }
-
-    // Non string escape, tiny reader with header.
-    public class TinyCsvReader : IDisposable
-    {
-        static char[] trim = new[] { ' ', '\t' };
-
-        readonly StreamReader reader;
-        public IReadOnlyList<string> Header { get; private set; }
-
-        public TinyCsvReader(StreamReader reader)
-        {
-            this.reader = reader;
-            {
-                var line = reader.ReadLine();
-                if (line == null) throw new InvalidOperationException("Header is null.");
-
-                var index = 0;
-                var header = new List<string>();
-                while (index < line.Length)
-                {
-                    var s = GetValue(line, ref index);
-                    if (s.Length == 0) break;
-                    header.Add(s);
-                }
-                this.Header = header;
-            }
-        }
-
-        string GetValue(string line, ref int i)
-        {
-            var temp = new char[line.Length - i];
-            var j = 0;
-            for (; i < line.Length; i++)
-            {
-                if (line[i] == ',')
-                {
-                    i += 1;
-                    break;
-                }
-                temp[j++] = line[i];
-            }
-
-            return new string(temp, 0, j).Trim(trim);
-        }
-
-        public string[] ReadValues()
-        {
-            var line = reader.ReadLine();
-            if (line == null) return null;
-            if (string.IsNullOrWhiteSpace(line)) return null;
-
-            var values = new string[Header.Count];
-            var lineIndex = 0;
-            for (int i = 0; i < values.Length; i++)
-            {
-                var s = GetValue(line, ref lineIndex);
-                values[i] = s;
-            }
-            return values;
-        }
-
-        public Dictionary<string, string> ReadValuesWithHeader()
-        {
-            var values = ReadValues();
-            if (values == null) return null;
-
-            var dict = new Dictionary<string, string>();
-            for (int i = 0; i < values.Length; i++)
-            {
-                dict.Add(Header[i], values[i]);
-            }
-
-            return dict;
-        }
-
-        public void Dispose()
-        {
-            reader.Dispose();
-        }
-    }
-}
-```
-
-Inheritance
----
-Currently MasterMemory does not support inheritance. Recommend way to create common method, use interface and extension method. But if you want to create common method with common cached field(made by `OnAfterConstruct`), for workaround, create abstract class and all data properties to abstract.
-
-```csharp
-public abstract class FooAndBarBase
-{
-    // all data properties to virtual
-    public virtual int Prop1 { get; protected set; }
-    public virtual int Prop2 { get; protected set; }
-
-    [IgnoreMember]
-    public int Prop3 => Prop1 + Prop2;
-
-    public IEnumerable<FooAndBarBase> CommonMethod()
-    {
-        throw new NotImplementedException();
-    }
-}
-
-[MemoryTable("foo_table"), MessagePackObject(true)]
-public class FooTable : FooAndBarBase
-{
-    [PrimaryKey]
-    public override int Prop1 { get; protected set; }
-    public override int Prop2 { get; protected set; }
-}
-
-[MemoryTable("bar_table"), MessagePackObject(true)]
-public class BarTable : FooAndBarBase
-{
-    [PrimaryKey]
-    public override int Prop1 { get; protected set; }
-    public override int Prop2 { get; protected set; }
-}
-```
--->
+* `JSON`: 支持将单元格文本转化为JSON对象
 
 Optimization
 ---

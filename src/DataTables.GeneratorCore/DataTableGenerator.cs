@@ -96,6 +96,12 @@ namespace DataTables.GeneratorCore
 
                 logger(string.Format("Generate Excel File: [{0}]({1})", context.InputFilePath.Replace(inputDirectory, "").Trim('\\'), context.SheetName));
 
+                // 收集全部的子表
+                if (!string.IsNullOrEmpty(context.Child))
+                {
+                    context.Children = list.Where(x => x.ClassName == context.ClassName && !string.IsNullOrEmpty(x.Child)).Select(x => x.Child).ToArray();
+                }
+
                 // 生成代码文件
                 GenerateCodeFile(context, codeOutputDir, forceOverwrite, logger);
                 
@@ -105,12 +111,23 @@ namespace DataTables.GeneratorCore
 
             logger("Generate Manager Files:");
 
+            Dictionary<string, string[]> dataTables = new Dictionary<string, string[]>();
+            foreach (var context in list)
+            {
+                if (dataTables.ContainsKey(context.ClassName))
+                {
+                    continue;
+                }
+
+                dataTables.Add(context.ClassName, context.Children);
+            }
+
             // 生成DataTableManagerExtension代码文件(放在未尾确保类名前缀会正确附加)
             var dataTableManagerExtensionTemplate = new DataTableManagerExtensionTemplate()
             {
                 Namespace = usingNamespace,
                 DataRowPrefix = prefixClassName,
-                DataRowTypeName = list.Select(x => x.ClassName).ToArray(),
+                DataTables = dataTables,
             };
             logger(WriteToFile(codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
         }
@@ -150,10 +167,9 @@ namespace DataTables.GeneratorCore
                             {
                                 FileName = Path.GetFileNameWithoutExtension(filePath),
                                 UsingStrings = Array.Empty<string>(),
+
                                 InputFilePath = filePath,
                                 SheetName = tableReader.Name,
-                                Indexs = new List<string[]>(),
-                                Groups = new List<string[]>(),
                             };
 
                             contexts.Add(tableReader.Name, context);
@@ -359,6 +375,9 @@ namespace DataTables.GeneratorCore
                         case "group":
                             context.Groups.Add(properties[1].Trim().Split('&'));
                             break;
+                        case "child":
+                            context.Child = properties[1].Trim();
+                            break;
                     }
                 }
                 else if (properties.Length == 1)
@@ -508,7 +527,7 @@ namespace DataTables.GeneratorCore
 
         static void GenerateDataFile(GenerationContext context, string outputDir, bool forceOverwrite, Action<string> logger)
         {
-            string binaryDataFileName = Path.Combine(outputDir, context.RealClassName + ".bytes");
+            string binaryDataFileName = Path.Combine(outputDir, context.RealClassName + (string.IsNullOrEmpty(context.Child) ? string.Empty : '.' + context.Child) + ".bytes");
             if (!DataTableProcessor.GenerateDataFile(context, binaryDataFileName, logger) && File.Exists(binaryDataFileName))
             {
                 File.Delete(binaryDataFileName);

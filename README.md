@@ -3,7 +3,7 @@
 DataTables
 ===
 
-רע��Excel���ñ��ĵ�����Ŀǰ֧��.NET Core�ķ������Unity�ͻ��ˡ�
+专注于Excel配置表的导出：目前支持.NET Core的服务端与Unity客户端。
 
 <!-- ![image](https://user-images.githubusercontent.com/46207/61031896-61890800-a3fb-11e9-86b7-84c821d347a4.png) -->
 
@@ -17,10 +17,6 @@ DataTables
 - [Getting Started(.NET Core)](#getting-startednet-core)
 - [Getting Started(Unity)](#getting-startedunity)
 - [DataTable configuration](#datatable-configuration)
-- [��ͷ��ʽ������](#%EF%BF%BD%EF%BF%BD%CD%B7%EF%BF%BD%EF%BF%BD%CA%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD)
-- [�����ƶ�����](#%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD%C6%B6%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD)
-- [�ֶ����ƶ�����](#%EF%BF%BD%D6%B6%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD%C6%B6%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD)
-- [�ֶ����Ͷ�����](#%EF%BF%BD%D6%B6%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD%CD%B7%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD%EF%BF%BD)
 - [Optimization](#optimization)
 - [Code Generator](#code-generator)
 - [License](#license)
@@ -158,39 +154,39 @@ You can invoke all indexed query by IntelliSense.
 DataTable configuration
 ---
 
-��ǩҳ�����ʽ��
-* ��ǩҳ������`#`��ͷ�����ᵼ����
+标签页定义格式：
+* 标签页名称以`#`开头将不会导出；
 
-���ñ������ʽ��
-* ��һ�У���ͷ��ʽ�����У�ʹ��`DataTabeGenerator`��ͷ����Ҫ����������һЩ����
-* �ڶ��У������ƶ����У�֧����ע�͡���ǩ���˵ȹ���
-* �����У��ֶ����ƶ�����
-* �����У��ֶ����Ͷ�����
+配置表定义格式：
+* 第一行：表头格式定义行，使用`DataTabeGenerator`开头，主要定义表级别的一些配置
+* 第二行：列名称定义行，支持列注释、标签过滤等功能
+* 第三行：字段名称定义行
+* 第四行：字段类型定义行
 
-## ��ͷ��ʽ������
+## 表头格式定义行
 
-��`,`�ָ��Ĳ������壬��Сд�����У�֧�����¹��ܣ�
-* DataTabeGenerator: ��ʶ��Sheet֧�ֵ�����ʵ�ʿ��п��ޣ���ǿ��Ҫ�󣩣�
-* Title: ��Sheet���������ƣ����������ඨ���ע�����
-* Class: ��Sheet�������ƣ�ͬʱ��ȷ�ĸ�ʽ�Żᵼ����Sheet��
-* Split: ֧�ְ�Sheet���зֱ�����ͬһ��Class��������SubTitle���壬���ᵼ���ɶ�������ļ�������ʱ���ν�������һ���ļ���
-* EnableTagsFilter: ���öԸ��а���ǩ���е����������ǩ�ɵ�����������ʱ�ṩ��
-* Index: ��ָ���н����������������ṩ��ݽӿڽ��в�ѯ����ѯ���Ϊ������¼��֧��ͬʱ���ö��Index��֧��ͬʱ���ö���У���`&`ƴ�ӣ�
-* Group: ��ָ���н��з��飬�������ṩ��ݽӿڽ��в�ѯ����ѯ���Ϊ�����¼��֧��ͬʱ���ö��Group��֧��ͬʱ���ö���У���`&`ƴ�ӣ�
+以`,`分隔的参数定义，大小写不敏感，支持以下功能：
+* DataTabeGenerator: 标识该Sheet支持导出（实际可有可无，不强制要求）；
+* Title: 该Sheet的中文名称，将出现在类定义的注释栏里；
+* Class: 该Sheet的类名称，同时正确的格式才会导出该Sheet；
+* Split: 支持按Sheet进行分表，即同一个Class的若存在SubTitle定义，将会导出成多个数据文件，加载时单次仅仅加载一个文件；
+* EnableTagsFilter: 启用对各列按标签进行导出，输入标签由导出工具运行时提供；
+* Index: 对指定列进行索引，导出后将提供快捷接口进行查询，查询结果为单个记录；支持同时配置多个Index；支持同时配置多个列，以`&`拼接；
+* Group: 对指定列进行分组，导出后将提供快捷接口进行查询，查询结果为多个记录；支持同时配置多个Group；支持同时配置多个列，以`&`拼接；
 
-## �����ƶ�����
+## 列名称定义行
 
-����֧�֣�
-* ֧�������ֶ��ı���`#`�ַ���ͷ����������ע�ͣ����ٲ�������ĵ�����
-* ֧�������ֶ��ı���`@ + ��дӢ����ĸ`��β����������֧�ְ���ǩ������һ��Ӣ����ĸ����һ����ǩ�����嵼����Щ��ǩ������������ʱָ����
+功能支持：
+* 支持在列字段文本以`#`字符开头，代表该列注释，不再参与后续的导出；
+* 支持在列字段文本以`@ + 大写英文字母`结尾，代表该列支持按标签导出，一个英文字母代表一个标签，具体导出哪些标签由命令行运行时指定；
 
-## �ֶ����ƶ�����
+## 字段名称定义行
 
-��Ӣ����ĸ�������»�����ɣ�ͬʱ���������ֿ�ͷ����Сд���У�
+由英文字母数字与下划线组成，同时不能以数字开头；大小写敏感；
 
-## �ֶ����Ͷ�����
+## 字段类型定义行
 
-֧�������ֶζ��壺
+支持以下字段定义：
 * `short`, `int`, `long`, `ushort`, `uint`, `ulong`
 * `float`, `double`
 * `bool`
@@ -198,7 +194,7 @@ DataTable configuration
 * `Array` : StartWiths Array string, like Array<int>, Array<string>
 * `Enum` : StartWiths Enum string, like Enum<ColorT>
 * `Dictionary` : StartWiths Map string, like Map<int, int>, Map<int, string>
-* `JSON`: ֧�ֽ���Ԫ���ı�ת��ΪJSON����
+* `JSON`: 支持将单元格文本转化为JSON对象
 
 Optimization
 ---

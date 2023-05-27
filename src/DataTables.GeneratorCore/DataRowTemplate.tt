@@ -31,15 +31,22 @@ namespace <#= Namespace #>
     for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {
         var item = GenerationContext.Indexs[i];
-#>
-        private <#= GenerationContext.BuildIndexDictDefine(item) #> m_Dict<#= i + 1 #> = new <#= GenerationContext.BuildIndexDictDefine(item) #>();
-<#  }
+
+        #>        private <#= GenerationContext.BuildIndexDictDefine(item) #> m_Dict<#= i + 1 #> = new <#= GenerationContext.BuildIndexDictDefine(item) #>();<#=Environment.NewLine#><#
+    }
+
     for (var j = 0; j < GenerationContext.Groups.Count; j++)
     {
         var fieldNames = GenerationContext.Groups[j];
+
+        #>        private <#= GenerationContext.BuildGroupDictDefine(fieldNames) #> m_Dict<#= GenerationContext.Indexs.Count + 1 + j #> = new <#= GenerationContext.BuildGroupDictDefine(fieldNames) #>();<#=Environment.NewLine#><#
+    }
+
 #>
-        private <#= GenerationContext.BuildGroupDictDefine(fieldNames) #> m_Dict<#= GenerationContext.Indexs.Count + 1 + j #> = new <#= GenerationContext.BuildGroupDictDefine(fieldNames) #>();
-<#  }
+        public DT<#= GenerationContext.ClassName #>() : base() { }
+        public DT<#= GenerationContext.ClassName #>(string name) : base(name) { }
+<#
+
     for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {
         var item = GenerationContext.Indexs[i];

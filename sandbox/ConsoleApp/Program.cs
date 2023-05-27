@@ -72,11 +72,17 @@ namespace ConsoleApp
 
             var manager = new DataTableManager();
             manager.SetDataTableHelper(new DefaultDataTableHelper("Generated"));
+            manager.Preload();
 
-            var card = manager.CreateDataTable<DTDataTableSample>();
             Debug.Assert(manager.HasDataTable<DTDataTableSample>(), "º”‘ÿ≈‰÷√±Ì ß∞‹");
+
+            var card = manager.GetDataTable<DTDataTableSample>();
             Debug.Assert(card.GetDataRowById(1) != null, "º”‘ÿ≈‰÷√±Ì ß∞‹1");
             manager.DestroyDataTable(card);
+
+            //Debug.Assert(!manager.HasDataTable<DTDataTableSplitSample>(), "º”‘ÿ≈‰÷√±Ì ß∞‹");
+            //manager.CreateDataTable<DTDataTableSplitSample>();
+            //Debug.Assert(manager.HasDataTable<DTDataTableSplitSample>(), "º”‘ÿ≈‰÷√±Ì ß∞‹");
         }
 
     }

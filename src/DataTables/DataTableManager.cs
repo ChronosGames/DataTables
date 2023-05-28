@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Xml.Linq;
 
 namespace DataTables
 {
@@ -220,20 +219,20 @@ namespace DataTables
         /// 创建数据表。
         /// </summary>
         /// <typeparam name="T">数据表的类型。</typeparam>
-        /// <returns>要创建的数据表。</returns>
-        public T CreateDataTable<T>() where T : DataTableBase
+        /// <param name="onCompleted">数据表加载完成时回调。</param>
+        public void CreateDataTable<T>(Action onCompleted) where T : DataTableBase
         {
-            return CreateDataTable<T>(string.Empty);
+            CreateDataTable<T>(string.Empty, onCompleted);
         }
 
         /// <summary>
         /// 创建数据表。
         /// </summary>
         /// <param name="dataTableType">数据表的类型。</param>
-        /// <returns></returns>
-        public DataTableBase CreateDataTable(Type dataTableType)
+        /// <param name="onCompleted">数据表加载完成时回调。</param>
+        public void CreateDataTable(Type dataTableType, Action onCompleted)
         {
-            return CreateDataTable(dataTableType, string.Empty);
+            CreateDataTable(dataTableType, string.Empty, onCompleted);
         }
 
         /// <summary>
@@ -241,8 +240,8 @@ namespace DataTables
         /// </summary>
         /// <typeparam name="T">数据表的类型。</typeparam>
         /// <param name="name">数据表名称。</param>
-        /// <returns>要创建的数据表。</returns>
-        public T CreateDataTable<T>(string name) where T : DataTableBase
+        /// <param name="onCompleted">数据表加载完成时回调。</param>
+        public void CreateDataTable<T>(string name, Action onCompleted) where T : DataTableBase
         {
             if (m_DataTableHelper == null)
             {
@@ -256,29 +255,7 @@ namespace DataTables
             }
 
             var dataTable = (T)Activator.CreateInstance(typeof(T), name);
-
-            var raw = m_DataTableHelper.Read(dataTable.Type, name);
-            using (var ms = new MemoryStream(raw, false))
-            {
-                using (var reader = new BinaryReader(ms, Encoding.UTF8))
-                {
-                    var rowCount = reader.Read7BitEncodedInt32();
-                    dataTable.InitDataSet(rowCount);
-                    for (int i = 0; i < rowCount; i++)
-                    {
-                        if (!dataTable.SetDataRow(i, reader))
-                        {
-                            return null;
-                        }
-                    }
-                }
-            }
-
-            // 触发加载完成事件
-            dataTable.OnLoadCompleted();
-
-            m_DataTables.Add(typeNamePair, dataTable);
-            return dataTable;
+            m_DataTableHelper.Read(dataTable.Type, name, (raw) => LoadDataTable(dataTable, name, raw, onCompleted));
         }
 
         /// <summary>
@@ -286,8 +263,8 @@ namespace DataTables
         /// </summary>
         /// <param name="dataTableType">数据表的类型。</param>
         /// <param name="name">数据表名称。</param>
-        /// <returns></returns>
-        public DataTableBase CreateDataTable(Type dataTableType, string name)
+        /// <param name="onCompleted">数据表加载完成时回调。</param>
+        public void CreateDataTable(Type dataTableType, string name, Action onCompleted)
         {
             if (!dataTableType.IsSubclassOf(typeof(DataTableBase)))
             {
@@ -306,7 +283,17 @@ namespace DataTables
             }
 
             var dataTable = (DataTableBase)Activator.CreateInstance(dataTableType, name);
-            var raw = m_DataTableHelper.Read(dataTable.Type, name);
+            m_DataTableHelper.Read(dataTable.Type, name, (raw) => LoadDataTable(dataTable, name, raw, onCompleted));
+        }
+
+        private void LoadDataTable(DataTableBase dataTable, string name, byte[] raw, Action onCompleted)
+        {
+            var typeNamePair = new TypeNamePair(dataTable.GetType(), name);
+            if (InternalHasDataTable(typeNamePair))
+            {
+                throw new Exception(string.Format("Already exist data table '{0}'.", typeNamePair));
+            }
+
             using (var ms = new MemoryStream(raw, false))
             {
                 using (var reader = new BinaryReader(ms, Encoding.UTF8))
@@ -317,7 +304,7 @@ namespace DataTables
                     {
                         if (!dataTable.SetDataRow(i, reader))
                         {
-                            return null;
+                            return;
                         }
                     }
                 }
@@ -326,8 +313,11 @@ namespace DataTables
             // 触发加载完成事件
             dataTable.OnLoadCompleted();
 
+            // 缓存当前配置表
             m_DataTables.Add(typeNamePair, dataTable);
-            return dataTable;
+
+            // 回调加载完毕
+            onCompleted?.Invoke();
         }
 
         /// <summary>

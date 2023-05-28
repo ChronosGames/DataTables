@@ -72,7 +72,7 @@ namespace ConsoleApp
 
             var manager = new DataTableManager();
             manager.SetDataTableHelper(new DefaultDataTableHelper("Generated"));
-            manager.Preload();
+            manager.Preload(() => Console.WriteLine("数据表全部加载完毕"));
 
             Debug.Assert(manager.HasDataTable<DTDataTableSample>(), "加载配置表失败");
 

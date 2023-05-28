@@ -98,31 +98,31 @@ namespace DataTables
         /// 创建数据表。
         /// </summary>
         /// <typeparam name="T">数据表的类型。</typeparam>
-        /// <returns>要创建的数据表。</returns>
-        T CreateDataTable<T>() where T : DataTableBase;
+        /// <param name="onCompleted">数据表加载完成时回调。</param>
+        void CreateDataTable<T>(Action onCompleted) where T : DataTableBase;
 
         /// <summary>
         /// 创建数据表。
         /// </summary>
         /// <param name="dataTableType">数据表的类型。</param>
-        /// <returns></returns>
-        DataTableBase CreateDataTable(Type dataTableType);
+        /// <param name="onCompleted">数据表加载完成时回调。</param>
+        void CreateDataTable(Type dataTableType, Action onCompleted);
 
         /// <summary>
         /// 创建数据表。
         /// </summary>
         /// <typeparam name="T">数据表的类型。</typeparam>
         /// <param name="name">数据表名称。</param>
-        /// <returns>要创建的数据表。</returns>
-        T CreateDataTable<T>(string name) where T : DataTableBase;
+        /// <param name="onCompleted">数据表加载完成时回调。</param>
+        void CreateDataTable<T>(string name, Action onCompleted) where T : DataTableBase;
 
         /// <summary>
         /// 创建数据表。
         /// </summary>
         /// <param name="dataTableType">数据表的类型。</param>
         /// <param name="name">数据表名称。</param>
-        /// <returns></returns>
-        DataTableBase CreateDataTable(Type dataTableType, string name);
+        /// <param name="onCompleted">数据表加载完成时回调。</param>
+        void CreateDataTable(Type dataTableType, string name, Action onCompleted);
 
         /// <summary>
         /// 销毁数据表。

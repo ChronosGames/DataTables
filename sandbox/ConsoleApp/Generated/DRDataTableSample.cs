@@ -166,8 +166,11 @@ namespace ConsoleApp
         /// <summary>枚举数组</summary>
         public ColorT[] EnumArray { get; private set; }
 
-        /// <summary>自定义类</summary>
+        /// <summary>JSON类</summary>
         public SampleParent CustomJSON { get; private set; }
+
+        /// <summary>自定义类</summary>
+        public CustomSample CustomFieldType { get; private set; }
 
 
         public override bool Deserialize(BinaryReader reader)
@@ -298,6 +301,11 @@ namespace ConsoleApp
             {
                 var __jsonStr = reader.ReadString();
                 CustomJSON = Utility.Json.ToObject<SampleParent>(__jsonStr);
+            }
+
+            {
+                var __jsonStr = reader.ReadString();
+                CustomFieldType = new CustomSample(__jsonStr);
             }
 
             return true;

@@ -31,7 +31,7 @@ namespace DataTables.Generator
 
             new DataTableGenerator().GenerateFile(inputDirectory, codeOutputDir, dataOutputDir, usingNamespace, prefixClassName,
                 importNamespaces : importNamespaces,
-                filterColumnTags : filterColumnTags, forceOverwrite, x => Console.WriteLine(x));
+                filterColumnTags : filterColumnTags, forceOverwrite, Console.WriteLine);
 
             Console.WriteLine("Complete DataTables CodeGeneration, elapsed:" + sw.Elapsed);
         }

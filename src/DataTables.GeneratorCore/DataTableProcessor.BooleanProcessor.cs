@@ -1,69 +1,68 @@
 ﻿using System;
 using System.IO;
 
-namespace DataTables.GeneratorCore
+namespace DataTables.GeneratorCore;
+
+public sealed partial class DataTableProcessor
 {
-    public sealed partial class DataTableProcessor
+    private sealed class BooleanProcessor : GenericDataProcessor<bool>
     {
-        private sealed class BooleanProcessor : GenericDataProcessor<bool>
+        public override bool IsSystem
         {
-            public override bool IsSystem
+            get
             {
-                get
-                {
-                    return true;
-                }
+                return true;
+            }
+        }
+
+        public override string LanguageKeyword
+        {
+            get
+            {
+                return "bool";
+            }
+        }
+
+        public override Type Type => typeof(bool);
+
+        public override string[] GetTypeStrings()
+        {
+            return new string[]
+            {
+                "bool",
+                "boolean",
+                "system.boolean"
+            };
+        }
+
+        public override bool Parse(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return false;
             }
 
-            public override string LanguageKeyword
+            if (value == "0" || string.Compare(value, "n", true) == 0 || string.Compare(value, "no", true) == 0)
             {
-                get
-                {
-                    return "bool";
-                }
+                return false;
             }
 
-            public override Type Type => typeof(bool);
-
-            public override string[] GetTypeStrings()
+            if (value == "1" || string.Compare(value, "y", true) == 0 || string.Compare(value, "yes", true) == 0)
             {
-                return new string[]
-                {
-                    "bool",
-                    "boolean",
-                    "system.boolean"
-                };
+                return true;
             }
 
-            public override bool Parse(string value)
-            {
-                if (string.IsNullOrEmpty(value))
-                {
-                    return false;
-                }
+            return bool.Parse(value.ToLowerInvariant());
+        }
 
-                if (value == "0" || string.Compare(value, "n", true) == 0 || string.Compare(value, "no", true) == 0)
-                {
-                    return false;
-                }
+        public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
+        {
+            return $"{propertyName} = reader.ReadBoolean();";
+        }
 
-                if (value == "1" || string.Compare(value, "y", true) == 0 || string.Compare(value, "yes", true) == 0)
-                {
-                    return true;
-                }
-
-                return bool.Parse(value.ToLowerInvariant());
-            }
-
-            public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
-            {
-                return $"{propertyName} = reader.ReadBoolean();";
-            }
-
-            public override void WriteToStream(BinaryWriter binaryWriter, string value)
-            {
-                binaryWriter.Write(Parse(value));
-            }
+        public override void WriteToStream(BinaryWriter binaryWriter, string value)
+        {
+            binaryWriter.Write(Parse(value));
         }
     }
 }

@@ -36,25 +36,26 @@ public partial class DataRowTemplate
 
     internal string BuildSummary(string summary)
     {
-        var arr = summary.Split('\n');
-        if (arr.Length == 0)
+        var text = System.Security.SecurityElement.Escape(summary.Trim());
+        var lines = text.Split('\n');
+        if (lines.Length == 0)
         {
             return string.Empty;
         }
-        else if (arr.Length == 1)
+        else if (lines.Length == 1)
         {
-            return arr[0].Trim();
+            return lines[0].Trim();
         }
         else
         {
             var sb = new StringBuilder();
             sb.AppendLine();
             sb.Append("        /// ");
-            sb.AppendLine(arr[0].Trim());
-            for (int i = 1; i < arr.Length; i++)
+            sb.AppendLine(lines[0].Trim());
+            for (int i = 1; i < lines.Length; i++)
             {
                 sb.Append("        /// <para>");
-                sb.Append(arr[i].Trim());
+                sb.Append(lines[i].Trim());
                 sb.AppendLine("</para>");
             }
             sb.Append("        /// ");

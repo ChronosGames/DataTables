@@ -10,9 +10,10 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.4.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.4.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="3.4.0" />
+        <PackageReference Include="NPOI" Version="2.6.0" />
         <PackageReference Include="System.CodeDom" Version="4.5.0" />
-        <PackageReference Include="ExcelDataReader" Version="3.7.0-develop00310" />
-        <PackageReference Include="ExcelDataReader.DataSet" Version="3.7.0-develop00310" />
+        <PackageReference Include="ExcelDataReader" Version="3.7.0-develop00365" />
+        <PackageReference Include="ExcelDataReader.DataSet" Version="3.7.0-develop00365" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
 

@@ -8,6 +8,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using ExcelDataReader;
 using ExcelDataReader.Exceptions;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
 
 namespace DataTables.GeneratorCore;
 
@@ -52,6 +54,11 @@ public sealed class DataTableGenerator
             list.AddRange(CreateGenerationContext(item, filterColumnTags, logger));
         }
 
+        // 加载首行单元格的批注信息
+        foreach (var context in list)
+        {
+            LoadFirstRowCellNote(context);
+        }
         // list.Sort((a, b) => string.Compare(a.FileName + a.SheetName, a.FileName + b.SheetName, StringComparison.Ordinal));
 
         if (list.Count == 0)
@@ -306,6 +313,63 @@ public sealed class DataTableGenerator
         yield break;
     }
 
+    private static void LoadFirstRowCellNote(GenerationContext context)
+    {
+        using (var stream = new FileStream(context.InputFilePath, FileMode.Open))
+        {
+            stream.Position = 0;
+            using (XSSFWorkbook xssWorkbook = new XSSFWorkbook(stream))
+            {
+                var sheet = xssWorkbook.GetSheet(context.SheetName);
+
+                IRow row;
+                ICell cell;
+                for (int i = 0; i < 100; i++)
+                {
+                    row = sheet.GetRow(i);
+                    if (row.GetCell(0).StringCellValue.Trim().StartsWith("#"))
+                    {
+                        continue;
+                    }
+
+                    for (int j = i + 1; j < 100; j++)
+                    {
+                        row = sheet.GetRow(j);
+                        cell = row.GetCell(0);
+                        if (cell.CellType == CellType.String && cell.StringCellValue.Trim().StartsWith("#"))
+                        {
+                            continue;
+                        }
+
+                        for (int k = 0; k < row.Cells.Count; k++)
+                        {
+                            cell = row.Cells[k];
+                            if (cell.CellComment == null)
+                            {
+                                continue;
+                            }
+
+                            if (string.IsNullOrEmpty(cell.CellComment.String.String))
+                            {
+                                continue;
+                            }
+
+                            var field = context.Properties.FirstOrDefault(x => x.Index == k);
+                            if (field != null)
+                            {
+                                field.Note = cell.CellComment.String.String;
+                            }
+                        }
+
+                        break;
+                    }
+
+                    break;
+                }
+            }
+        }
+    }
+
     private static void RemoveEmptyProperties(GenerationContext context)
     {
         var properties = context.Properties;
@@ -445,7 +509,7 @@ public sealed class DataTableGenerator
                 }
             }
 
-            context.Properties[i] = new Property();
+            context.Properties[i] = new Property(i);
             context.Properties[i].Comment = text;
         }
     }

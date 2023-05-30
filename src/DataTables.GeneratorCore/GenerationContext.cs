@@ -148,11 +148,35 @@ public class GenerationContext
 
 public class Property
 {
+    /// <summary>
+    /// 列序号
+    /// </summary>
+    public readonly int Index;
+
+    /// <summary>
+    /// 字段类型
+    /// </summary>
     public string TypeName { get; set; }
 
+    /// <summary>
+    /// 字段名
+    /// </summary>
     public string Name { get; set; }
 
+    /// <summary>
+    /// 中文名称行上的单元格的文本内容
+    /// </summary>
     public string Comment { get; set; }
+
+    /// <summary>
+    /// 中文名称行上单元格的批注信息
+    /// </summary>
+    public string Note { get; set; }
+
+    public Property(int index)
+    {
+        Index = index;
+    }
 }
 
 public abstract class KeyBase

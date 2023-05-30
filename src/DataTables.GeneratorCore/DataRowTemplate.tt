@@ -110,7 +110,7 @@ namespace <#= Namespace #>
     public sealed partial class <#= GenerationContext.RealClassName #> : DataRowBase
     {
 <# foreach(var item in GenerationContext.Properties) { #>
-        /// <summary><#= BuildSummary(item.Comment) #></summary>
+        /// <summary><#= BuildSummary(item.Comment) #></summary><#= string.IsNullOrEmpty(item.Note) ? string.Empty : Environment.NewLine + "        /// <remarks>" + BuildSummary(item.Note) + "</remarks>" #>
         public <#= GetPropertyTypeString(item) #> <#= item.Name #> { get; private set; }
 <# } #>
 

@@ -56,9 +56,9 @@ Edit the `.csproj`, add [DataTables.MSBuild.Tasks](https://www.nuget.org/package
 
 ```xml
 <ItemGroup>
-    <PackageReference Include="DataTables.API" Version="0.2.2" />
+    <PackageReference Include="DataTables.API" Version="0.8.4" />
     <!-- Install MSBuild Task(with PrivateAssets="All", it means to use dependency only in build time). -->
-    <PackageReference Include="DataTables.MSBuild.Tasks" Version="0.2.2" PrivateAssets="All" />
+    <PackageReference Include="DataTables.MSBuild.Tasks" Version="0.8.4" PrivateAssets="All" />
 </ItemGroup>
 
 <!-- Call code generator before-build. -->
@@ -73,28 +73,34 @@ After the build, generated files(`DataTableManagerExtension.cs` and `Tables/DR**
 Finally, you can regsiter and query by these files.
 
 ```csharp
-// to load datatables, use DataTableManagerExtension to load all datatables.
-using DataTables;
+// 预加载指定数据表，然后，进行查询
 
-public static class DataTableManagerHelper
-{
-    public static DataTableManager Configure(this DataTableManager manager, string dataPath)
-    {
-        foreach (var className in DataTableManagerExtension.Names)
-        {
-            var raw = File.ReadAllBytes(Path.Combine(dataPath, className + ".bin"));
-            manager.CreateDataTable(className, raw);
-        }
-    }
-}
+var manager = new DataTableManager();
+
+// 使用默认的数据表数据文件加载器
+manager.SetDataTableHelper(new DefaultDataTableHelper("<Data Files Dir>"));
+
+// 预加载DTScene数据表
+manager.CreateDataTable<DTScene>(null);
+
+// 由于默认数据表加载器是同步调用的方式，若可在Preload之后直接查询数据，否则要放在callback内
+var drScene1 = manager.GetDataTable<DRScene>().GetDataRow(x => x.Id == 2000);
+var drScene2 = manager.GetDataTable<DRScene>().GetDataRowById(2000);
 
 // -----------------------
+// 预加载全部数据表，然后，查询任意数据表的内容示例：
 
-// for query phase, use DataTableManager.
 var manager = new DataTableManager();
-manager.Configure("xxxxx");
-var drScene = manager.GetDataTable<DRScene>().GetDataRow(x => x.Id == 2000);
 
+// 使用默认的数据表数据文件加载器
+manager.SetDataTableHelper(new DefaultDataTableHelper("<Data Files Dir>"));
+
+// 预加载所有的数据表
+manager.Preload(() => Console.WriteLine("数据表全部加载完毕"));
+
+// 由于默认数据表加载器是同步调用的方式，若可在Preload之后直接查询数据，否则要放在callback内
+var drScene1 = manager.GetDataTable<DRScene>().GetDataRow(x => x.Id == 2000);
+var drScene2 = manager.GetDataTable<DRScene>().GetDataRowById(2000);
 ```
 
 You can invoke all indexed query by IntelliSense.
@@ -129,28 +135,34 @@ DataTables.Generator.exe -i "C:\UnitySample" -co "C:\UnitySample\Generated" -do 
 The rest is the same as .NET Core version.
 
 ```csharp
-// to load datatables, use DataTableManagerExtension to load all datatables.
-using DataTables;
+// 预加载指定数据表，然后，进行查询
 
-public static class DataTableManagerHelper
-{
-    public static DataTableManager Configure(this DataTableManager manager, string dataPath)
-    {
-        foreach (var className in DataTableManagerExtension.Names)
-        {
-            var raw = File.ReadAllBytes(Path.Combine(dataPath, className + ".bin"));
-            manager.CreateDataTable(className, raw);
-        }
-    }
-}
+var manager = new DataTableManager();
+
+// 使用默认的数据表数据文件加载器
+manager.SetDataTableHelper(new DefaultDataTableHelper("<Data Files Dir>"));
+
+// 预加载DTScene数据表
+manager.CreateDataTable<DTScene>(null);
+
+// 由于默认数据表加载器是同步调用的方式，若可在Preload之后直接查询数据，否则要放在callback内
+var drScene1 = manager.GetDataTable<DRScene>().GetDataRow(x => x.Id == 2000);
+var drScene2 = manager.GetDataTable<DRScene>().GetDataRowById(2000);
 
 // -----------------------
+// 预加载全部数据表，然后，查询任意数据表的内容示例：
 
-// for query phase, use DataTableManager.
 var manager = new DataTableManager();
-manager.Configure("xxxxx");
-var drScene = manager.GetDataTable<DRScene>().GetDataRow(x => x.Id == 2000);
 
+// 使用默认的数据表数据文件加载器
+manager.SetDataTableHelper(new DefaultDataTableHelper("<Data Files Dir>"));
+
+// 预加载所有的数据表
+manager.Preload(() => Console.WriteLine("数据表全部加载完毕"));
+
+// 由于默认数据表加载器是同步调用的方式，若可在Preload之后直接查询数据，否则要放在callback内
+var drScene1 = manager.GetDataTable<DRScene>().GetDataRow(x => x.Id == 2000);
+var drScene2 = manager.GetDataTable<DRScene>().GetDataRowById(2000);
 ```
 
 You can invoke all indexed query by IntelliSense.
@@ -199,6 +211,7 @@ DataTable configuration
 * `Enum` : StartWiths Enum string, like Enum<ColorT>
 * `Dictionary` : StartWiths Map string, like Map<int, int>, Map<int, string>
 * `JSON`: 支持将单元格文本转化为JSON对象
+* `Custom`: 支持自定义类的导出, 自定义类必须拥有带一个字符串形参的构造函数
 
 Optimization
 ---

@@ -30,18 +30,25 @@ namespace <#= Namespace #>
         public static void Preload(this DataTableManager manager, Action onCompleted)
         {
             int done = <#=DataTables.Sum(pair => pair.Value.Length > 0 ? pair.Value.Length : 1)#>;
+
+            void next()
+            { 
+                if (--done == 0)
+                    onCompleted?.Invoke(); 
+            };
+
 <# 
 foreach (var pair in DataTables)
 {
     if (pair.Value.Length == 0)
     {
-        #>            manager.CreateDataTable<DT<#=pair.Key#>>(() => { if (--done == 0) onCompleted?.Invoke(); });<#=Environment.NewLine#><#
+        #>            manager.CreateDataTable<DT<#=pair.Key#>>(next);<#=Environment.NewLine#><#
     }
     else
     {
         foreach (var name in pair.Value)
         {
-            #>            manager.CreateDataTable<DT<#=pair.Key#>>("<#=name#>", () => { if (--done == 0) onCompleted?.Invoke(); });<#=Environment.NewLine#><#
+            #>            manager.CreateDataTable<DT<#=pair.Key#>>("<#=name#>", next);<#=Environment.NewLine#><#
         }
     }   
 }

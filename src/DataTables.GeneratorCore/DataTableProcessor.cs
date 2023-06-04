@@ -31,7 +31,9 @@ public sealed partial class DataTableProcessor
         }
         catch (Exception exception)
         {
+            Console.ForegroundColor = ConsoleColor.Red;
             logger(string.Format("  > Generate {0}.bytes failure, exception is '{1}'.", context.RealClassName, exception));
+            Console.ResetColor();
             return false;
         }
     }

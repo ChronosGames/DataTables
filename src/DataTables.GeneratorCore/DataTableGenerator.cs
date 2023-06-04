@@ -53,12 +53,6 @@ public sealed class DataTableGenerator
         {
             list.AddRange(CreateGenerationContext(item, filterColumnTags, logger));
         }
-
-        // 加载首行单元格的批注信息
-        foreach (var context in list)
-        {
-            LoadFirstRowCellNote(context);
-        }
         // list.Sort((a, b) => string.Compare(a.FileName + a.SheetName, a.FileName + b.SheetName, StringComparison.Ordinal));
 
         if (list.Count == 0)
@@ -96,6 +90,9 @@ public sealed class DataTableGenerator
                     var dataLastWriteTime = File.GetLastWriteTime(targetFilePath);
                     if (dataLastWriteTime > excelLastWriteTime && dataLastWriteTime > processLastWriteTime)
                     {
+                        // 标记为跳过
+                        context.Skiped = true;
+
                         logger(string.Format("Generate Excel File: [{0}]({1}) (skiped)", context.InputFilePath.Replace(inputDirectory, "").Trim('\\'), context.SheetName));
                         continue;
                     }
@@ -103,6 +100,9 @@ public sealed class DataTableGenerator
             }
 
             logger(string.Format("Generate Excel File: [{0}]({1})", context.InputFilePath.Replace(inputDirectory, "").Trim('\\'), context.SheetName));
+
+            // 加载首行单元格的批注信息
+            LoadFirstRowCellNote(context);
 
             // 收集全部的子表
             if (!string.IsNullOrEmpty(context.Child))
@@ -138,6 +138,10 @@ public sealed class DataTableGenerator
             DataTables = dataTables,
         };
         logger(WriteToFile(codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
+
+        logger(string.Empty);
+        logger("===========================================================");
+        logger($"数据表导出完成: {list.Count(x => !x.Failed && !x.Skiped)} 成功，{list.Count(x => x.Failed)} 失败，{list.Count(x => x.Skiped)} 已跳过");
     }
 
     IEnumerable<GenerationContext> CreateGenerationContext(string filePath, string filterColumnTags, Action<string> logger)
@@ -610,9 +614,15 @@ public sealed class DataTableGenerator
     static void GenerateDataFile(GenerationContext context, string outputDir, bool forceOverwrite, Action<string> logger)
     {
         string binaryDataFileName = Path.Combine(outputDir, context.RealClassName + (string.IsNullOrEmpty(context.Child) ? string.Empty : '.' + context.Child) + ".bytes");
-        if (!DataTableProcessor.GenerateDataFile(context, binaryDataFileName, logger) && File.Exists(binaryDataFileName))
+        if (!DataTableProcessor.GenerateDataFile(context, binaryDataFileName, logger))
         {
-            File.Delete(binaryDataFileName);
+            // 记录出错的情况
+            context.Failed = true;
+
+            if (File.Exists(binaryDataFileName))
+            {
+                File.Delete(binaryDataFileName);
+            }
         }
     }
 }

@@ -51,6 +51,16 @@ public class GenerationContext
     /// </summary>
     public string[] Children = Array.Empty<string>();
 
+    /// <summary>
+    /// 导出时是否出错
+    /// </summary>
+    public bool Failed;
+
+    /// <summary>
+    /// 导出时是否跳过
+    /// </summary>
+    public bool Skiped;
+
     public Property GetField(string field)
     {
         return Properties.FirstOrDefault(x => x.Name == field);

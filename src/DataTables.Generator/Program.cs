@@ -33,7 +33,7 @@ namespace DataTables.Generator
                 importNamespaces : importNamespaces,
                 filterColumnTags : filterColumnTags, forceOverwrite, Console.WriteLine);
 
-            Console.WriteLine("Complete DataTables CodeGeneration, elapsed:" + sw.Elapsed);
+            Console.WriteLine("Complete DataTables Generation, elapsed: " + sw.Elapsed);
         }
     }
 }

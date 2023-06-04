@@ -1,6 +1,7 @@
-﻿using Microsoft.Build.Framework;
+﻿using System;
+using DataTables.GeneratorCore;
+using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using System;
 
 namespace DataTables.MSBuild.Tasks
 {
@@ -27,7 +28,7 @@ namespace DataTables.MSBuild.Tasks
         {
             try
             {
-                new DataTables.GeneratorCore.DataTableGenerator().GenerateFile(InputDirectory, CodeOutputDirectory, DataOutputDirectory, UsingNamespace, PrefixClassName, ImportNamespaces, FilterColumnTags, ForceOverwrite, x => this.Log.LogMessage(x));
+                new DataTableGenerator().GenerateFile(InputDirectory, CodeOutputDirectory, DataOutputDirectory, UsingNamespace, PrefixClassName, ImportNamespaces, FilterColumnTags, ForceOverwrite, x => this.Log.LogMessage(x));
             }
             catch (Exception ex)
             {

@@ -77,6 +77,12 @@ public sealed class DataTableGenerator
             context.PrefixClassName = prefixClassName;
             context.UsingStrings = usingStrings;
 
+            // 收集全部的子表
+            if (!string.IsNullOrEmpty(context.Child))
+            {
+                context.Children = list.Where(x => x.ClassName == context.ClassName && !string.IsNullOrEmpty(x.Child)).Select(x => x.Child).ToArray();
+            }
+
             // 判断是否存在配置表变更（以修改时间为准），若不存在则直接跳过
             if (!forceOverwrite)
             {
@@ -103,12 +109,6 @@ public sealed class DataTableGenerator
 
             // 加载首行单元格的批注信息
             LoadFirstRowCellNote(context);
-
-            // 收集全部的子表
-            if (!string.IsNullOrEmpty(context.Child))
-            {
-                context.Children = list.Where(x => x.ClassName == context.ClassName && !string.IsNullOrEmpty(x.Child)).Select(x => x.Child).ToArray();
-            }
 
             // 生成代码文件
             GenerateCodeFile(context, codeOutputDir, forceOverwrite, logger);

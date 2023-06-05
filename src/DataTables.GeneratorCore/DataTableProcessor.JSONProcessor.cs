@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace DataTables.GeneratorCore
 {
@@ -39,7 +39,7 @@ namespace DataTables.GeneratorCore
 
             public override string Parse(string value)
             {
-                return value.StartsWith("\"") ? JsonConvert.DeserializeObject<string>(value) : value;
+                return value.StartsWith("\"") ? JsonSerializer.Deserialize<string>(value) : value;
             }
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)
@@ -50,8 +50,7 @@ namespace DataTables.GeneratorCore
             public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
             {
                 return $"{{\n"
-                    + $"{Tabs(depth + 1)}var __jsonStr = reader.ReadString();\n"
-                    + $"{Tabs(depth + 1)}{propertyName} = Utility.Json.ToObject<{m_TypeString}>(__jsonStr);\n"
+                    + $"{Tabs(depth + 1)}{propertyName} = reader.ReadJson<{m_TypeString}>();\n"
                     + $"{Tabs(depth)}}}";
             }
         }

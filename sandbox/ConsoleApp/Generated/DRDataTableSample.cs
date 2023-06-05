@@ -256,12 +256,11 @@ namespace ConsoleApp
                 }
             }
             {
-                var __jsonStr = reader.ReadString();
-                CustomJSON = Utility.Json.ToObject<SampleParent>(__jsonStr);
+                CustomJSON = reader.ReadJson<SampleParent>();
             }
             {
-                var __jsonStr = reader.ReadString();
-                CustomFieldType = new CustomSample(__jsonStr);
+                var __customStr = reader.ReadString();
+                CustomFieldType = new CustomSample(__customStr);
             }
             return true;
         }

@@ -1,7 +1,7 @@
 ﻿using System;
-using System.IO;
 using System.Collections;
-using Newtonsoft.Json;
+using System.IO;
+using System.Text.Json;
 
 namespace DataTables.GeneratorCore;
 
@@ -45,12 +45,12 @@ public sealed partial class DataTableProcessor
                 value = "[]";
             }
 
-            var arr = JsonConvert.DeserializeObject<ArrayList>(value);
+            var arr = JsonSerializer.Deserialize<ArrayList>(value);
 
             binaryWriter.Write7BitEncodedInt32(arr.Count);
             foreach (var item in arr)
             {
-                DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).WriteToStream(binaryWriter, JsonConvert.SerializeObject(item));
+                DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).WriteToStream(binaryWriter, JsonSerializer.Serialize(item));
             }
         }
 

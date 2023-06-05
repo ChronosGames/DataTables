@@ -252,8 +252,7 @@ namespace ConsoleApp
                 }
             }
             {
-                var __jsonStr = reader.ReadString();
-                CustomJSON = Utility.Json.ToObject<SampleParent>(__jsonStr);
+                CustomJSON = reader.ReadJson<SampleParent>();
             }
             return true;
         }

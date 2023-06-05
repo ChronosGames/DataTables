@@ -67,6 +67,15 @@ public class GenerationContext
     }
 
     /// <summary>
+    /// 获取输出的二进制文件相对路径
+    /// </summary>
+    /// <returns></returns>
+    public string GetDataOutputFilePath()
+    {
+        return this.RealClassName + (string.IsNullOrEmpty(this.Child) ? string.Empty : '.' + this.Child) + ".bytes";
+    }
+
+    /// <summary>
     /// 拼接索引列表的日志输出格式串
     /// </summary>
     /// <param name="fields"></param>

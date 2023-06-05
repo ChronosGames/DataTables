@@ -1,60 +1,62 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
-        <RootNamespace>DataTables</RootNamespace>
-        <AssemblyName>DataTables</AssemblyName>
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <!-- This project is meta package -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <RootNamespace>DataTables</RootNamespace>
+    <AssemblyName>DataTables</AssemblyName>
 
-        <OutputType>Library</OutputType>
-        <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-        <Company>Cysharp</Company>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <NoWarn>1701;1702;1705;1591</NoWarn>
+    <OutputType>Library</OutputType>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <Company>Cysharp</Company>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>1701;1702;1705;1591</NoWarn>
 
-        <!-- NuGet -->
-        <PackageId>DataTables.API</PackageId>
-        <PackageVersion>$(Version)</PackageVersion>
-        <Authors>PhonixGame</Authors>
-        <Copyright>PhonixGame</Copyright>
-        <Description>Embedded Typed Readonly In-Memory Document Database for .NET Core and Unity.</Description>
-        <PackageProjectUrl>https://github.com/PhonixGame/DataTables</PackageProjectUrl>
-        <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
-        <RepositoryType>git</RepositoryType>
-        <PackageTags>database, embedded, inmemory, unity</PackageTags>
-        <IsPackable>true</IsPackable>
-    </PropertyGroup>
+    <!-- NuGet -->
+    <PackageId>DataTables.API</PackageId>
+    <PackageVersion>$(Version)</PackageVersion>
+    <Authors>PhonixGame</Authors>
+    <Copyright>PhonixGame</Copyright>
+    <Description>Embedded Typed Readonly In-Memory Document Database for .NET Core and Unity.</Description>
+    <PackageProjectUrl>https://github.com/PhonixGame/DataTables</PackageProjectUrl>
+    <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>database, embedded, inmemory, unity</PackageTags>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <None Update="Validation\ValidatableSet.Sequential.tt">
-            <Generator>TextTemplatingFileGenerator</Generator>
-            <LastGenOutput>ValidatableSet.Sequential.cs</LastGenOutput>
-        </None>
-    </ItemGroup>
-    <ItemGroup>
-        <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
-    </ItemGroup>
-    <ItemGroup>
-        <Compile Update="Validation\ValidatableSet.Sequential.cs">
-            <DesignTime>True</DesignTime>
-            <AutoGen>True</AutoGen>
-            <DependentUpon>ValidatableSet.Sequential.tt</DependentUpon>
-        </Compile>
-    </ItemGroup>
+  <ItemGroup>
+    <None Update="Validation\ValidatableSet.Sequential.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ValidatableSet.Sequential.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Validation\ValidatableSet.Sequential.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ValidatableSet.Sequential.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
 
-    <!-- Copy files for Unity -->
-    <PropertyGroup>
-        <DestinationRoot>$(ProjectDir)..\DataTables.Unity\Assets\Scripts\DataTables\</DestinationRoot>
-        <TestDestination>$(ProjectDir)..\DataTables.Unity\Assets\Tests\</TestDestination>
-    </PropertyGroup>
-    <ItemGroup>
-        <TargetFiles1 Include="$(ProjectDir)\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;_InternalVisibleTo.cs" />
-        <TargetFiles2 Include="$(ProjectDir)\..\DataTables.Annotations\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;" />
-        <TargetFiles3 Include="$(ProjectDir)\..\..\tests\DataTables.Tests\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;" />
-    </ItemGroup>
-    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-        <Copy SourceFiles="@(TargetFiles1)" DestinationFiles="$(DestinationRoot)\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" />
-        <Copy SourceFiles="@(TargetFiles2)" DestinationFiles="$(DestinationRoot)\Annotations\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" />
-        <Copy SourceFiles="@(TargetFiles3)" DestinationFiles="$(TestDestination)\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" />
-    </Target>
+  <!-- Copy files for Unity -->
+  <PropertyGroup>
+    <DestinationRoot>$(ProjectDir)..\DataTables.Unity\Assets\Scripts\DataTables\</DestinationRoot>
+    <TestDestination>$(ProjectDir)..\DataTables.Unity\Assets\Tests\</TestDestination>
+  </PropertyGroup>
+  <ItemGroup>
+    <TargetFiles1 Include="$(ProjectDir)\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;_InternalVisibleTo.cs" />
+    <TargetFiles2 Include="$(ProjectDir)\..\DataTables.Annotations\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;" />
+    <TargetFiles3 Include="$(ProjectDir)\..\..\tests\DataTables.Tests\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;" />
+  </ItemGroup>
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Copy SourceFiles="@(TargetFiles1)" DestinationFiles="$(DestinationRoot)\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(TargetFiles2)" DestinationFiles="$(DestinationRoot)\Annotations\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(TargetFiles3)" DestinationFiles="$(TestDestination)\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>

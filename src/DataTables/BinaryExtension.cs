@@ -128,5 +128,22 @@ namespace DataTables
         {
             Write7BitEncodedInt64(binaryWriter, (long)value);
         }
+
+        public static T ReadJson<T>(this BinaryReader binaryReader)
+        {
+            var plain = binaryReader.ReadString();
+            if (string.IsNullOrEmpty(plain))
+            {
+                return default(T);
+            }
+
+#if NET7_0_OR_GREATER
+            return System.Text.Json.JsonSerializer.Deserialize<T>(plain);
+#elif UNITY_EDITOR
+            return UnityEngine.JsonUtility.FromJson<T>(plain);
+#else
+            throw new NotImplementedException();
+#endif
+        }
     }
 }

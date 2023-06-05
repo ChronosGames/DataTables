@@ -1,5 +1,9 @@
-﻿namespace ConsoleApp
+﻿using System.Text.Json.Serialization;
+
+namespace ConsoleApp
 {
+    [JsonDerivedType(typeof(SampleChildren1), typeDiscriminator: "Children1")]
+    [JsonDerivedType(typeof(SampleChildren2), typeDiscriminator: "Children2")]
     public class SampleParent
     {
         public string Id;

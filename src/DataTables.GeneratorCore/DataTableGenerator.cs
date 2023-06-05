@@ -84,7 +84,7 @@ public sealed class DataTableGenerator
                 var processLastWriteTime = File.GetLastWriteTime(processPath);
                 var excelLastWriteTime = File.GetLastWriteTime(context.InputFilePath);
 
-                var targetFilePath = Path.Combine(dataOutputDir, context.RealClassName + ".bytes");
+                var targetFilePath = Path.Combine(dataOutputDir, context.GetDataOutputFilePath());
                 if (File.Exists(targetFilePath))
                 {
                     var dataLastWriteTime = File.GetLastWriteTime(targetFilePath);
@@ -613,7 +613,7 @@ public sealed class DataTableGenerator
 
     static void GenerateDataFile(GenerationContext context, string outputDir, bool forceOverwrite, Action<string> logger)
     {
-        string binaryDataFileName = Path.Combine(outputDir, context.RealClassName + (string.IsNullOrEmpty(context.Child) ? string.Empty : '.' + context.Child) + ".bytes");
+        string binaryDataFileName = Path.Combine(outputDir, context.GetDataOutputFilePath());
         if (!DataTableProcessor.GenerateDataFile(context, binaryDataFileName, logger))
         {
             // 记录出错的情况

@@ -1,15 +1,6 @@
-﻿
-
-
-
-
-
-
-using System;
+﻿using System;
 using System.IO;
-using DataTables.GeneratorCore;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace DataTables.GeneratorCore
 {
@@ -50,8 +41,7 @@ namespace DataTables.GeneratorCore
                     return 0;
                 }
 
-                object v = JsonConvert.DeserializeObject(value);
-                return Convert.ToInt32(v);
+                return JsonSerializer.Deserialize<int>(value);
             }
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)

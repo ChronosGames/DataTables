@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.IO;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace DataTables.GeneratorCore
 {
@@ -47,13 +47,13 @@ namespace DataTables.GeneratorCore
                     value = "{}";
                 }
 
-                var dict = JsonConvert.DeserializeObject<Hashtable>(value);
+                var dict = JsonSerializer.Deserialize<Hashtable>(value);
 
                 binaryWriter.Write7BitEncodedInt32(dict.Count);
                 foreach (DictionaryEntry item in dict)
                 {
-                    DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).WriteToStream(binaryWriter, JsonConvert.SerializeObject(item.Key));
-                    DataProcessorUtility.GetDataProcessor(m_ValueTypeStr).WriteToStream(binaryWriter, JsonConvert.SerializeObject(item.Value));
+                    DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).WriteToStream(binaryWriter, JsonSerializer.Serialize(item.Key));
+                    DataProcessorUtility.GetDataProcessor(m_ValueTypeStr).WriteToStream(binaryWriter, JsonSerializer.Serialize(item.Value));
                 }
             }
 

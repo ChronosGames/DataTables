@@ -68,8 +68,6 @@ namespace ConsoleApp
     {
         static void Main(string[] args)
         {
-            Utility.Json.SetJsonHelper(new JsonHelper());
-
             var manager = new DataTableManager();
             manager.SetDataTableHelper(new DefaultDataTableHelper("Generated"));
             manager.Preload(() => Console.WriteLine("数据表全部加载完毕"));

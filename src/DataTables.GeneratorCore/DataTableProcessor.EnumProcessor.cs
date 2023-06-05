@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace DataTables.GeneratorCore
 {
@@ -40,7 +40,7 @@ namespace DataTables.GeneratorCore
 
             public override string Parse(string value)
             {
-                return value.StartsWith("\"") ? JsonConvert.DeserializeObject<string>(value) : value;
+                return value.StartsWith("\"") ? JsonSerializer.Deserialize<string>(value) : value;
             }
 
             public override void WriteToStream(BinaryWriter binaryWriter, string value)

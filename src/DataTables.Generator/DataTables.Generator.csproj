@@ -18,8 +18,9 @@
         <PackageProjectUrl>https://github.com/PhonixGame/DataTables</PackageProjectUrl>
         <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
-        <PackageTags>database, embedded, inmemory, unity</PackageTags>
+        <PackageTags>unity, excel, generator, datatable</PackageTags>
         <IsPackable>true</IsPackable>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -28,6 +29,13 @@
 
     <ItemGroup>
         <ProjectReference Include="..\DataTables.GeneratorCore\DataTables.GeneratorCore.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="README.md">
+        <Pack>True</Pack>
+        <PackagePath>\</PackagePath>
+      </None>
     </ItemGroup>
 
 </Project>

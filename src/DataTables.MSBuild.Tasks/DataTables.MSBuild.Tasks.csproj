@@ -46,7 +46,7 @@
     <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
         <ItemGroup>
             <_PackageFiles Include="$(OutDir)\**\*.dll" Exclude="$(OutDir)$(TargetFileName)">
-                <PackagePath>tasks\netstandard2.0\%(RecursiveDir)</PackagePath>
+                <PackagePath>tasks\net7.0\%(RecursiveDir)</PackagePath>
                 <Visible>false</Visible>
                 <BuildAction>Content</BuildAction>
             </_PackageFiles>

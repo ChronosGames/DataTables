@@ -158,7 +158,7 @@ public sealed class DataTableGenerator
             }
             catch (HeaderException he)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
+                Console.ForegroundColor = ConsoleColor.Yellow;
                 logger($"Open '{filePath}' failure, exception is '{he.Message}'.");
                 Console.ResetColor();
                 yield break;

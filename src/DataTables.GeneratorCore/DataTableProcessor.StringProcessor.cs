@@ -1,57 +1,49 @@
-﻿
+﻿using System.IO;
 
+namespace DataTables.GeneratorCore;
 
-
-
-
-
-using System.IO;
-
-namespace DataTables.GeneratorCore
+public sealed partial class DataTableProcessor
 {
-    public sealed partial class DataTableProcessor
+    private sealed class StringProcessor : GenericDataProcessor<string>
     {
-        private sealed class StringProcessor : GenericDataProcessor<string>
+        public override bool IsSystem
         {
-            public override bool IsSystem
+            get
             {
-                get
-                {
-                    return true;
-                }
+                return true;
             }
+        }
 
-            public override string LanguageKeyword
+        public override string LanguageKeyword
+        {
+            get
             {
-                get
-                {
-                    return "string";
-                }
+                return "string";
             }
+        }
 
-            public override string[] GetTypeStrings()
+        public override string[] GetTypeStrings()
+        {
+            return new string[]
             {
-                return new string[]
-                {
-                    "string",
-                    "system.string"
-                };
-            }
+                "string",
+                "system.string"
+            };
+        }
 
-            public override string Parse(string value)
-            {
-                return string.IsNullOrEmpty(value) ? string.Empty : value;
-            }
+        public override string Parse(string value)
+        {
+            return string.IsNullOrEmpty(value) ? string.Empty : value;
+        }
 
-            public override void WriteToStream(BinaryWriter binaryWriter, string value)
-            {
-                binaryWriter.Write(Parse(value));
-            }
+        public override void WriteToStream(BinaryWriter binaryWriter, string value)
+        {
+            binaryWriter.Write(Parse(value));
+        }
 
-            public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
-            {
-                return $"{propertyName} = reader.ReadString();";
-            }
+        public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
+        {
+            return $"{propertyName} = reader.ReadString();";
         }
     }
 }

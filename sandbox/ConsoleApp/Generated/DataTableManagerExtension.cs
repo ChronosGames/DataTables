@@ -10,7 +10,7 @@ namespace ConsoleApp
         public static Dictionary<string, string[]> Tables = new Dictionary<string, string[]>
         {
             { "DRDataTableSample", Array.Empty<string>() },
-            { "DRDataTableSplitSample", new string[] {"x001", "x002"} },
+            { "DRDataTableSplitSample", Array.Empty<string>() },
         };
 
         /// <summary>
@@ -19,7 +19,7 @@ namespace ConsoleApp
         /// <param name="onCompleted">全部数据表预加载完成时回调。</param>
         public static void Preload(this DataTableManager manager, Action onCompleted)
         {
-            int done = 3;
+            int done = 2;
 
             void next()
             { 
@@ -28,8 +28,7 @@ namespace ConsoleApp
             };
 
             manager.CreateDataTable<DTDataTableSample>(next);
-            manager.CreateDataTable<DTDataTableSplitSample>("x001", next);
-            manager.CreateDataTable<DTDataTableSplitSample>("x002", next);
+            manager.CreateDataTable<DTDataTableSplitSample>(next);
         }
     }
 }

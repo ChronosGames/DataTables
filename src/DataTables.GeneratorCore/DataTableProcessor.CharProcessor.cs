@@ -1,53 +1,52 @@
 ﻿using System;
 using System.IO;
 
-namespace DataTables.GeneratorCore
+namespace DataTables.GeneratorCore;
+
+public sealed partial class DataTableProcessor
 {
-    public sealed partial class DataTableProcessor
+    private sealed class CharProcessor : GenericDataProcessor<char>
     {
-        private sealed class CharProcessor : GenericDataProcessor<char>
+        public override bool IsSystem
         {
-            public override bool IsSystem
+            get
             {
-                get
-                {
-                    return true;
-                }
+                return true;
             }
+        }
 
-            public override string LanguageKeyword
+        public override string LanguageKeyword
+        {
+            get
             {
-                get
-                {
-                    return "char";
-                }
+                return "char";
             }
+        }
 
-            public override string[] GetTypeStrings()
+        public override string[] GetTypeStrings()
+        {
+            return new string[]
             {
-                return new string[]
-                {
-                    "char",
-                    "system.char"
-                };
-            }
+                "char",
+                "system.char"
+            };
+        }
 
-            public override Type Type => typeof(char);
+        public override Type Type => typeof(char);
 
-            public override char Parse(string value)
-            {
-                return string.IsNullOrEmpty(value) ? default : char.Parse(value);
-            }
+        public override char Parse(string value)
+        {
+            return string.IsNullOrEmpty(value) ? default : char.Parse(value);
+        }
 
-            public override void WriteToStream(BinaryWriter binaryWriter, string value)
-            {
-                binaryWriter.Write(Parse(value));
-            }
+        public override void WriteToStream(BinaryWriter binaryWriter, string value)
+        {
+            binaryWriter.Write(Parse(value));
+        }
 
-            public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
-            {
-                return $"{propertyName} = reader.ReadChar();";
-            }
+        public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
+        {
+            return $"{propertyName} = reader.ReadChar();";
         }
     }
 }

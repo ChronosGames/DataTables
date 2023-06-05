@@ -1,53 +1,52 @@
 ﻿using System;
 using System.IO;
 
-namespace DataTables.GeneratorCore
+namespace DataTables.GeneratorCore;
+
+public sealed partial class DataTableProcessor
 {
-    public sealed partial class DataTableProcessor
+    private sealed class DecimalProcessor : GenericDataProcessor<decimal>
     {
-        private sealed class DecimalProcessor : GenericDataProcessor<decimal>
+        public override bool IsSystem
         {
-            public override bool IsSystem
+            get
             {
-                get
-                {
-                    return true;
-                }
+                return true;
             }
+        }
 
-            public override string LanguageKeyword
+        public override string LanguageKeyword
+        {
+            get
             {
-                get
-                {
-                    return "decimal";
-                }
+                return "decimal";
             }
+        }
 
-            public override string[] GetTypeStrings()
+        public override string[] GetTypeStrings()
+        {
+            return new string[]
             {
-                return new string[]
-                {
-                    "decimal",
-                    "system.decimal"
-                };
-            }
+                "decimal",
+                "system.decimal"
+            };
+        }
 
-            public override Type Type => typeof(decimal);
+        public override Type Type => typeof(decimal);
 
-            public override decimal Parse(string value)
-            {
-                return decimal.Parse(value);
-            }
+        public override decimal Parse(string value)
+        {
+            return decimal.Parse(value);
+        }
 
-            public override void WriteToStream(BinaryWriter binaryWriter, string value)
-            {
-                binaryWriter.Write(Parse(value));
-            }
+        public override void WriteToStream(BinaryWriter binaryWriter, string value)
+        {
+            binaryWriter.Write(Parse(value));
+        }
 
-            public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
-            {
-                return $"{propertyName} = reader.ReadDecimal();";
-            }
+        public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
+        {
+            return $"{propertyName} = reader.ReadDecimal();";
         }
     }
 }

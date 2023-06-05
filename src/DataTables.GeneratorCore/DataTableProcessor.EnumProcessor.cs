@@ -2,64 +2,63 @@
 using System.IO;
 using System.Text.Json;
 
-namespace DataTables.GeneratorCore
+namespace DataTables.GeneratorCore;
+
+public sealed partial class DataTableProcessor
 {
-    public sealed partial class DataTableProcessor
+    private sealed class EnumProcessor : GenericDataProcessor<string>
     {
-        private sealed class EnumProcessor : GenericDataProcessor<string>
+        public override bool IsSystem
         {
-            public override bool IsSystem
+            get
             {
-                get
-                {
-                    return false;
-                }
+                return false;
             }
+        }
 
-            public override string LanguageKeyword => m_TypeString;
+        public override string LanguageKeyword => m_TypeString;
 
-            public override string[] GetTypeStrings()
+        public override string[] GetTypeStrings()
+        {
+            return new string[]
             {
-                return new string[]
-                {
-                    $"enum<{m_TypeString}>",
-                    $"E<{m_TypeString}>",
-                };
-            }
+                $"enum<{m_TypeString}>",
+                $"E<{m_TypeString}>",
+            };
+        }
 
-            public override Type Type => typeof(string);
+        public override Type Type => typeof(string);
 
-            private readonly string m_TypeString;
+        private readonly string m_TypeString;
 
-            public EnumProcessor() { }
+        public EnumProcessor() { }
 
-            public EnumProcessor(string typeString)
-            {
-                m_TypeString = typeString;
-            }
+        public EnumProcessor(string typeString)
+        {
+            m_TypeString = typeString;
+        }
 
-            public override string Parse(string value)
-            {
-                return value.StartsWith("\"") ? JsonSerializer.Deserialize<string>(value) : value;
-            }
+        public override string Parse(string value)
+        {
+            return value.StartsWith("\"") ? JsonSerializer.Deserialize<string>(value) : value;
+        }
 
-            public override void WriteToStream(BinaryWriter binaryWriter, string value)
-            {
-                binaryWriter.Write(Parse(value));
-            }
+        public override void WriteToStream(BinaryWriter binaryWriter, string value)
+        {
+            binaryWriter.Write(Parse(value));
+        }
 
-            public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
-            {
-                return $"{{\n"
-                    + $"{Tabs(depth + 1)}{m_TypeString} __enumVal = default;\n"
-                    + $"{Tabs(depth + 1)}var __enumStr = reader.ReadString();\n"
-                    + $"{Tabs(depth + 1)}if (!string.IsNullOrEmpty(__enumStr) && !Enum.TryParse(__enumStr, out __enumVal))\n"
-                    + $"{Tabs(depth + 1)}{{\n"
-                    + $"{Tabs(depth + 2)}throw new ArgumentException();\n"
-                    + $"{Tabs(depth + 1)}}}\n"
-                    + $"{Tabs(depth + 1)}{propertyName} = __enumVal;\n"
-                    + $"{Tabs(depth)}}}";
-            }
+        public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
+        {
+            return $"{{\n"
+                + $"{Tabs(depth + 1)}{m_TypeString} __enumVal = default;\n"
+                + $"{Tabs(depth + 1)}var __enumStr = reader.ReadString();\n"
+                + $"{Tabs(depth + 1)}if (!string.IsNullOrEmpty(__enumStr) && !Enum.TryParse(__enumStr, out __enumVal))\n"
+                + $"{Tabs(depth + 1)}{{\n"
+                + $"{Tabs(depth + 2)}throw new ArgumentException();\n"
+                + $"{Tabs(depth + 1)}}}\n"
+                + $"{Tabs(depth + 1)}{propertyName} = __enumVal;\n"
+                + $"{Tabs(depth)}}}";
         }
     }
 }

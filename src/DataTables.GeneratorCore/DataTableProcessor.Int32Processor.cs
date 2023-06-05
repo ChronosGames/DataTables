@@ -1,58 +1,56 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 
-namespace DataTables.GeneratorCore
+namespace DataTables.GeneratorCore;
+
+public sealed partial class DataTableProcessor
 {
-    public sealed partial class DataTableProcessor
+    private sealed class Int32Processor : GenericDataProcessor<int>
     {
-        private sealed class Int32Processor : GenericDataProcessor<int>
+        public override bool IsSystem
         {
-            public override bool IsSystem
+            get
             {
-                get
-                {
-                    return true;
-                }
+                return true;
+            }
+        }
+
+        public override string LanguageKeyword
+        {
+            get
+            {
+                return "int";
+            }
+        }
+
+        public override string[] GetTypeStrings()
+        {
+            return new string[]
+            {
+                "int",
+                "int32",
+                "system.int32"
+            };
+        }
+
+        public override int Parse(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return 0;
             }
 
-            public override string LanguageKeyword
-            {
-                get
-                {
-                    return "int";
-                }
-            }
+            return JsonSerializer.Deserialize<int>(value);
+        }
 
-            public override string[] GetTypeStrings()
-            {
-                return new string[]
-                {
-                    "int",
-                    "int32",
-                    "system.int32"
-                };
-            }
+        public override void WriteToStream(BinaryWriter binaryWriter, string value)
+        {
+            binaryWriter.Write7BitEncodedInt32(Parse(value));
+        }
 
-            public override int Parse(string value)
-            {
-                if (string.IsNullOrEmpty(value))
-                {
-                    return 0;
-                }
-
-                return JsonSerializer.Deserialize<int>(value);
-            }
-
-            public override void WriteToStream(BinaryWriter binaryWriter, string value)
-            {
-                binaryWriter.Write7BitEncodedInt32(Parse(value));
-            }
-
-            public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
-            {
-                return $"{propertyName} = reader.Read7BitEncodedInt32();";
-            }
+        public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
+        {
+            return $"{propertyName} = reader.Read7BitEncodedInt32();";
         }
     }
 }

@@ -33,12 +33,12 @@ namespace Benchmark
             var baseConfig = Job.ShortRun.WithIterationCount(1).WithWarmupCount(1);
 
             // Add(baseConfig.With(Runtime.Clr).With(Jit.RyuJit).With(Platform.X64));
-            Add(baseConfig.With(Runtime.Core).With(Jit.RyuJit).With(Platform.X64));
+            // Add(baseConfig.With(Runtime.).With(Jit.RyuJit).With(Platform.X64));
             // Add(baseConfig.With(InProcessEmitToolchain.Instance));
 
-            Add(MarkdownExporter.GitHub);
-            Add(CsvExporter.Default);
-            Add(MemoryDiagnoser.Default);
+            AddExporter(MarkdownExporter.GitHub);
+            AddExporter(CsvExporter.Default);
+            AddDiagnoser(MemoryDiagnoser.Default);
         }
     }
 

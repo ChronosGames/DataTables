@@ -8,19 +8,19 @@ namespace DataTables.MSBuild.Tasks
     public class DataTablesGenerator : Task
     {
         [Required]
-        public string InputDirectory { get; set; }
+        public string InputDirectory { get; set; } = string.Empty;
         [Required]
-        public string CodeOutputDirectory { get; set; }
+        public string CodeOutputDirectory { get; set; } = string.Empty;
         [Required]
-        public string DataOutputDirectory { get; set; }
+        public string DataOutputDirectory { get; set; } = string.Empty;
 
-        public string UsingNamespace { get; set; }
+        public string UsingNamespace { get; set; } = string.Empty;
 
-        public string PrefixClassName { get; set; }
+        public string PrefixClassName { get; set; } = string.Empty;
 
-        public string ImportNamespaces { get; set; }
+        public string ImportNamespaces { get; set; } = string.Empty;
 
-        public string FilterColumnTags { get; set; }
+        public string FilterColumnTags { get; set; } = string.Empty;
 
         public bool ForceOverwrite { get; set; }
 

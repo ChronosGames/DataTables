@@ -23,7 +23,9 @@
     </PropertyGroup>
 	
 	<ItemGroup>
-		<!-- NuGet Tasks path. -->
+    <None Include="../../Icon.png" Pack="true" PackagePath="/" />
+
+    <!-- NuGet Tasks path. -->
 		<Content Include="build\DataTables.MSBuild.Tasks.props" PackagePath="build\" />
 	</ItemGroup>
 	

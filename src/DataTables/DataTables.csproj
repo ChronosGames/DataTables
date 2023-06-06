@@ -2,8 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
-    <!-- This project is meta package -->
-    <IncludeBuildOutput>false</IncludeBuildOutput>
     <RootNamespace>DataTables</RootNamespace>
     <AssemblyName>DataTables</AssemblyName>
 
@@ -26,29 +24,13 @@
     <IsPackable>true</IsPackable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <None Update="Validation\ValidatableSet.Sequential.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>ValidatableSet.Sequential.cs</LastGenOutput>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Update="Validation\ValidatableSet.Sequential.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>ValidatableSet.Sequential.tt</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
   <!-- Copy files for Unity -->
   <PropertyGroup>
     <DestinationRoot>$(ProjectDir)..\DataTables.Unity\Assets\Scripts\DataTables\</DestinationRoot>
     <TestDestination>$(ProjectDir)..\DataTables.Unity\Assets\Tests\</TestDestination>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="../../Icon.png" Pack="true" PackagePath="/" />
     <TargetFiles1 Include="$(ProjectDir)\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;_InternalVisibleTo.cs" />
     <TargetFiles2 Include="$(ProjectDir)\..\DataTables.Annotations\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;" />
     <TargetFiles3 Include="$(ProjectDir)\..\..\tests\DataTables.Tests\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;" />

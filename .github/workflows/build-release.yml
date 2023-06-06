@@ -76,8 +76,8 @@ jobs:
       # Store artifacts.
       - uses: actions/upload-artifact@v3
         with:
-          name: DataTables.Unity.${{ env.GIT_TAG }}.unitypackage
-          path: ./src/DataTables.Unity/DataTables.Unity.${{ env.GIT_TAG }}.unitypackage
+          name: DataTables.Unity.${{ inputs.tag }}.unitypackage
+          path: ./src/DataTables.Unity/DataTables.Unity.${{ inputs.tag }}.unitypackage
           if-no-files-found: error
 
   # release

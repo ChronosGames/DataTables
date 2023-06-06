@@ -1,0 +1,22 @@
+<Project>
+    <PropertyGroup>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)opensource.snk</AssemblyOriginatorKeyFile>
+
+        <!-- NuGet Packaging -->
+        <PackageVersion>$(Version)</PackageVersion>
+        <Company>PhonixGame</Company>
+        <Authors>PhonixGame</Authors>
+        <Copyright>© PhonixGame, Inc.</Copyright>
+        <PackageProjectUrl>https://github.com/PhonixGame/DataTables</PackageProjectUrl>
+        <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageIcon>Icon.png</PackageIcon>
+        <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)opensource.snk</AssemblyOriginatorKeyFile>
+    </PropertyGroup>
+</Project>

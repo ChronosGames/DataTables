@@ -91,8 +91,8 @@ jobs:
       push-tag: true
       nuget-push: true
       unitypackage-upload: true
-      unitypackage-name: DataTables.${{ inputs.tag }}.unitypackage
-      unitypackage-path: ./DataTables.${{ inputs.tag }}.unitypackage/DataTables.${{ inputs.tag }}.unitypackage
+      unitypackage-name: DataTables.Unity.${{ inputs.tag }}.unitypackage
+      unitypackage-path: ./DataTables.Unity.${{ inputs.tag }}.unitypackage/DataTables.Unity.${{ inputs.tag }}.unitypackage
     secrets: inherit
 
   cleanup:

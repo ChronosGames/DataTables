@@ -1,66 +1,75 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
-        <LangVersion>latest</LangVersion>
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
 
-        <!-- NuGet Packages for build task. -->
-        <NoPackageAnalysis>true</NoPackageAnalysis>
-        <BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
-        <!-- SKD depenencies local copy. -->
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-        <!-- NuGet Info -->
-        <PackageId>DataTables.MSBuild.Tasks</PackageId>
-        <PackageVersion>$(Version)</PackageVersion>
-        <Authors>PhonixGame</Authors>
-        <Copyright>PhonixGame</Copyright>
-        <Description>MSBuild Tasks of DataTables Code Generator.</Description>
-        <PackageProjectUrl>https://github.com/PhonixGame/DataTables</PackageProjectUrl>
-        <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
-        <RepositoryType>git</RepositoryType>
-        <PackageTags>datatable, embedded, inmemory, unity</PackageTags>
-        
-        <!-- we need the assemblies bundled, so set this so we don't expose any dependencies to the outside world -->
-        <GenerateDependencyFile>true</GenerateDependencyFile>
-        <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
-        <DebugType>embedded</DebugType>
-        <IsPackable>true</IsPackable>
-    </PropertyGroup>
-	
-	<ItemGroup>
-        <None Include="../../Icon.png" Pack="true" PackagePath="/" />
-	</ItemGroup>
+    <!-- NuGet Packages for build task. -->
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
+    <!-- SKD depenencies local copy. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <!-- NuGet Info -->
+    <PackageId>DataTables.MSBuild.Tasks</PackageId>
+    <PackageVersion>$(Version)</PackageVersion>
+    <Authors>PhonixGame</Authors>
+    <Copyright>PhonixGame</Copyright>
+    <Description>MSBuild Tasks of DataTables Code Generator.</Description>
+    <PackageProjectUrl>https://github.com/PhonixGame/DataTables</PackageProjectUrl>
+    <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>datatable, embedded, inmemory, unity</PackageTags>
+
+    <!-- we need the assemblies bundled, so set this so we don't expose any dependencies to the outside world -->
+    <GenerateDependencyFile>true</GenerateDependencyFile>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../Icon.png" Pack="true" PackagePath="/" />
+
+    <!-- NuGet Tasks path. -->
+    <Content Include="build\DataTables.MSBuild.Tasks.props" PackagePath="build\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Build.Framework" Version="17.6.3" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.6.3" PrivateAssets="All" ExcludeAssets="Runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DataTables.GeneratorCore\DataTables.GeneratorCore.csproj" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!--
+    The include needs to happen after output has been copied to build output folder
+    but before NuGet generates a nuspec. See https://github.com/NuGet/Home/issues/4704.
+  -->
+  <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
+    <ItemGroup>
+      <_PackageFiles Include="$(OutDir)\**\*.dll" Exclude="$(OutDir)$(TargetFileName)">
+        <PackagePath>tasks\net7.0\%(RecursiveDir)</PackagePath>
+        <Visible>false</Visible>
+        <BuildAction>Content</BuildAction>
+      </_PackageFiles>
+    </ItemGroup>
+  </Target>
+
+
+  <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
+    <ItemGroup>
+      <!-- The dependencies of your MSBuild task must be packaged inside the package, they cannot be expressed as normal PackageReferences -->
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths)" TargetPath="%(ReferenceCopyLocalPaths.DestinationSubPath)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- This target adds the generated deps.json file to our package output -->
+  <Target Name="AddBuildDependencyFileToBuiltProjectOutputGroupOutput" BeforeTargets="BuiltProjectOutputGroup" Condition=" '$(GenerateDependencyFile)' == 'true'">
 
     <ItemGroup>
-        <!-- These lines pack the build props/targets files to the `build` folder in the generated package.
-         By convention, the .NET SDK will look for build\<Package Id>.props and build\<Package Id>.targets
-         for automatic inclusion in the build. -->
-        <Content Include="build\DataTables.MSBuild.Tasks.props" PackagePath="build\" />
-        <Content Include="build\DataTables.MSBuild.Tasks.targets" PackagePath="build\" />
+      <BuiltProjectOutputGroupOutput Include="$(ProjectDepsFilePath)" TargetPath="$(ProjectDepsFileName)" FinalOutputPath="$(ProjectDepsFilePath)" />
     </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Microsoft.Build.Framework" Version="17.6.3" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.6.3" PrivateAssets="all" ExcludeAssets="Runtime" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\DataTables.GeneratorCore\DataTables.GeneratorCore.csproj" PrivateAssets="all" />
-    </ItemGroup>
-
-    <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
-        <ItemGroup>
-            <!-- The dependencies of your MSBuild task must be packaged inside the package, they cannot be expressed as normal PackageReferences -->
-            <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths)" TargetPath="%(ReferenceCopyLocalPaths.DestinationSubPath)" />
-        </ItemGroup>
-    </Target>
-
-    <!-- This target adds the generated deps.json file to our package output -->
-    <Target Name="AddBuildDependencyFileToBuiltProjectOutputGroupOutput" BeforeTargets="BuiltProjectOutputGroup" Condition=" '$(GenerateDependencyFile)' == 'true'">
-
-        <ItemGroup>
-            <BuiltProjectOutputGroupOutput Include="$(ProjectDepsFilePath)" TargetPath="$(ProjectDepsFileName)" FinalOutputPath="$(ProjectDepsFilePath)" />
-        </ItemGroup>
-    </Target>
+  </Target>
 
 </Project>

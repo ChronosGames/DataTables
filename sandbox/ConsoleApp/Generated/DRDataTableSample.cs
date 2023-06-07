@@ -259,8 +259,8 @@ namespace ConsoleApp
                 CustomJSON = reader.ReadJson<SampleParent>();
             }
             {
-                var __customStr = reader.ReadString();
-                CustomFieldType = new CustomSample(__customStr);
+                var __jsonStr = reader.ReadString();
+                CustomFieldType = new CustomSample(__jsonStr);
             }
             return true;
         }

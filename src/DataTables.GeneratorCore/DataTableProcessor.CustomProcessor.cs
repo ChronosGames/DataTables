@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Text.Json;
 
 namespace DataTables.GeneratorCore;
 
@@ -30,7 +29,10 @@ public sealed partial class DataTableProcessor
 
         private readonly string m_TypeString;
 
-        public CustomProcessor() { }
+        public CustomProcessor()
+        {
+            m_TypeString = string.Empty;
+        }
 
         public CustomProcessor(string typeString)
         {
@@ -39,7 +41,7 @@ public sealed partial class DataTableProcessor
 
         public override string Parse(string value)
         {
-            return value.StartsWith("\"") ? JsonSerializer.Deserialize<string>(value) : value;
+            return value.StartsWith("\"") ? JsonUtility.Deserialize<string>(value) : value;
         }
 
         public override void WriteToStream(BinaryWriter binaryWriter, string value)

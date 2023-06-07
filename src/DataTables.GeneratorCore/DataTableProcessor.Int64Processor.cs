@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Text.Json;
+﻿using System.IO;
 
 namespace DataTables.GeneratorCore;
 
@@ -41,7 +39,7 @@ public sealed partial class DataTableProcessor
                 return 0;
             }
 
-            return JsonSerializer.Deserialize<long>(value);
+            return JsonUtility.Deserialize<long>(value);
         }
 
         public override void WriteToStream(BinaryWriter binaryWriter, string value)

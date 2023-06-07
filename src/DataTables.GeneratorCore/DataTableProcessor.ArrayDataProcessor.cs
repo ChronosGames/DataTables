@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.IO;
-using System.Text.Json;
 
 namespace DataTables.GeneratorCore;
 
@@ -20,6 +19,8 @@ public sealed partial class DataTableProcessor
 
         public ArrayDataProcessor()
         {
+            m_KeyTypeStr = string.Empty;
+            m_LanguageKeyword = string.Empty;
         }
 
         public ArrayDataProcessor(DataProcessor keyProcessor)
@@ -45,12 +46,17 @@ public sealed partial class DataTableProcessor
                 value = "[]";
             }
 
-            var arr = JsonSerializer.Deserialize<ArrayList>(value);
+            var arr = JsonUtility.Deserialize<ArrayList>(value);
+            if (arr == null)
+            {
+                binaryWriter.Write7BitEncodedInt32(0);
+                return;
+            }
 
             binaryWriter.Write7BitEncodedInt32(arr.Count);
             foreach (var item in arr)
             {
-                DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).WriteToStream(binaryWriter, JsonSerializer.Serialize(item));
+                DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).WriteToStream(binaryWriter, JsonUtility.Serialize(item));
             }
         }
 

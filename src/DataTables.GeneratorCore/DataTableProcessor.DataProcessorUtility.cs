@@ -45,7 +45,7 @@ public sealed partial class DataTableProcessor
                 type = string.Empty;
             }
 
-            DataProcessor dataProcessor = null;
+            DataProcessor? dataProcessor;
             if (s_DataProcessors.TryGetValue(type.ToLowerInvariant(), out dataProcessor))
             {
                 return dataProcessor;

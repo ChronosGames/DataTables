@@ -22,7 +22,7 @@
 
     <!-- we need the assemblies bundled, so set this so we don't expose any dependencies to the outside world -->
     <GenerateDependencyFile>true</GenerateDependencyFile>
-    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+    <!--<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>-->
     <IsPackable>true</IsPackable>
   </PropertyGroup>
 
@@ -66,7 +66,6 @@
 
   <!-- This target adds the generated deps.json file to our package output -->
   <Target Name="AddBuildDependencyFileToBuiltProjectOutputGroupOutput" BeforeTargets="BuiltProjectOutputGroup" Condition=" '$(GenerateDependencyFile)' == 'true'">
-
     <ItemGroup>
       <BuiltProjectOutputGroupOutput Include="$(ProjectDepsFilePath)" TargetPath="$(ProjectDepsFileName)" FinalOutputPath="$(ProjectDepsFilePath)" />
     </ItemGroup>

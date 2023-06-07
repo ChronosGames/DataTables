@@ -1,44 +1,44 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
-        <LangVersion>latest</LangVersion>
-        <IsPackable>false</IsPackable>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <PackageReference Include="NPOI" Version="2.6.0" />
-        <PackageReference Include="System.CodeDom" Version="7.0.0" />
-        <PackageReference Include="ExcelDataReader" Version="3.7.0-develop00365" />
-        <PackageReference Include="ExcelDataReader.DataSet" Version="3.7.0-develop00365" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NPOI" Version="2.6.0" />
+    <PackageReference Include="System.CodeDom" Version="7.0.0" />
+    <PackageReference Include="ExcelDataReader" Version="3.7.0-develop00365" />
+    <PackageReference Include="ExcelDataReader.DataSet" Version="3.7.0-develop00365" />
+  </ItemGroup>
 
-	<ItemGroup>
-		<Compile Update="DataRowTemplate.cs">
-			<DependentUpon>DataRowTemplate.tt</DependentUpon>
-			<DesignTime>True</DesignTime>
-			<AutoGen>True</AutoGen>
-		</Compile>
-		<Compile Update="DataTableManagerExtensionTemplate.cs">
-			<DependentUpon>DataTableManagerExtensionTemplate.tt</DependentUpon>
-			<DesignTime>True</DesignTime>
-			<AutoGen>True</AutoGen>
-		</Compile>
-	</ItemGroup>
+  <ItemGroup>
+    <Compile Update="DataRowTemplate.cs">
+      <DependentUpon>DataRowTemplate.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="DataTableManagerExtensionTemplate.cs">
+      <DependentUpon>DataTableManagerExtensionTemplate.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+  </ItemGroup>
 
-    <ItemGroup>
-        <None Update="DataRowTemplate.tt">
-            <LastGenOutput>DataRowTemplate.cs</LastGenOutput>
-            <Generator>TextTemplatingFilePreprocessor</Generator>
-        </None>
-		<None Update="DataTableManagerExtensionTemplate.tt">
-			<LastGenOutput>DataTableManagerExtensionTemplate.cs</LastGenOutput>
-			<Generator>TextTemplatingFilePreprocessor</Generator>
-		</None>
-    </ItemGroup>
+  <ItemGroup>
+    <None Update="DataRowTemplate.tt">
+      <LastGenOutput>DataRowTemplate.cs</LastGenOutput>
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+    </None>
+    <None Update="DataTableManagerExtensionTemplate.tt">
+      <LastGenOutput>DataTableManagerExtensionTemplate.cs</LastGenOutput>
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+    </None>
+  </ItemGroup>
 
-    <ItemGroup>
-        <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
-    </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
 
 </Project>

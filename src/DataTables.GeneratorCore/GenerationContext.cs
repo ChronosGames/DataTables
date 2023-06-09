@@ -34,12 +34,12 @@ public class GenerationContext
     public string InputFilePath { get; set; }
 
     /// <summary>字段索引列表</summary>
-    public List<string[]> Indexs { get; private set; } = new List<string[]>();
+    public readonly List<string[]> Indexs = new List<string[]>();
 
     /// <summary>
     /// 列分组索引列表
     /// </summary>
-    public List<string[]> Groups { get; private set; } = new List<string[]>();
+    public readonly List<string[]> Groups = new List<string[]>();
 
     /// <summary>
     /// 子表的名称
@@ -61,7 +61,7 @@ public class GenerationContext
     /// </summary>
     public bool Skiped;
 
-    public Property GetField(string field)
+    public Property? GetField(string field)
     {
         return Properties.FirstOrDefault(x => x.Name == field);
     }

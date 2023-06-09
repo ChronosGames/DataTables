@@ -28,9 +28,20 @@ public class Program : ConsoleAppBase
         var sw = Stopwatch.StartNew();
         Console.WriteLine("Start DataTables CodeGeneration");
 
-        new DataTableGenerator().GenerateFile(inputDirectory, codeOutputDir, dataOutputDir, usingNamespace, prefixClassName,
-            importNamespaces: importNamespaces,
-            filterColumnTags: filterColumnTags, forceOverwrite, Console.WriteLine);
+        try
+        {
+            new DataTableGenerator().GenerateFile(inputDirectory, codeOutputDir, dataOutputDir, usingNamespace, prefixClassName,
+                importNamespaces: importNamespaces,
+                filterColumnTags: filterColumnTags,
+                forceOverwrite,
+                Console.WriteLine);
+        }
+        catch (Exception e)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(e);
+            Console.ResetColor();
+        }
 
         Console.WriteLine("Complete DataTables Generation, elapsed: " + sw.Elapsed);
     }

@@ -232,6 +232,8 @@ public sealed class DataTableGenerator
 
                                     rowReader.Read();
                                     ParseFieldTypeRow(context, rowReader);
+
+                                    ValidateGenerateContext(context);
                                 }
                             }
                             catch (Exception e)
@@ -251,7 +253,13 @@ public sealed class DataTableGenerator
                                 return false;
                             }
 
-                            return !value.ToString().Trim().StartsWith("#");
+                            var plain = value.ToString();
+                            if (string.IsNullOrEmpty(plain))
+                            {
+                                return false;
+                            }
+
+                            return !plain.Trim().StartsWith("#");
                         },
 
                         // Gets or sets a callback to determine whether to include the specific
@@ -570,6 +578,34 @@ public sealed class DataTableGenerator
         context.RowCount = rowCount;
         context.ColumnCount = columnCount;
         context.Cells = cells;
+    }
+
+    // 检查GenerateContext是否存在异常
+    private static void ValidateGenerateContext(GenerationContext context)
+    {
+        // 检查是否存在正确的索引配置
+        foreach (var index in context.Indexs)
+        {
+            foreach (var fieldName in index)
+            {
+                if (!context.Properties.Any(x => x != null && x.Name == fieldName))
+                {
+                    throw new Exception($"Index配置中发现不存在的字段: {fieldName}");
+                }
+            }
+        }
+
+        // 检查是否存在正确的分组配置
+        foreach (var group in context.Groups)
+        {
+            foreach (var fieldName in group)
+            {
+                if (!context.Properties.Any(x => x != null && x.Name == fieldName))
+                {
+                    throw new Exception($"Group配置中发现不存在的字段: {fieldName}");
+                }
+            }
+        }
     }
 
     #endregion

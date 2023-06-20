@@ -99,6 +99,8 @@ public sealed partial class DataTableProcessor : IDisposable
                 return;
             }
         }
+
+        ValidateGenerateContext();
     }
 
     private static bool ValidRow(IRow? row)
@@ -199,6 +201,11 @@ public sealed partial class DataTableProcessor : IDisposable
     // 检查GenerateContext是否存在异常
     private void ValidateGenerateContext()
     {
+        if (m_RowFieldType == -1)
+        {
+            throw new Exception("表格头部信息不全");
+        }
+
         // 检查是否存在正确的索引配置
         foreach (var index in m_Context.Indexs)
         {

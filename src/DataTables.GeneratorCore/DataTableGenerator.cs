@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -6,8 +7,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using ExcelDataReader;
-using ExcelDataReader.Exceptions;
+using System.Threading.Tasks;
+using NPOI.SS.Formula.Functions;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 
@@ -15,16 +16,13 @@ namespace DataTables.GeneratorCore;
 
 public sealed class DataTableGenerator
 {
-    private const int HeadRowCount = 4;
-    private static readonly Regex NameRegex = new Regex(@"^[A-Za-z][A-Za-z0-9_]*$");
-
     public void GenerateFile(string inputDirectory, string codeOutputDir, string dataOutputDir, string usingNamespace, string prefixClassName, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger)
     {
         // By default, ExcelDataReader throws a NotSupportedException "No data is available for encoding 1252." on .NET Core.
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
         prefixClassName ??= string.Empty;
-        var list = new List<GenerationContext>();
+        var list = new ConcurrentQueue<GenerationContext>();
 
         // 拼接Import的命名空间
         string[] usingStrings = string.IsNullOrEmpty(importNamespaces) ? Array.Empty<string>() : importNamespaces.Split('&');
@@ -46,16 +44,10 @@ public sealed class DataTableGenerator
             throw new InvalidOperationException("Path must be directory but it is csproj. inputDirectory:" + inputDirectory);
         }
 
-        var files = Directory.EnumerateFiles(inputDirectory, "*.*", SearchOption.AllDirectories)
-                    .Where(s => s.EndsWith(".xlsx") || s.EndsWith(".xlsb") || s.EndsWith(".xls") || s.EndsWith(".csv"));
+        var filePaths = Directory.EnumerateFiles(inputDirectory, "*.*", SearchOption.AllDirectories)
+                    .Where(s => s.EndsWith(".xlsx") || s.EndsWith(".xlsb") || s.EndsWith(".xls") || s.EndsWith(".csv")).ToArray();
 
-        foreach (var item in files)
-        {
-            list.AddRange(CreateGenerationContext(item, filterColumnTags, logger));
-        }
-        // list.Sort((a, b) => string.Compare(a.FileName + a.SheetName, a.FileName + b.SheetName, StringComparison.Ordinal));
-
-        if (list.Count == 0)
+        if (filePaths.Count() == 0)
         {
             throw new InvalidOperationException("Not found Excel files, inputDir:" + inputDirectory);
         }
@@ -70,52 +62,51 @@ public sealed class DataTableGenerator
             Directory.CreateDirectory(dataOutputDir);
         }
 
-        foreach (var context in list)
+        Array.ForEach(filePaths, filePath =>
         {
-            // 全局属性赋值
-            context.Namespace = usingNamespace;
-            context.PrefixClassName = prefixClassName;
-            context.UsingStrings = usingStrings;
-
-            // 收集全部的子表
-            if (!string.IsNullOrEmpty(context.Child))
+            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
-                context.Children = list.Where(x => x.ClassName == context.ClassName && !string.IsNullOrEmpty(x.Child)).Select(x => x.Child).ToArray();
-            }
-
-            // 判断是否存在配置表变更（以修改时间为准），若不存在则直接跳过
-            if (!forceOverwrite)
-            {
-                var processPath = Process.GetCurrentProcess().MainModule.FileName;
-                var processLastWriteTime = File.GetLastWriteTime(processPath);
-                var excelLastWriteTime = File.GetLastWriteTime(context.InputFilePath);
-
-                var targetFilePath = Path.Combine(dataOutputDir, context.GetDataOutputFilePath());
-                if (File.Exists(targetFilePath))
+                var xssWorkbook = new XSSFWorkbook(stream);
+                for (int i = 0; i < xssWorkbook.NumberOfSheets; i++)
                 {
-                    var dataLastWriteTime = File.GetLastWriteTime(targetFilePath);
-                    if (dataLastWriteTime > excelLastWriteTime && dataLastWriteTime > processLastWriteTime)
+                    var sheet = xssWorkbook.GetSheetAt(i);
+                    if (!ValidSheet(sheet))
                     {
-                        // 标记为跳过
-                        context.Skiped = true;
-
-                        logger(string.Format("Generate Excel File: [{0}]({1}) (skiped)", context.InputFilePath.Replace(inputDirectory, "").Trim('\\'), context.SheetName));
                         continue;
+                    }
+
+                    var context = new GenerationContext
+                    {
+                        FileName = Path.GetFileNameWithoutExtension(filePath),
+                        Namespace = usingNamespace,
+                        PrefixClassName = prefixClassName,
+                        UsingStrings = usingStrings,
+                        SheetName = sheet.SheetName.Trim(),
+                    };
+
+                    logger(string.Format("Generate Excel File: [{0}]({1})", filePath.Replace(inputDirectory, "").Trim('\\'), context.SheetName));
+
+                    using (var processor = new DataTableProcessor(context, filterColumnTags))
+                    {
+                        // 初始化GenerateContext
+                        processor.CreateGenerateContext(sheet);
+                        list.Enqueue(context);
+
+                        // 收集全部的子表
+                        if (!string.IsNullOrEmpty(context.Child))
+                        {
+                            context.Children = list.Where(x => x.ClassName == context.ClassName && !string.IsNullOrEmpty(x.Child)).Select(x => x.Child).ToArray();
+                        }
+
+                        // 生成代码文件
+                        GenerateCodeFile(context, codeOutputDir, forceOverwrite, logger);
+
+                        // 生成数据文件
+                        processor.GenerateDataFile(filePath, dataOutputDir, forceOverwrite, sheet, logger);
                     }
                 }
             }
-
-            logger(string.Format("Generate Excel File: [{0}]({1})", context.InputFilePath.Replace(inputDirectory, "").Trim('\\'), context.SheetName));
-
-            // 加载首行单元格的批注信息
-            LoadFirstRowCellNote(context);
-
-            // 生成代码文件
-            GenerateCodeFile(context, codeOutputDir, forceOverwrite, logger);
-
-            // 生成二进制文件
-            GenerateDataFile(context, dataOutputDir, forceOverwrite, logger);
-        }
+        });
 
         logger("Generate Manager Files:");
 
@@ -127,6 +118,7 @@ public sealed class DataTableGenerator
                 continue;
             }
 
+            // 记录子表名称
             dataTables.Add(context.ClassName, context.Children);
         }
 
@@ -144,471 +136,21 @@ public sealed class DataTableGenerator
         logger($"数据表导出完成: {list.Count(x => !x.Failed && !x.Skiped)} 成功，{list.Count(x => x.Failed)} 失败，{list.Count(x => x.Skiped)} 已跳过");
     }
 
-    IEnumerable<GenerationContext> CreateGenerationContext(string filePath, string filterColumnTags, Action<string> logger)
+    // 检验是否过滤该Sheet
+    private static bool ValidSheet(ISheet? sheet)
     {
-        using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read))
-        {
-            // Auto-detect format, supports:
-            //  - Binary Excel files (2.0-2003 format; *.xls)
-            //  - OpenXml Excel files (2007 format; *.xlsx, *.xlsb)
-            IExcelDataReader reader;
-            try
-            {
-                reader = ExcelReaderFactory.CreateReader(stream);
-            }
-            catch (HeaderException he)
-            {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                logger($"Open '{filePath}' failure, exception is '{he.Message}'.");
-                Console.ResetColor();
-                yield break;
-            }
-
-            try
-            {
-                var contexts = new Dictionary<string, GenerationContext>();
-                var result = reader.AsDataSet(new ExcelDataSetConfiguration()
-                {
-                    // Gets or sets a value indicating whether to set the DataColumn.DataType 
-                    // property in a second pass.
-                    UseColumnDataType = true,
-
-                    // Gets or sets a callback to determine whether to include the current sheet
-                    // in the DataSet. Called once per sheet before ConfigureDataTable.
-                    FilterSheet = (tableReader, sheetIndex) =>
-                    {
-                        var isCommentSheet = tableReader.Name.StartsWith("#", StringComparison.Ordinal);
-                        if (isCommentSheet)
-                        {
-                            return false;
-                        }
-
-                        if (tableReader.RowCount < HeadRowCount)
-                        {
-                            return false;
-                        }
-
-                        var context = new GenerationContext
-                        {
-                            FileName = Path.GetFileNameWithoutExtension(filePath),
-                            UsingStrings = Array.Empty<string>(),
-
-                            InputFilePath = filePath,
-                            SheetName = tableReader.Name,
-                        };
-
-                        contexts.Add(tableReader.Name, context);
-
-                        return true;
-                    },
-
-                    // Gets or sets a callback to obtain configuration options for a DataTable. 
-                    ConfigureDataTable = (tableReader) => new ExcelDataTableConfiguration()
-                    {
-                        // Gets or sets a value indicating the prefix of generated column names.
-                        EmptyColumnNamePrefix = "Column",
-
-                        // Gets or sets a value indicating whether to use a row from the 
-                        // data as column names.
-                        UseHeaderRow = true,
-
-                        // Gets or sets a callback to determine which row is the header row. 
-                        // Only called when UseHeaderRow = true.
-                        ReadHeaderRow = (rowReader) =>
-                        {
-                            var context = contexts[rowReader.Name];
-
-                            // F.ex skip the first row and use the 2nd row as column headers:
-                            //rowReader.Read();
-                            try
-                            {
-                                if (ParseSheetInfoRow(context, rowReader))
-                                {
-                                    rowReader.Read();
-                                    ParseFieldCommentRow(context, rowReader, filterColumnTags);
-
-                                    rowReader.Read();
-                                    ParseFieldNameRow(context, rowReader);
-
-                                    rowReader.Read();
-                                    ParseFieldTypeRow(context, rowReader);
-
-                                    ValidateGenerateContext(context);
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                throw new Exception($"Parse {filePath}'s '{rowReader.Name}' exception.", e);
-                            }
-                        },
-
-                        // Gets or sets a callback to determine whether to include the 
-                        // current row in the DataTable.
-                        FilterRow = (rowReader) =>
-                        {
-                            // Console.WriteLine($"{rowReader.GetValue(0)}, Depth={rowReader.Depth}, FieldCount={rowReader.FieldCount}, RowCount={rowReader.RowCount}");
-                            var value = rowReader.GetValue(0);
-                            if (value == null)
-                            {
-                                return false;
-                            }
-
-                            var plain = value.ToString();
-                            if (string.IsNullOrEmpty(plain))
-                            {
-                                return false;
-                            }
-
-                            return !plain.Trim().StartsWith("#");
-                        },
-
-                        // Gets or sets a callback to determine whether to include the specific
-                        // column in the DataTable. Called once per column after reading the 
-                        // headers.
-                        FilterColumn = (rowReader, columnIndex) =>
-                        {
-                            var context = contexts[rowReader.Name];
-                            if (context.Properties == null)
-                            {
-                                return false;
-                            }
-
-                            var property = context.Properties[columnIndex];
-                            return property != null;
-                        }
-                    }
-                });
-
-                foreach (var pair in contexts)
-                {
-                    // 解析数据
-                    var context = pair.Value;
-                    if (string.IsNullOrEmpty(context.ClassName))
-                    {
-                        continue;
-                    }
-
-                    // 忽略无属性的Sheet
-                    if (context.Properties == null)
-                    {
-                        continue;
-                    }
-
-                    // 移除空的Property元素
-                    RemoveEmptyProperties(pair.Value);
-
-                    // 忽略属性列表个数为零的Sheet
-                    if (context.Properties.Length == 0)
-                    {
-                        continue;
-                    }
-
-                    // 解析数据
-                    try
-                    {
-                        ParseDataSet(context, result.Tables[pair.Key]);
-                    }
-                    catch (Exception e)
-                    {
-                        throw new Exception($"Parse {filePath}'s {pair.Value.SheetName} exception.", e);
-                    }
-
-                    yield return context;
-                }
-            }
-            finally
-            {
-                reader.Dispose();
-            }
-        }
-
-        yield break;
-    }
-
-    private static void LoadFirstRowCellNote(GenerationContext context)
-    {
-        using (var stream = new FileStream(context.InputFilePath, FileMode.Open))
-        {
-            stream.Position = 0;
-            using (XSSFWorkbook xssWorkbook = new XSSFWorkbook(stream))
-            {
-                var sheet = xssWorkbook.GetSheet(context.SheetName);
-
-                IRow row;
-                ICell cell;
-                for (int i = 0; i < 100; i++)
-                {
-                    row = sheet.GetRow(i);
-                    if (row.GetCell(0).StringCellValue.Trim().StartsWith("#"))
-                    {
-                        continue;
-                    }
-
-                    for (int j = i + 1; j < 100; j++)
-                    {
-                        row = sheet.GetRow(j);
-                        cell = row.GetCell(0);
-                        if (cell.CellType == CellType.String && cell.StringCellValue.Trim().StartsWith("#"))
-                        {
-                            continue;
-                        }
-
-                        for (int k = 0; k < row.Cells.Count; k++)
-                        {
-                            cell = row.Cells[k];
-                            if (cell.CellComment == null)
-                            {
-                                continue;
-                            }
-
-                            if (string.IsNullOrEmpty(cell.CellComment.String.String))
-                            {
-                                continue;
-                            }
-
-                            var field = context.Properties.FirstOrDefault(x => x.Index == k);
-                            if (field != null)
-                            {
-                                field.Note = cell.CellComment.String.String;
-                            }
-                        }
-
-                        break;
-                    }
-
-                    break;
-                }
-            }
-        }
-    }
-
-    private static void RemoveEmptyProperties(GenerationContext context)
-    {
-        var properties = context.Properties;
-        int i = 0, j = 0;
-        for (; i < properties.Length; i++)
-        {
-            if (properties[i] != null)
-            {
-                continue;
-            }
-
-            // 寻找下一个非空的
-            var found = -1;
-            for (j = Math.Max(j, i + 1); j < properties.Length; j++)
-            {
-                if (properties[j] != null)
-                {
-                    found = j;
-                    break;
-                }
-            }
-
-            if (found != -1)
-            {
-                properties[i] = properties[found];
-                properties[found] = null;
-            }
-            else
-            {
-                break;
-            }
-        }
-
-        if (i != properties.Length)
-        {
-            Array.Resize(ref properties, i);
-            context.Properties = properties;
-        }
-    }
-
-    #region 数据表解析过程
-
-    private static bool ContainTags(string text, string tags)
-    {
-        for (int i = 0; i < text.Length; i++)
-        {
-            if (tags.Contains(text[i]))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // 解析第一行的表头信息
-    private static bool ParseSheetInfoRow(GenerationContext context, IExcelDataReader reader)
-    {
-        var value = reader.GetValue(0);
-        if (value == null)
+        if (sheet == null)
         {
             return false;
         }
 
-        var arr = reader.GetString(0).Split(',');
-        foreach (var pair in arr)
+        if (sheet.SheetName.TrimStart().StartsWith("#"))
         {
-            var properties = pair.Split('=');
-            if (properties.Length == 2)
-            {
-                switch (properties[0].Trim().ToLower())
-                {
-                    case "title":
-                        context.Title = properties[1].Trim();
-                        break;
-                    case "class":
-                        context.ClassName = properties[1].Trim();
-                        break;
-                    case "enabletagsfilter":
-                        context.EnableTagsFilter = bool.Parse(properties[1].Trim());
-                        break;
-                    case "index":
-                        context.Indexs.Add(properties[1].Trim().Split('&'));
-                        break;
-                    case "group":
-                        context.Groups.Add(properties[1].Trim().Split('&'));
-                        break;
-                    case "child":
-                        context.Child = properties[1].Trim();
-                        break;
-                }
-            }
-            else if (properties.Length == 1)
-            {
-                switch (properties[0].Trim().ToLower())
-                {
-                    case "enabletagsfilter":
-                        context.EnableTagsFilter = true;
-                        break;
-                }
-            }
+            return false;
         }
 
-        return !string.IsNullOrEmpty(context.ClassName);
+        return true;
     }
-
-    private static void ParseFieldCommentRow(GenerationContext context, IExcelDataReader reader, string filterColumnTags)
-    {
-        context.Properties = new Property[reader.FieldCount];
-
-        for (int i = 0; i < reader.FieldCount; i++)
-        {
-            // 修正列名行文本为空时解析报错
-            if (reader.GetValue(i) == null)
-            {
-                continue;
-            }
-
-            var text = reader.GetString(i).Trim();
-            if (text.StartsWith("#", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            // 是否允许导出
-            if (context.EnableTagsFilter)
-            {
-                var index = text.LastIndexOf('@');
-                if (index != -1)
-                {
-                    if (!string.IsNullOrEmpty(filterColumnTags) && !ContainTags(text.Substring(index + 1).ToUpper(), filterColumnTags.ToUpper()))
-                    {
-                        continue;
-                    }
-
-                    text = text.Substring(0, index);
-                }
-            }
-
-            context.Properties[i] = new Property(i);
-            context.Properties[i].Comment = text;
-        }
-    }
-
-    private static void ParseFieldNameRow(GenerationContext context, IExcelDataReader reader)
-    {
-        for (int i = 0; i < reader.FieldCount; i++)
-        {
-            if (context.Properties[i] == null)
-            {
-                continue;
-            }
-
-            var text = reader.GetString(i).Trim();
-            if (!NameRegex.IsMatch(text))
-            {
-                context.Properties[i] = null;
-                continue;
-            }
-
-            context.Properties[i].Name = text;
-        }
-    }
-
-    private static void ParseFieldTypeRow(GenerationContext context, IExcelDataReader reader)
-    {
-        for (int i = 0; i < reader.FieldCount; i++)
-        {
-            if (context.Properties[i] == null)
-            {
-                continue;
-            }
-
-            context.Properties[i].TypeName = reader.GetString(i).Trim();
-        }
-    }
-
-    private static void ParseDataSet(GenerationContext context, DataTable table)
-    {
-        int rowCount = table.Rows.Count;
-        int columnCount = table.Columns.Count;
-        Debug.Assert(columnCount == context.Properties.Length, "列个数不一致");
-
-        object[,] cells = new object[rowCount, columnCount];
-
-        for (int i = 0; i < rowCount; i++)
-        {
-            for (int j = 0; j < columnCount; j++)
-            {
-                cells[i, j] = table.Rows[i][j];
-            }
-        }
-
-        context.RowCount = rowCount;
-        context.ColumnCount = columnCount;
-        context.Cells = cells;
-    }
-
-    // 检查GenerateContext是否存在异常
-    private static void ValidateGenerateContext(GenerationContext context)
-    {
-        // 检查是否存在正确的索引配置
-        foreach (var index in context.Indexs)
-        {
-            foreach (var fieldName in index)
-            {
-                if (!context.Properties.Any(x => x != null && x.Name == fieldName))
-                {
-                    throw new Exception($"Index配置中发现不存在的字段: {fieldName}");
-                }
-            }
-        }
-
-        // 检查是否存在正确的分组配置
-        foreach (var group in context.Groups)
-        {
-            foreach (var fieldName in group)
-            {
-                if (!context.Properties.Any(x => x != null && x.Name == fieldName))
-                {
-                    throw new Exception($"Group配置中发现不存在的字段: {fieldName}");
-                }
-            }
-        }
-    }
-
-    #endregion
 
     static void GenerateCodeFile(GenerationContext context, string outputDir, bool forceOverwrite, Action<string> logger)
     {
@@ -645,20 +187,5 @@ public sealed class DataTableGenerator
 
         File.WriteAllBytes(path, contentBytes);
         return $"  > Generate {fileName} to: {path}";
-    }
-
-    static void GenerateDataFile(GenerationContext context, string outputDir, bool forceOverwrite, Action<string> logger)
-    {
-        string binaryDataFileName = Path.Combine(outputDir, context.GetDataOutputFilePath());
-        if (!DataTableProcessor.GenerateDataFile(context, binaryDataFileName, logger))
-        {
-            // 记录出错的情况
-            context.Failed = true;
-
-            if (File.Exists(binaryDataFileName))
-            {
-                File.Delete(binaryDataFileName);
-            }
-        }
     }
 }

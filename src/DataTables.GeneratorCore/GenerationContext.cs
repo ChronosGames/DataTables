@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using NPOI.SS.UserModel;
 
 namespace DataTables.GeneratorCore;
 
@@ -25,13 +26,7 @@ public class GenerationContext
 
     public bool EnableTagsFilter { get; set; }
 
-    public Property[] Properties { get; set; }
-
-    public int RowCount { get; set; }
-    public int ColumnCount { get; set; }
-    public object[,] Cells { get; set; }
-
-    public string InputFilePath { get; set; }
+    public XField[] Fields { get; set; }
 
     /// <summary>字段索引列表</summary>
     public readonly List<string[]> Indexs = new List<string[]>();
@@ -61,9 +56,9 @@ public class GenerationContext
     /// </summary>
     public bool Skiped;
 
-    public Property? GetField(string field)
+    public XField? GetField(string field)
     {
-        return Properties.FirstOrDefault(x => x.Name == field);
+        return Fields.FirstOrDefault(x => !x.IsIgnore && x.Name == field);
     }
 
     /// <summary>
@@ -165,12 +160,17 @@ public class GenerationContext
     }
 }
 
-public class Property
+public class XField
 {
     /// <summary>
     /// 列序号
     /// </summary>
     public readonly int Index;
+
+    /// <summary>
+    /// 中文名称行上的单元格的文本内容
+    /// </summary>
+    public string Title { get; set; }
 
     /// <summary>
     /// 字段类型
@@ -183,17 +183,18 @@ public class Property
     public string Name { get; set; }
 
     /// <summary>
-    /// 中文名称行上的单元格的文本内容
-    /// </summary>
-    public string Comment { get; set; }
-
-    /// <summary>
     /// 中文名称行上单元格的批注信息
     /// </summary>
     public string Note { get; set; }
 
-    public Property(int index)
+    /// <summary>
+    /// 是否忽略
+    /// </summary>
+    public bool IsIgnore { get; set; }
+
+    public XField(int index)
     {
         Index = index;
     }
 }
+

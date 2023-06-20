@@ -36,7 +36,7 @@ public sealed partial class DataTableProcessor
 
         public override double Parse(string value)
         {
-            return double.Parse(value);
+            return string.IsNullOrEmpty(value) ? 0d : double.Parse(value);
         }
 
         public override void WriteToStream(BinaryWriter binaryWriter, string value)

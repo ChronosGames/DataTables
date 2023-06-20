@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Text;
 
 namespace DataTables.GeneratorCore;
@@ -24,12 +22,12 @@ public partial class DataRowTemplate
 
     public string ClassName => GenerationContext.RealClassName;
 
-    internal string GetPropertyTypeString(Property property)
+    internal string GetPropertyTypeString(XField property)
     {
         return DataTableProcessor.GetLanguageKeyword(property);
     }
 
-    internal string GetDeserializeMethodString(Property property)
+    internal string GetDeserializeMethodString(XField property)
     {
         return DataTableProcessor.GetDeserializeMethodString(GenerationContext, property);
     }

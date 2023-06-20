@@ -175,9 +175,12 @@ namespace DataTables.GeneratorCore
             this.Write("</summary>\r\n    public sealed partial class ");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
             this.Write(" : DataRowBase\r\n    {\r\n");
- foreach(var item in GenerationContext.Properties) { 
+ foreach(var item in GenerationContext.Fields)
+{
+    if (item.IsIgnore) continue;
+
             this.Write("        /// <summary>");
-            this.Write(this.ToStringHelper.ToStringWithCulture(BuildSummary(item.Comment)));
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildSummary(item.Title)));
             this.Write("</summary>");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.IsNullOrEmpty(item.Note) ? string.Empty : Environment.NewLine + "        /// <remarks>" + BuildSummary(item.Note) + "</remarks>"));
             this.Write("\r\n        public ");
@@ -187,7 +190,10 @@ namespace DataTables.GeneratorCore
             this.Write(" { get; private set; }\r\n");
  } 
             this.Write("\r\n        public override bool Deserialize(BinaryReader reader)\r\n        {\r\n");
- foreach(var item in GenerationContext.Properties) { 
+ foreach(var item in GenerationContext.Fields)
+{
+    if (item.IsIgnore) continue;
+
             this.Write("            ");
             this.Write(this.ToStringHelper.ToStringWithCulture(GetDeserializeMethodString(item)));
             this.Write("\r\n");

@@ -109,14 +109,20 @@ namespace <#= Namespace #>
     /// <summary><#= BuildSummary(GenerationContext.Title) #></summary>
     public sealed partial class <#= GenerationContext.RealClassName #> : DataRowBase
     {
-<# foreach(var item in GenerationContext.Properties) { #>
-        /// <summary><#= BuildSummary(item.Comment) #></summary><#= string.IsNullOrEmpty(item.Note) ? string.Empty : Environment.NewLine + "        /// <remarks>" + BuildSummary(item.Note) + "</remarks>" #>
+<# foreach(var item in GenerationContext.Fields)
+{
+    if (item.IsIgnore) continue;
+#>
+        /// <summary><#= BuildSummary(item.Title) #></summary><#= string.IsNullOrEmpty(item.Note) ? string.Empty : Environment.NewLine + "        /// <remarks>" + BuildSummary(item.Note) + "</remarks>" #>
         public <#= GetPropertyTypeString(item) #> <#= item.Name #> { get; private set; }
 <# } #>
 
         public override bool Deserialize(BinaryReader reader)
         {
-<# foreach(var item in GenerationContext.Properties) { #>
+<# foreach(var item in GenerationContext.Fields)
+{
+    if (item.IsIgnore) continue;
+#>
             <#= GetDeserializeMethodString(item) #>
 <# } #>
             return true;

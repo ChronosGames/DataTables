@@ -13,8 +13,6 @@
   <ItemGroup>
     <PackageReference Include="NPOI" Version="2.6.0" />
     <PackageReference Include="System.CodeDom" Version="7.0.0" />
-    <PackageReference Include="ExcelDataReader" Version="3.7.0-develop00365" />
-    <PackageReference Include="ExcelDataReader.DataSet" Version="3.7.0-develop00365" />
   </ItemGroup>
 
   <ItemGroup>

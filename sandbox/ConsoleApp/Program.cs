@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Buffers;
 using System.Diagnostics;
 using DataTables;
@@ -70,17 +70,17 @@ namespace ConsoleApp
         {
             var manager = new DataTableManager();
             manager.SetDataTableHelper(new DefaultDataTableHelper("Generated"));
-            manager.Preload(() => Console.WriteLine("Êı¾İ±íÈ«²¿¼ÓÔØÍê±Ï"));
+            manager.Preload(() => Console.WriteLine("æ•°æ®è¡¨å…¨éƒ¨åŠ è½½å®Œæ¯•"));
 
-            Debug.Assert(manager.HasDataTable<DTDataTableSample>(), "¼ÓÔØÅäÖÃ±íÊ§°Ü");
+            Debug.Assert(manager.HasDataTable<DTDataTableSample>(), "åŠ è½½é…ç½®è¡¨å¤±è´¥");
 
             var card = manager.GetDataTable<DTDataTableSample>();
-            Debug.Assert(card.GetDataRowById(1) != null, "¼ÓÔØÅäÖÃ±íÊ§°Ü1");
+            Debug.Assert(card.GetDataRowById(1) != null, "åŠ è½½é…ç½®è¡¨å¤±è´¥1");
             manager.DestroyDataTable(card);
 
-            //Debug.Assert(!manager.HasDataTable<DTDataTableSplitSample>(), "¼ÓÔØÅäÖÃ±íÊ§°Ü");
+            //Debug.Assert(!manager.HasDataTable<DTDataTableSplitSample>(), "åŠ è½½é…ç½®è¡¨å¤±è´¥");
             //manager.CreateDataTable<DTDataTableSplitSample>();
-            //Debug.Assert(manager.HasDataTable<DTDataTableSplitSample>(), "¼ÓÔØÅäÖÃ±íÊ§°Ü");
+            //Debug.Assert(manager.HasDataTable<DTDataTableSplitSample>(), "åŠ è½½é…ç½®è¡¨å¤±è´¥");
         }
 
     }

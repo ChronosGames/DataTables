@@ -113,6 +113,22 @@ public sealed partial class DataTableProcessor : IDisposable
             return false;
         }
 
+        // 是否空行
+        bool found = false;
+        for (int i = row.FirstCellNum; i < row.LastCellNum; i++)
+        {
+            var cell0 = row.GetCell(i);
+            if (cell0 != null && cell0.CellType != CellType.Blank)
+            {
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            return false;
+        }
+
         var cell = row.GetCell(row.FirstCellNum);
         if (cell == null)
         {
@@ -157,6 +173,27 @@ public sealed partial class DataTableProcessor : IDisposable
             default:
                 return cell.ToString().Trim();
         }
+    }
+
+    private static string GetCellNote(ICell cell)
+    {
+        if (cell.CellComment == null)
+        {
+            return string.Empty;
+        }
+
+        var author = cell.CellComment.Author;
+        var plain = cell.CellComment.String.String;
+        if (plain.StartsWith($"{author}:\n", StringComparison.Ordinal))
+        {
+            return plain.Substring(author.Length + 2);
+        }
+        else if (plain.StartsWith($"{author}:\r\n", StringComparison.Ordinal))
+        {
+            return plain.Substring(author.Length + 3);
+        }
+
+        return plain;
     }
 
     // 检查GenerateContext是否存在异常
@@ -282,7 +319,7 @@ public sealed partial class DataTableProcessor : IDisposable
             }
 
             field.Title = text;
-            field.Note = cell.CellComment != null ? cell.CellComment.ToString().Trim() : string.Empty;
+            field.Note = GetCellNote(cell);
         }
     }
 
@@ -362,7 +399,7 @@ public sealed partial class DataTableProcessor : IDisposable
                 using (BinaryWriter binaryWriter = new BinaryWriter(fileStream, Encoding.UTF8))
                 {
                     // 写入行数
-                    binaryWriter.Write7BitEncodedInt32(GetRowCount(sheet));
+                    binaryWriter.Write7BitEncodedInt32(GetDataRowCount(sheet));
 
                     for (int i = m_RowFieldType + 1; i <= sheet.LastRowNum; i++)
                     {
@@ -397,7 +434,7 @@ public sealed partial class DataTableProcessor : IDisposable
         }
     }
 
-    private int GetRowCount(ISheet sheet)
+    private int GetDataRowCount(ISheet sheet)
     {
         int rowCount = 0;
 

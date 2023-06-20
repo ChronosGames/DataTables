@@ -118,6 +118,12 @@ public sealed class DataTableGenerator
                 continue;
             }
 
+            // 收集全部的子表
+            if (!string.IsNullOrEmpty(context.Child))
+            {
+                context.Children = list.Where(x => x.ClassName == context.ClassName && !string.IsNullOrEmpty(x.Child)).Select(x => x.Child).ToArray();
+            }
+
             // 记录子表名称
             dataTables.Add(context.ClassName, context.Children);
         }

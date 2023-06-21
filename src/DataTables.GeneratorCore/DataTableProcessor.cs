@@ -179,14 +179,28 @@ public sealed partial class DataTableProcessor : IDisposable
     {
         switch (cellType)
         {
+            case CellType.Blank:
+                return string.Empty;
             case CellType.Numeric:
-                return cell.NumericCellValue.ToString();
+            {
+                // 如果单元格为数字类型，根据单元格的样式格式化成字符串
+                if (DateUtil.IsCellDateFormatted(cell))
+                {
+                    return cell.DateCellValue.ToString("yyyy-MM-dd HH:mm:ss");
+                }
+                else
+                {
+                    return cell.NumericCellValue.ToString();
+                }
+            }
             case CellType.String:
                 return cell.StringCellValue.Trim();
             case CellType.Boolean:
-                return cell.BooleanCellValue.ToString();
+                return cell.BooleanCellValue ? "TRUE" : "FALSE";
             case CellType.Formula:
                 return GetCellString(cell, cell.CachedFormulaResultType);
+            case CellType.Error:
+                return FormulaError.ForInt(cell.ErrorCellValue).String;
             default:
                 return cell.ToString().Trim();
         }

@@ -131,23 +131,38 @@ public sealed partial class DataTableProcessor : IDisposable
             return false;
         }
 
-        var cell = row.GetCell(row.FirstCellNum);
-        if (cell == null)
-        {
-            return true;
-        }
-
-        if (cell.CellType != CellType.String)
-        {
-            return true;
-        }
-
-        if (cell.StringCellValue.TrimStart().StartsWith("#"))
+        if (GetCellString(row.GetCell(row.FirstCellNum)).StartsWith("#"))
         {
             return false;
         }
 
         return true;
+    }
+
+    private bool VaildDataRow(IRow? row)
+    {
+        if (row == null || row.FirstCellNum < 0)
+        {
+            return false;
+        }
+
+        if (GetCellString(row.GetCell(row.FirstCellNum)).StartsWith("#"))
+        {
+            return false;
+        }
+
+        // 是否空行
+        foreach (var field in m_Context.Fields)
+        {
+            if (field.IsIgnore) { continue; }
+
+            if (!string.IsNullOrEmpty(GetCellString(row.GetCell(field.Index))))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string GetCellString(ICell? cell)
@@ -332,45 +347,35 @@ public sealed partial class DataTableProcessor : IDisposable
 
     private void ParseFieldNameRow(IRow row)
     {
-        for (int i = 0; i <= row.LastCellNum - row.FirstCellNum; i++)
+        foreach (var field in m_Context.Fields)
         {
-            if (m_Context.Fields.Length <= i)
+            if (field.IsIgnore)
             {
                 continue;
             }
 
-            if (m_Context.Fields[i].IsIgnore)
-            {
-                continue;
-            }
-
-            var text = GetCellString(row.GetCell(i + row.FirstCellNum));
+            var text = GetCellString(row.GetCell(field.Index));
             if (!NameRegex.IsMatch(text))
             {
-                m_Context.Fields[i].IsIgnore = true;
+                field.IsIgnore = true;
                 continue;
             }
 
-            m_Context.Fields[i].Name = text;
+            field.Name = text;
         }
     }
 
     private void ParseFieldTypeRow(IRow row)
     {
-        for (int i = 0; i <= row.LastCellNum - row.FirstCellNum; i++)
+        foreach (var field in m_Context.Fields)
         {
-            if (m_Context.Fields.Length <= i)
+            if (field.IsIgnore)
             {
                 continue;
             }
 
-            if (m_Context.Fields[i].IsIgnore)
-            {
-                continue;
-            }
-
-            var text = GetCellString(row.GetCell(i + row.FirstCellNum));
-            m_Context.Fields[i].TypeName = text;
+            var text = GetCellString(row.GetCell(field.Index));
+            field.TypeName = text;
         }
     }
 
@@ -411,7 +416,7 @@ public sealed partial class DataTableProcessor : IDisposable
                     for (int i = m_RowFieldType + 1; i <= sheet.LastRowNum; i++)
                     {
                         var row = sheet.GetRow(i);
-                        if (!ValidRow(row))
+                        if (!VaildDataRow(row))
                         {
                             continue;
                         }

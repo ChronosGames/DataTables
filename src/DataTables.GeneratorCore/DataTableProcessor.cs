@@ -95,12 +95,9 @@ public sealed partial class DataTableProcessor : IDisposable
 
             if (++m_ReadRowIndex > 3)
             {
-                ValidateGenerateContext();
                 return;
             }
         }
-
-        ValidateGenerateContext();
     }
 
     private static bool ValidRow(IRow? row)
@@ -227,9 +224,13 @@ public sealed partial class DataTableProcessor : IDisposable
         return plain;
     }
 
-    // 检查GenerateContext是否存在异常
-    private void ValidateGenerateContext()
+    public bool ValidateGenerateContext()
     {
+        if (string.IsNullOrEmpty(m_Context.ClassName))
+        {
+            return false;
+        }
+
         if (m_RowFieldType == -1)
         {
             throw new Exception("表格头部信息不全");
@@ -258,6 +259,8 @@ public sealed partial class DataTableProcessor : IDisposable
                 }
             }
         }
+
+        return true;
     }
 
     private static bool ContainTags(string text, string tags)

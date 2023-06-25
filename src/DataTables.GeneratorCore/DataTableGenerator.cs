@@ -90,6 +90,11 @@ public sealed class DataTableGenerator
                     {
                         // 初始化GenerateContext
                         processor.CreateGenerateContext(sheet);
+                        if (!processor.ValidateGenerateContext())
+                        {
+                            continue;
+                        }
+
                         list.Enqueue(context);
 
                         // 收集全部的子表

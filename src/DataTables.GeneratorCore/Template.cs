@@ -48,15 +48,15 @@ public partial class DataRowTemplate
         {
             var sb = new StringBuilder();
             sb.AppendLine();
-            sb.Append("        /// ");
+            sb.Append("    /// ");
             sb.AppendLine(lines[0].Trim());
             for (int i = 1; i < lines.Length; i++)
             {
-                sb.Append("        /// <para>");
+                sb.Append("    /// <para>");
                 sb.Append(lines[i].Trim());
                 sb.AppendLine("</para>");
             }
-            sb.Append("        /// ");
+            sb.Append("    /// ");
             return sb.ToString();
         }
     }

@@ -34,18 +34,18 @@ namespace DataTables.GeneratorCore
             this.Write(this.ToStringHelper.ToStringWithCulture(Namespace));
             this.Write("\r\n{\r\n");
  } 
-            this.Write("    public sealed partial class DT");
+            this.Write("public sealed partial class DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write(" : DataTable<");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
-            this.Write(">\r\n    {\r\n");
+            this.Write(">\r\n{\r\n");
 
     if (GenerationContext.Children.Length > 0)
     {
         foreach (var child in GenerationContext.Children)
         {
             
-            this.Write("        public const string _");
+            this.Write("    public const string _");
             this.Write(this.ToStringHelper.ToStringWithCulture(child));
             this.Write(" = \"");
             this.Write(this.ToStringHelper.ToStringWithCulture(child));
@@ -64,7 +64,7 @@ namespace DataTables.GeneratorCore
         var item = GenerationContext.Indexs[i];
 
         
-            this.Write("        private ");
+            this.Write("    private ");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildIndexDictDefine(item)));
             this.Write(" m_Dict");
             this.Write(this.ToStringHelper.ToStringWithCulture(i + 1));
@@ -80,7 +80,7 @@ namespace DataTables.GeneratorCore
         var fieldNames = GenerationContext.Groups[j];
 
         
-            this.Write("        private ");
+            this.Write("    private ");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildGroupDictDefine(fieldNames)));
             this.Write(" m_Dict");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.Indexs.Count + 1 + j));
@@ -92,9 +92,9 @@ namespace DataTables.GeneratorCore
     }
 
 
-            this.Write("        public DT");
+            this.Write("    public DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
-            this.Write("() : base() { }\r\n        public DT");
+            this.Write("() : base() { }\r\n    public DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write("(string name) : base(name) { }\r\n");
 
@@ -103,50 +103,50 @@ namespace DataTables.GeneratorCore
     {
         var item = GenerationContext.Indexs[i];
 
-            this.Write("        public ");
+            this.Write("    public ");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
             this.Write(" GetDataRowBy");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join("And", item)));
             this.Write("(");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildMethodParameters(item)));
-            this.Write(")\r\n        {\r\n            if (m_Dict");
+            this.Write(")\r\n    {\r\n        if (m_Dict");
             this.Write(this.ToStringHelper.ToStringWithCulture(i + 1));
             this.Write(".TryGetValue(");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", ", item)));
-            this.Write(", out var result))\r\n            {\r\n                return result;\r\n            }\r" +
-                    "\n            else\r\n            {\r\n#if DT_CHECK_NOT_FOUND && UNITY_EDITOR\r\n      " +
-                    "          UnityEngine.Debug.LogWarningFormat(\"DT");
+            this.Write(", out var result))\r\n        {\r\n            return result;\r\n        }\r\n        els" +
+                    "e\r\n        {\r\n#if DT_CHECK_NOT_FOUND && UNITY_EDITOR\r\n            UnityEngine.De" +
+                    "bug.LogWarningFormat(\"DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write(" not found index: ");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildIndexsLogFormat(item)));
             this.Write("\", ");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", ", item)));
-            this.Write(");\r\n#endif\r\n                return null;\r\n            }\r\n        }\r\n");
+            this.Write(");\r\n#endif\r\n            return null;\r\n        }\r\n    }\r\n");
   }
     for (var j = 0; j < GenerationContext.Groups.Count; j++)
     {
         var item = GenerationContext.Groups[j];
 
-            this.Write("        public List<");
+            this.Write("    public List<");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
             this.Write("> GetDataRowsGroupBy");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join("And", item)));
             this.Write("(");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildMethodParameters(item)));
-            this.Write(")\r\n        {\r\n            return m_Dict");
+            this.Write(")\r\n    {\r\n        return m_Dict");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.Indexs.Count + j + 1));
             this.Write(".TryGetValue(");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", ", item)));
-            this.Write(", out var result) ? result : null;\r\n        }\r\n");
+            this.Write(", out var result) ? result : null;\r\n    }\r\n");
   } 
-            this.Write("\r\n        protected override void InternalAddDataRow(int index, ");
+            this.Write("\r\n    protected override void InternalAddDataRow(int index, ");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
-            this.Write(" dataRow)\r\n        {\r\n            base.InternalAddDataRow(index, dataRow);\r\n\r\n");
+            this.Write(" dataRow)\r\n    {\r\n        base.InternalAddDataRow(index, dataRow);\r\n\r\n");
   for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {
         var item = GenerationContext.Indexs[i];
 
-            this.Write("            m_Dict");
+            this.Write("        m_Dict");
             this.Write(this.ToStringHelper.ToStringWithCulture(i+1));
             this.Write(".Add(dataRow.");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", dataRow.", item)));
@@ -156,49 +156,48 @@ namespace DataTables.GeneratorCore
     {
         var item = GenerationContext.Groups[i];
 
-            this.Write("            {\r\n                if (m_Dict");
+            this.Write("        {\r\n            if (m_Dict");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.Indexs.Count + i + 1));
             this.Write(".TryGetValue(dataRow.");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", dataRow.", item)));
-            this.Write(", out var arr))\r\n                {\r\n                    arr.Add(dataRow);\r\n      " +
-                    "          }\r\n                else\r\n                {\r\n                    arr = " +
-                    "new List<");
+            this.Write(", out var arr))\r\n            {\r\n                arr.Add(dataRow);\r\n            }\r" +
+                    "\n            else\r\n            {\r\n                arr = new List<");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
-            this.Write(">();\r\n                    arr.Add(dataRow);\r\n                    m_Dict");
+            this.Write(">();\r\n                arr.Add(dataRow);\r\n                m_Dict");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.Indexs.Count + i + 1));
             this.Write(".Add(dataRow.");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", dataRow.", item)));
-            this.Write(", arr);\r\n                }\r\n            }\r\n");
+            this.Write(", arr);\r\n            }\r\n        }\r\n");
   } 
-            this.Write("        }\r\n    }\r\n\r\n    /// <summary>");
+            this.Write("    }\r\n}\r\n\r\n/// <summary>");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildSummary(GenerationContext.Title)));
-            this.Write("</summary>\r\n    public sealed partial class ");
+            this.Write("</summary>\r\npublic sealed partial class ");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
-            this.Write(" : DataRowBase\r\n    {\r\n");
+            this.Write(" : DataRowBase\r\n{\r\n");
  foreach(var item in GenerationContext.Fields)
 {
     if (item.IsIgnore) continue;
 
-            this.Write("        /// <summary>");
+            this.Write("    /// <summary>");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildSummary(item.Title)));
             this.Write("</summary>");
-            this.Write(this.ToStringHelper.ToStringWithCulture(string.IsNullOrEmpty(item.Note) ? string.Empty : Environment.NewLine + "        /// <remarks>" + BuildSummary(item.Note) + "</remarks>"));
-            this.Write("\r\n        public ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(string.IsNullOrEmpty(item.Note) ? string.Empty : Environment.NewLine + "    /// <remarks>" + BuildSummary(item.Note) + "</remarks>"));
+            this.Write("\r\n    public ");
             this.Write(this.ToStringHelper.ToStringWithCulture(GetPropertyTypeString(item)));
             this.Write(" ");
             this.Write(this.ToStringHelper.ToStringWithCulture(item.Name));
             this.Write(" { get; private set; }\r\n");
  } 
-            this.Write("\r\n        public override bool Deserialize(BinaryReader reader)\r\n        {\r\n");
+            this.Write("\r\n    public override bool Deserialize(BinaryReader reader)\r\n    {\r\n");
  foreach(var item in GenerationContext.Fields)
 {
     if (item.IsIgnore) continue;
 
-            this.Write("            ");
+            this.Write("        ");
             this.Write(this.ToStringHelper.ToStringWithCulture(GetDeserializeMethodString(item)));
             this.Write("\r\n");
  } 
-            this.Write("            return true;\r\n        }\r\n    }\r\n    \r\n");
+            this.Write("        return true;\r\n    }\r\n}\r\n    \r\n");
  if (!string.IsNullOrEmpty(Namespace)) { 
             this.Write("}\r\n");
  } 

@@ -15,14 +15,14 @@ using DataTables;
 namespace <#= Namespace #>
 {
 <# } #>
-    public sealed partial class DT<#= GenerationContext.ClassName #> : DataTable<<#= GenerationContext.RealClassName #>>
-    {
+public sealed partial class DT<#= GenerationContext.ClassName #> : DataTable<<#= GenerationContext.RealClassName #>>
+{
 <#
     if (GenerationContext.Children.Length > 0)
     {
         foreach (var child in GenerationContext.Children)
         {
-            #>        public const string _<#=child #> = "<#=child#>";<#=Environment.NewLine#><#
+            #>    public const string _<#=child #> = "<#=child#>";<#=Environment.NewLine#><#
         }
 
         #><#=Environment.NewLine#><#
@@ -32,102 +32,102 @@ namespace <#= Namespace #>
     {
         var item = GenerationContext.Indexs[i];
 
-        #>        private <#= GenerationContext.BuildIndexDictDefine(item) #> m_Dict<#= i + 1 #> = new <#= GenerationContext.BuildIndexDictDefine(item) #>();<#=Environment.NewLine#><#
+        #>    private <#= GenerationContext.BuildIndexDictDefine(item) #> m_Dict<#= i + 1 #> = new <#= GenerationContext.BuildIndexDictDefine(item) #>();<#=Environment.NewLine#><#
     }
 
     for (var j = 0; j < GenerationContext.Groups.Count; j++)
     {
         var fieldNames = GenerationContext.Groups[j];
 
-        #>        private <#= GenerationContext.BuildGroupDictDefine(fieldNames) #> m_Dict<#= GenerationContext.Indexs.Count + 1 + j #> = new <#= GenerationContext.BuildGroupDictDefine(fieldNames) #>();<#=Environment.NewLine#><#
+        #>    private <#= GenerationContext.BuildGroupDictDefine(fieldNames) #> m_Dict<#= GenerationContext.Indexs.Count + 1 + j #> = new <#= GenerationContext.BuildGroupDictDefine(fieldNames) #>();<#=Environment.NewLine#><#
     }
 
 #>
-        public DT<#= GenerationContext.ClassName #>() : base() { }
-        public DT<#= GenerationContext.ClassName #>(string name) : base(name) { }
+    public DT<#= GenerationContext.ClassName #>() : base() { }
+    public DT<#= GenerationContext.ClassName #>(string name) : base(name) { }
 <#
 
     for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {
         var item = GenerationContext.Indexs[i];
 #>
-        public <#= GenerationContext.RealClassName #> GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    public <#= GenerationContext.RealClassName #> GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    {
+        if (m_Dict<#= i + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result))
         {
-            if (m_Dict<#= i + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result))
-            {
-                return result;
-            }
-            else
-            {
-#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-                UnityEngine.Debug.LogWarningFormat("DT<#= GenerationContext.ClassName #> not found index: <#= GenerationContext.BuildIndexsLogFormat(item) #>", <#= string.Join(", ", item) #>);
-#endif
-                return null;
-            }
+            return result;
         }
+        else
+        {
+#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
+            UnityEngine.Debug.LogWarningFormat("DT<#= GenerationContext.ClassName #> not found index: <#= GenerationContext.BuildIndexsLogFormat(item) #>", <#= string.Join(", ", item) #>);
+#endif
+            return null;
+        }
+    }
 <#  }
     for (var j = 0; j < GenerationContext.Groups.Count; j++)
     {
         var item = GenerationContext.Groups[j];
 #>
-        public List<<#= GenerationContext.RealClassName #>> GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
-        {
-            return m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result) ? result : null;
-        }
+    public List<<#= GenerationContext.RealClassName #>> GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    {
+        return m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result) ? result : null;
+    }
 <#  } #>
 
-        protected override void InternalAddDataRow(int index, <#= GenerationContext.RealClassName #> dataRow)
-        {
-            base.InternalAddDataRow(index, dataRow);
+    protected override void InternalAddDataRow(int index, <#= GenerationContext.RealClassName #> dataRow)
+    {
+        base.InternalAddDataRow(index, dataRow);
 
 <#  for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {
         var item = GenerationContext.Indexs[i];
 #>
-            m_Dict<#= i+1 #>.Add(dataRow.<#= string.Join(", dataRow.", item) #>, dataRow);
+        m_Dict<#= i+1 #>.Add(dataRow.<#= string.Join(", dataRow.", item) #>, dataRow);
 <#  }
     for (var i = 0; i < GenerationContext.Groups.Count; i++)
     {
         var item = GenerationContext.Groups[i];
 #>
+        {
+            if (m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.TryGetValue(dataRow.<#= string.Join(", dataRow.", item) #>, out var arr))
             {
-                if (m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.TryGetValue(dataRow.<#= string.Join(", dataRow.", item) #>, out var arr))
-                {
-                    arr.Add(dataRow);
-                }
-                else
-                {
-                    arr = new List<<#= GenerationContext.RealClassName #>>();
-                    arr.Add(dataRow);
-                    m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.Add(dataRow.<#= string.Join(", dataRow.", item) #>, arr);
-                }
+                arr.Add(dataRow);
             }
-<#  } #>
+            else
+            {
+                arr = new List<<#= GenerationContext.RealClassName #>>();
+                arr.Add(dataRow);
+                m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.Add(dataRow.<#= string.Join(", dataRow.", item) #>, arr);
+            }
         }
+<#  } #>
     }
+}
 
-    /// <summary><#= BuildSummary(GenerationContext.Title) #></summary>
-    public sealed partial class <#= GenerationContext.RealClassName #> : DataRowBase
+/// <summary><#= BuildSummary(GenerationContext.Title) #></summary>
+public sealed partial class <#= GenerationContext.RealClassName #> : DataRowBase
+{
+<# foreach(var item in GenerationContext.Fields)
+{
+    if (item.IsIgnore) continue;
+#>
+    /// <summary><#= BuildSummary(item.Title) #></summary><#= string.IsNullOrEmpty(item.Note) ? string.Empty : Environment.NewLine + "    /// <remarks>" + BuildSummary(item.Note) + "</remarks>" #>
+    public <#= GetPropertyTypeString(item) #> <#= item.Name #> { get; private set; }
+<# } #>
+
+    public override bool Deserialize(BinaryReader reader)
     {
 <# foreach(var item in GenerationContext.Fields)
 {
     if (item.IsIgnore) continue;
 #>
-        /// <summary><#= BuildSummary(item.Title) #></summary><#= string.IsNullOrEmpty(item.Note) ? string.Empty : Environment.NewLine + "        /// <remarks>" + BuildSummary(item.Note) + "</remarks>" #>
-        public <#= GetPropertyTypeString(item) #> <#= item.Name #> { get; private set; }
+        <#= GetDeserializeMethodString(item) #>
 <# } #>
-
-        public override bool Deserialize(BinaryReader reader)
-        {
-<# foreach(var item in GenerationContext.Fields)
-{
-    if (item.IsIgnore) continue;
-#>
-            <#= GetDeserializeMethodString(item) #>
-<# } #>
-            return true;
-        }
+        return true;
     }
+}
     
 <# if (!string.IsNullOrEmpty(Namespace)) { #>
 }

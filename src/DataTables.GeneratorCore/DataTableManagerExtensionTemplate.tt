@@ -12,48 +12,48 @@ using DataTables;
 namespace <#= Namespace #>
 {
 <# } #>
-    public static class DataTableManagerExtension
+public static class DataTableManagerExtension
+{
+    public static Dictionary<string, string[]> Tables = new Dictionary<string, string[]>
     {
-        public static Dictionary<string, string[]> Tables = new Dictionary<string, string[]>
-        {
 <# foreach (var pair in DataTables)
 {
-    #>            { "<#= DataRowPrefix #><#= pair.Key #>", <#=(pair.Value.Length == 0 ? "Array.Empty<string>()" : "new string[] {\"" + string.Join("\", \"", pair.Value) + "\"}")#> },<#=Environment.NewLine#><# 
+    #>        { "<#= DataRowPrefix #><#= pair.Key #>", <#=(pair.Value.Length == 0 ? "Array.Empty<string>()" : "new string[] {\"" + string.Join("\", \"", pair.Value) + "\"}")#> },<#=Environment.NewLine#><# 
 } #>
+    };
+
+    /// <summary>
+    /// 预加载所有数据表。
+    /// </summary>
+    /// <param name="onCompleted">全部数据表预加载完成时回调。</param>
+    public static void Preload(this DataTableManager manager, Action onCompleted)
+    {
+        int done = <#=DataTables.Sum(pair => pair.Value.Length > 0 ? pair.Value.Length : 1)#>;
+
+        void next()
+        { 
+            if (--done == 0)
+                onCompleted?.Invoke(); 
         };
-
-        /// <summary>
-        /// 预加载所有数据表。
-        /// </summary>
-        /// <param name="onCompleted">全部数据表预加载完成时回调。</param>
-        public static void Preload(this DataTableManager manager, Action onCompleted)
-        {
-            int done = <#=DataTables.Sum(pair => pair.Value.Length > 0 ? pair.Value.Length : 1)#>;
-
-            void next()
-            { 
-                if (--done == 0)
-                    onCompleted?.Invoke(); 
-            };
 
 <# 
 foreach (var pair in DataTables)
 {
     if (pair.Value.Length == 0)
     {
-        #>            manager.CreateDataTable<DT<#=pair.Key#>>(next);<#=Environment.NewLine#><#
+        #>        manager.CreateDataTable<DT<#=pair.Key#>>(next);<#=Environment.NewLine#><#
     }
     else
     {
         foreach (var name in pair.Value)
         {
-            #>            manager.CreateDataTable<DT<#=pair.Key#>>("<#=name#>", next);<#=Environment.NewLine#><#
+            #>        manager.CreateDataTable<DT<#=pair.Key#>>("<#=name#>", next);<#=Environment.NewLine#><#
         }
     }   
 }
 #>
-        }
     }
+}
 <# if (!string.IsNullOrEmpty(Namespace)) { #>
 }
 <# } #>

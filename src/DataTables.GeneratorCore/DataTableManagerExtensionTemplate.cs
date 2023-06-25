@@ -32,13 +32,12 @@ namespace DataTables.GeneratorCore
             this.Write(this.ToStringHelper.ToStringWithCulture(Namespace));
             this.Write("\r\n{\r\n");
  } 
-            this.Write("    public static class DataTableManagerExtension\r\n    {\r\n        public static D" +
-                    "ictionary<string, string[]> Tables = new Dictionary<string, string[]>\r\n        {" +
-                    "\r\n");
+            this.Write("public static class DataTableManagerExtension\r\n{\r\n    public static Dictionary<st" +
+                    "ring, string[]> Tables = new Dictionary<string, string[]>\r\n    {\r\n");
  foreach (var pair in DataTables)
 {
     
-            this.Write("            { \"");
+            this.Write("        { \"");
             this.Write(this.ToStringHelper.ToStringWithCulture(DataRowPrefix));
             this.Write(this.ToStringHelper.ToStringWithCulture(pair.Key));
             this.Write("\", ");
@@ -47,25 +46,19 @@ namespace DataTables.GeneratorCore
             this.Write(this.ToStringHelper.ToStringWithCulture(Environment.NewLine));
  
 } 
-            this.Write(@"        };
-
-        /// <summary>
-        /// 预加载所有数据表。
-        /// </summary>
-        /// <param name=""onCompleted"">全部数据表预加载完成时回调。</param>
-        public static void Preload(this DataTableManager manager, Action onCompleted)
-        {
-            int done = ");
+            this.Write("    };\r\n\r\n    /// <summary>\r\n    /// 预加载所有数据表。\r\n    /// </summary>\r\n    /// <para" +
+                    "m name=\"onCompleted\">全部数据表预加载完成时回调。</param>\r\n    public static void Preload(this" +
+                    " DataTableManager manager, Action onCompleted)\r\n    {\r\n        int done = ");
             this.Write(this.ToStringHelper.ToStringWithCulture(DataTables.Sum(pair => pair.Value.Length > 0 ? pair.Value.Length : 1)));
-            this.Write(";\r\n\r\n            void next()\r\n            { \r\n                if (--done == 0)\r\n " +
-                    "                   onCompleted?.Invoke(); \r\n            };\r\n\r\n");
+            this.Write(";\r\n\r\n        void next()\r\n        { \r\n            if (--done == 0)\r\n             " +
+                    "   onCompleted?.Invoke(); \r\n        };\r\n\r\n");
  
 foreach (var pair in DataTables)
 {
     if (pair.Value.Length == 0)
     {
         
-            this.Write("            manager.CreateDataTable<DT");
+            this.Write("        manager.CreateDataTable<DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(pair.Key));
             this.Write(">(next);");
             this.Write(this.ToStringHelper.ToStringWithCulture(Environment.NewLine));
@@ -76,7 +69,7 @@ foreach (var pair in DataTables)
         foreach (var name in pair.Value)
         {
             
-            this.Write("            manager.CreateDataTable<DT");
+            this.Write("        manager.CreateDataTable<DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(pair.Key));
             this.Write(">(\"");
             this.Write(this.ToStringHelper.ToStringWithCulture(name));
@@ -87,7 +80,7 @@ foreach (var pair in DataTables)
     }   
 }
 
-            this.Write("        }\r\n    }\r\n");
+            this.Write("    }\r\n}\r\n");
  if (!string.IsNullOrEmpty(Namespace)) { 
             this.Write("}\r\n");
  } 

@@ -5,31 +5,31 @@ using DataTables;
 
 namespace ConsoleApp
 {
-    public static class DataTableManagerExtension
+public static class DataTableManagerExtension
+{
+    public static Dictionary<string, string[]> Tables = new Dictionary<string, string[]>
     {
-        public static Dictionary<string, string[]> Tables = new Dictionary<string, string[]>
-        {
-            { "DRDataTableSample", Array.Empty<string>() },
-            { "DRDataTableSplitSample", new string[] {"x001", "x002"} },
+        { "DRDataTableSample", Array.Empty<string>() },
+        { "DRDataTableSplitSample", new string[] {"x001", "x002"} },
+    };
+
+    /// <summary>
+    /// 预加载所有数据表。
+    /// </summary>
+    /// <param name="onCompleted">全部数据表预加载完成时回调。</param>
+    public static void Preload(this DataTableManager manager, Action onCompleted)
+    {
+        int done = 3;
+
+        void next()
+        { 
+            if (--done == 0)
+                onCompleted?.Invoke(); 
         };
 
-        /// <summary>
-        /// 预加载所有数据表。
-        /// </summary>
-        /// <param name="onCompleted">全部数据表预加载完成时回调。</param>
-        public static void Preload(this DataTableManager manager, Action onCompleted)
-        {
-            int done = 3;
-
-            void next()
-            { 
-                if (--done == 0)
-                    onCompleted?.Invoke(); 
-            };
-
-            manager.CreateDataTable<DTDataTableSample>(next);
-            manager.CreateDataTable<DTDataTableSplitSample>("x001", next);
-            manager.CreateDataTable<DTDataTableSplitSample>("x002", next);
-        }
+        manager.CreateDataTable<DTDataTableSample>(next);
+        manager.CreateDataTable<DTDataTableSplitSample>("x001", next);
+        manager.CreateDataTable<DTDataTableSplitSample>("x002", next);
     }
+}
 }

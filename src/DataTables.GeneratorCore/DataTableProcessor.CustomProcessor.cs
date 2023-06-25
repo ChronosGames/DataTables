@@ -51,10 +51,7 @@ public sealed partial class DataTableProcessor
 
         public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
         {
-            return $"{{\n"
-                + $"{Tabs(depth + 1)}var __jsonStr = reader.ReadString();\n"
-                + $"{Tabs(depth + 1)}{propertyName} = new {m_TypeString}(__jsonStr);\n"
-                + $"{Tabs(depth)}}}";
+            return $"{propertyName} = new {m_TypeString}(reader.ReadString());";
         }
     }
 }

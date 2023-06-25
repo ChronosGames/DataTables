@@ -23,7 +23,7 @@ public sealed partial class DataTableProcessor
 
         protected string Tabs(int depth)
         {
-            return new string(' ', 4 * (depth + 3));
+            return new string(' ', 4 * (depth + 2));
         }
 
         public abstract string[] GetTypeStrings();

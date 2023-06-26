@@ -231,6 +231,12 @@ public sealed partial class DataTableProcessor : IDisposable
             return false;
         }
 
+        // 是否存在有效列
+        if (!m_Context.Fields.Any(x => !x.IsIgnore))
+        {
+            return false;
+        }
+
         if (m_RowFieldType == -1)
         {
             throw new Exception("表格头部信息不全");

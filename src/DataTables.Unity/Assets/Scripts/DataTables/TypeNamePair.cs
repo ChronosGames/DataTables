@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 
 namespace DataTables
@@ -16,8 +16,7 @@ namespace DataTables
         /// 初始化类型和名称的组合值的新实例。
         /// </summary>
         /// <param name="type">类型。</param>
-        public TypeNamePair(Type type)
-            : this(type, string.Empty)
+        public TypeNamePair(Type type) : this(type, string.Empty)
         {
         }
 
@@ -70,7 +69,7 @@ namespace DataTables
                 throw new Exception("Type is invalid.");
             }
 
-            string typeName = m_Type.FullName;
+            string typeName = m_Type.FullName!;
             return string.IsNullOrEmpty(m_Name) ? typeName : string.Format("{0}.{1}", typeName, m_Name);
         }
 

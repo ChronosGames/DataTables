@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -112,6 +112,11 @@ public sealed partial class DataTableProcessor : IDisposable
             return false;
         }
 
+        if (row.FirstCellNum == row.LastCellNum)
+        {
+            return false;
+        }
+
         // 是否空行
         bool found = false;
         for (int i = row.FirstCellNum; i < row.LastCellNum; i++)
@@ -128,22 +133,12 @@ public sealed partial class DataTableProcessor : IDisposable
             return false;
         }
 
-        if (GetCellString(row.GetCell(row.FirstCellNum)).StartsWith("#"))
-        {
-            return false;
-        }
-
         return true;
     }
 
     private bool VaildDataRow(IRow? row)
     {
         if (row == null || row.FirstCellNum < 0)
-        {
-            return false;
-        }
-
-        if (GetCellString(row.GetCell(row.FirstCellNum)).StartsWith("#"))
         {
             return false;
         }
@@ -434,8 +429,9 @@ public sealed partial class DataTableProcessor : IDisposable
                 using (BinaryWriter binaryWriter = new BinaryWriter(fileStream, Encoding.UTF8))
                 {
                     // 写入行数
-                    binaryWriter.Write7BitEncodedInt32(GetDataRowCount(sheet));
+                    binaryWriter.Write(0);
 
+                    int dataRowCount = 0;
                     for (int i = m_RowFieldType + 1; i <= sheet.LastRowNum; i++)
                     {
                         var row = sheet.GetRow(i);
@@ -444,8 +440,14 @@ public sealed partial class DataTableProcessor : IDisposable
                             continue;
                         }
 
+                        dataRowCount++;
                         WriteRowBytes(binaryWriter, row);
                     }
+
+                    var endPosition = fileStream.Position;
+                    fileStream.Position = 0;
+                    binaryWriter.Write(dataRowCount);
+                    fileStream.Position = endPosition;
                 }
             }
 
@@ -469,35 +471,16 @@ public sealed partial class DataTableProcessor : IDisposable
         }
     }
 
-    private int GetDataRowCount(ISheet sheet)
-    {
-        int rowCount = 0;
-
-        for (int i = m_RowFieldType + 1; i <= sheet.LastRowNum; i++)
-        {
-            var row = sheet.GetRow(i);
-            if (!ValidRow(row))
-            {
-                continue;
-            }
-
-            rowCount++;
-        }
-
-        return rowCount;
-    }
-
-    private void WriteRowBytes(BinaryWriter binaryWriter, IRow row)
+    private void WriteRowBytes(BinaryWriter writer, IRow row)
     {
         foreach (var field in m_Context.Fields)
         {
-            if (field.IsIgnore)
-                continue;
+            if (field.IsIgnore) { continue; }
 
             var processor = DataProcessorUtility.GetDataProcessor(field.TypeName);
             try
             {
-                processor.WriteToStream(binaryWriter, GetCellString(row.GetCell(field.Index)));
+                processor.WriteToStream(writer, GetCellString(row.GetCell(field.Index)));
             }
             catch (Exception e)
             {

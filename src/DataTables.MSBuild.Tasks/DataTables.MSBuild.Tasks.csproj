@@ -12,12 +12,8 @@
     <!-- NuGet Info -->
     <PackageId>DataTables.MSBuild.Tasks</PackageId>
     <PackageVersion>$(Version)</PackageVersion>
-    <Authors>PhonixGame</Authors>
-    <Copyright>PhonixGame</Copyright>
     <Description>MSBuild Tasks of DataTables Code Generator.</Description>
     <PackageProjectUrl>https://github.com/PhonixGame/DataTables</PackageProjectUrl>
-    <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
     <PackageTags>datatable, embedded, inmemory, unity</PackageTags>
     <IsPackable>true</IsPackable>
   </PropertyGroup>

@@ -1,4 +1,4 @@
-﻿namespace ConsoleApp
+namespace ConsoleApp
 {
     public class CustomSample
     {

@@ -7,19 +7,14 @@
 
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    <Company>Cysharp</Company>
+    <Company>PhonixGame</Company>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>1701;1702;1705;1591</NoWarn>
 
     <!-- NuGet -->
     <PackageId>DataTables.API</PackageId>
     <PackageVersion>$(Version)</PackageVersion>
-    <Authors>PhonixGame</Authors>
-    <Copyright>PhonixGame</Copyright>
     <Description>Embedded Typed Readonly In-Memory Document Database for .NET Core and Unity.</Description>
-    <PackageProjectUrl>https://github.com/PhonixGame/DataTables</PackageProjectUrl>
-    <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>database, embedded, inmemory, unity</PackageTags>
     <IsPackable>true</IsPackable>

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using DataTables;
 
 
+
 namespace ConsoleApp
 {
 public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
@@ -13,10 +14,13 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     private Dictionary<int, DRDataTableSample> m_Dict1 = new Dictionary<int, DRDataTableSample>();
     private Dictionary<ConsoleApp.ColorT, DRDataTableSample> m_Dict2 = new Dictionary<ConsoleApp.ColorT, DRDataTableSample>();
     private MultiDictionary<int, short, DRDataTableSample> m_Dict3 = new MultiDictionary<int, short, DRDataTableSample>();
+
     private MultiDictionary<string, bool, List<DRDataTableSample>> m_Dict4 = new MultiDictionary<string, bool, List<DRDataTableSample>>();
     private Dictionary<string, List<DRDataTableSample>> m_Dict5 = new Dictionary<string, List<DRDataTableSample>>();
+
     public DTDataTableSample() : base() { }
     public DTDataTableSample(string name) : base(name) { }
+
     public DRDataTableSample GetDataRowById(int Id)
     {
         if (m_Dict1.TryGetValue(Id, out var result))
@@ -31,6 +35,7 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
             return null;
         }
     }
+
     public DRDataTableSample GetDataRowByColor(ConsoleApp.ColorT Color)
     {
         if (m_Dict2.TryGetValue(Color, out var result))
@@ -45,6 +50,7 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
             return null;
         }
     }
+
     public DRDataTableSample GetDataRowByIdAndInt16Value(int Id, short Int16Value)
     {
         if (m_Dict3.TryGetValue(Id, Int16Value, out var result))
@@ -59,10 +65,12 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
             return null;
         }
     }
+
     public List<DRDataTableSample> GetDataRowsGroupByNameAndBoolValue(string Name, bool BoolValue)
     {
         return m_Dict4.TryGetValue(Name, BoolValue, out var result) ? result : null;
     }
+
     public List<DRDataTableSample> GetDataRowsGroupByName(string Name)
     {
         return m_Dict5.TryGetValue(Name, out var result) ? result : null;
@@ -105,34 +113,47 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
 /// <summary>示例表</summary>
 public sealed partial class DRDataTableSample : DataRowBase
 {
+
     /// <summary>整数</summary>
     public int Id { get; private set; }
+
     /// <summary>小整数</summary>
     public short Int16Value { get; private set; }
+
     /// <summary>大整数</summary>
     public long Int64Value { get; private set; }
+
     /// <summary>无符号大整数</summary>
     public ulong UInt64Value { get; private set; }
+
     /// <summary>字符串</summary>
     public string Name { get; private set; }
+
     /// <summary>布尔</summary>
     public bool BoolValue { get; private set; }
+
     /// <summary>枚举</summary>
     public ConsoleApp.ColorT Color { get; private set; }
+
     /// <summary>数组</summary>
     public int[] ArrayValue { get; private set; }
+
     /// <summary>
     /// 二维数组
     /// <para>使用标准JSON格式串</para>
     /// <para>备注1字符串</para>
     /// </summary>
     public int[][] Array2DValue { get; private set; }
+
     /// <summary>三维数组</summary>
     public int[][][] Array3DValue { get; private set; }
+
     /// <summary>枚举与整形的字典</summary>
     public Dictionary<ColorT, int> MapEnumToInt { get; private set; }
+
     /// <summary>枚举数组</summary>
     public ColorT[] EnumArray { get; private set; }
+
     /// <summary>JSON类</summary>
     /// <remarks>
     /// 批注示例文本，请注意查阅！
@@ -140,6 +161,7 @@ public sealed partial class DRDataTableSample : DataRowBase
     /// <para>&lt;b&gt;abc&lt;/b&gt;</para>
     /// </remarks>
     public SampleParent CustomJSON { get; private set; }
+
     /// <summary>自定义类</summary>
     public CustomSample CustomFieldType { get; private set; }
 

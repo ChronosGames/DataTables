@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -298,8 +298,9 @@ namespace DataTables
             {
                 using (var reader = new BinaryReader(ms, Encoding.UTF8))
                 {
-                    var rowCount = reader.Read7BitEncodedInt32();
+                    var rowCount = reader.ReadInt32();
                     dataTable.InitDataSet(rowCount);
+
                     for (int i = 0; i < rowCount; i++)
                     {
                         if (!dataTable.SetDataRow(i, reader))

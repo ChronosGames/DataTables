@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 
 namespace DataTables
@@ -10,8 +10,7 @@ namespace DataTables
         /// <summary>
         /// 初始化数据表基类的新实例。
         /// </summary>
-        public DataTableBase()
-            : this(null)
+        public DataTableBase() : this(string.Empty)
         {
         }
 
@@ -21,7 +20,7 @@ namespace DataTables
         /// <param name="name">数据表名称。</param>
         public DataTableBase(string name)
         {
-            m_Name = name ?? string.Empty;
+            m_Name = name;
         }
 
         /// <summary>

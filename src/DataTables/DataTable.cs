@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -87,7 +87,7 @@ namespace DataTables
         /// <param name="condition">要检查的条件。</param>
         /// <returns>符合条件的数据表行。</returns>
         /// <remarks>当存在多个符合条件的数据表行时，仅返回第一个符合条件的数据表行。</remarks>
-        public T GetDataRow(Predicate<T> condition)
+        public T? GetDataRow(Predicate<T> condition)
         {
             if (condition == null)
             {
@@ -328,7 +328,7 @@ namespace DataTables
         /// </summary>
         internal override void Shutdown()
         {
-            m_DataSet = null;
+            m_DataSet = Array.Empty<T>();
         }
 
         protected virtual void InternalAddDataRow(int index, T dataRow)

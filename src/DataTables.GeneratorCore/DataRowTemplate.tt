@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using DataTables;
+
 <#= Using #>
 
 <# if (!string.IsNullOrEmpty(Namespace)) { #>
@@ -28,29 +29,36 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataTable<<#=
         #><#=Environment.NewLine#><#
     }
 
-    for (var i = 0; i < GenerationContext.Indexs.Count; i++)
+    if (GenerationContext.Indexs.Count > 0)
     {
-        var item = GenerationContext.Indexs[i];
+        for (var i = 0; i < GenerationContext.Indexs.Count; i++)
+        {
+            var item = GenerationContext.Indexs[i];
+            #>    private <#= GenerationContext.BuildIndexDictDefine(item) #> m_Dict<#= i + 1 #> = new <#= GenerationContext.BuildIndexDictDefine(item) #>();<#=Environment.NewLine#><#
+        }
 
-        #>    private <#= GenerationContext.BuildIndexDictDefine(item) #> m_Dict<#= i + 1 #> = new <#= GenerationContext.BuildIndexDictDefine(item) #>();<#=Environment.NewLine#><#
+        #><#=Environment.NewLine#><#
     }
 
-    for (var j = 0; j < GenerationContext.Groups.Count; j++)
+    if (GenerationContext.Groups.Count > 0)
     {
-        var fieldNames = GenerationContext.Groups[j];
+        for (var j = 0; j < GenerationContext.Groups.Count; j++)
+        {
+            var fieldNames = GenerationContext.Groups[j];
 
-        #>    private <#= GenerationContext.BuildGroupDictDefine(fieldNames) #> m_Dict<#= GenerationContext.Indexs.Count + 1 + j #> = new <#= GenerationContext.BuildGroupDictDefine(fieldNames) #>();<#=Environment.NewLine#><#
+            #>    private <#= GenerationContext.BuildGroupDictDefine(fieldNames) #> m_Dict<#= GenerationContext.Indexs.Count + 1 + j #> = new <#= GenerationContext.BuildGroupDictDefine(fieldNames) #>();<#=Environment.NewLine#><#
+        }
+
+        #><#=Environment.NewLine#><#
     }
-
 #>
     public DT<#= GenerationContext.ClassName #>() : base() { }
     public DT<#= GenerationContext.ClassName #>(string name) : base(name) { }
-<#
-
-    for (var i = 0; i < GenerationContext.Indexs.Count; i++)
+<#  for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {
         var item = GenerationContext.Indexs[i];
 #>
+
     public <#= GenerationContext.RealClassName #> GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
     {
         if (m_Dict<#= i + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result))
@@ -70,6 +78,7 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataTable<<#=
     {
         var item = GenerationContext.Groups[j];
 #>
+
     public List<<#= GenerationContext.RealClassName #>> GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
     {
         return m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result) ? result : null;
@@ -113,6 +122,7 @@ public sealed partial class <#= GenerationContext.RealClassName #> : DataRowBase
 {
     if (item.IsIgnore) continue;
 #>
+
     /// <summary><#= BuildSummary(item.Title) #></summary><#= string.IsNullOrEmpty(item.Note) ? string.Empty : Environment.NewLine + "    /// <remarks>" + BuildSummary(item.Note) + "</remarks>" #>
     public <#= GetPropertyTypeString(item) #> <#= item.Name #> { get; private set; }
 <# } #>

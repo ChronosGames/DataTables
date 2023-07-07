@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace DataTables
 {
@@ -51,7 +50,7 @@ namespace DataTables
         /// <param name="condition">要检查的条件。</param>
         /// <returns>符合条件的数据表行。</returns>
         /// <remarks>当存在多个符合条件的数据表行时，仅返回第一个符合条件的数据表行。</remarks>
-        T GetDataRow(Predicate<T> condition);
+        T? GetDataRow(Predicate<T> condition);
 
         /// <summary>
         /// 获取符合条件的数据表行。

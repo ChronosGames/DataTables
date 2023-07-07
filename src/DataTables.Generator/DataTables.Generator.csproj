@@ -12,12 +12,8 @@
     <PropertyGroup>
         <PackageId>DataTables.Generator</PackageId>
         <PackageVersion>$(Version)</PackageVersion>
-        <Authors>PhonixGame</Authors>
-        <Copyright>PhonixGame</Copyright>
         <Description>Code Generator of DataTables.</Description>
         <PackageProjectUrl>https://github.com/PhonixGame/DataTables</PackageProjectUrl>
-        <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
-        <RepositoryType>git</RepositoryType>
         <PackageTags>unity, excel, generator, datatable</PackageTags>
         <IsPackable>true</IsPackable>
     </PropertyGroup>

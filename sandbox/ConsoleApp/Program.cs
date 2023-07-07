@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers;
 using System.Diagnostics;
 using DataTables;
@@ -74,9 +74,10 @@ namespace ConsoleApp
 
             Debug.Assert(manager.HasDataTable<DTDataTableSample>(), "加载配置表失败");
 
-            var card = manager.GetDataTable<DTDataTableSample>();
-            Debug.Assert(card.GetDataRowById(1) != null, "加载配置表失败1");
-            manager.DestroyDataTable(card);
+            var dtSample = manager.GetDataTable<DTDataTableSample>();
+            Debug.Assert(dtSample.GetAllDataRows()[dtSample.Count - 1].CustomFieldType.Raw == "aaa");
+            Debug.Assert(dtSample.GetDataRowById(1) != null, "加载配置表失败1");
+            manager.DestroyDataTable(dtSample);
 
             //Debug.Assert(!manager.HasDataTable<DTDataTableSplitSample>(), "加载配置表失败");
             //manager.CreateDataTable<DTDataTableSplitSample>();

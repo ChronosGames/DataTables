@@ -16,8 +16,9 @@ generated_code = true
 
 # C# files
 [*.cs]
-charset = utf-8-bom
+charset = utf-8
 indent_size = 4
+end_of_line = lf
 
 csharp_style_namespace_declarations = file_scoped
 dotnet_style_require_accessibility_modifiers = never

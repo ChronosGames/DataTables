@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -8,7 +9,7 @@ public sealed partial class DataTableProcessor
 {
     private static class DataProcessorUtility
     {
-        private static readonly IDictionary<string, DataProcessor> s_DataProcessors = new SortedDictionary<string, DataProcessor>(StringComparer.Ordinal);
+        private static readonly ConcurrentDictionary<string, DataProcessor> s_DataProcessors = new ConcurrentDictionary<string, DataProcessor>(StringComparer.Ordinal);
 
         static DataProcessorUtility()
         {
@@ -32,7 +33,7 @@ public sealed partial class DataTableProcessor
 
                     foreach (string typeString in dataProcessor.GetTypeStrings())
                     {
-                        s_DataProcessors.Add(typeString.ToLowerInvariant(), dataProcessor);
+                        s_DataProcessors.TryAdd(typeString.ToLowerInvariant(), dataProcessor);
                     }
                 }
             }
@@ -62,7 +63,7 @@ public sealed partial class DataTableProcessor
                     abc = new EnumProcessor(str1);
                     foreach (var ts in abc.GetTypeStrings())
                     {
-                        s_DataProcessors.Add(ts, abc);
+                        s_DataProcessors.TryAdd(ts, abc);
                     }
                     return abc;
                 }
@@ -87,7 +88,7 @@ public sealed partial class DataTableProcessor
                             continue;
                         }
 
-                        s_DataProcessors.Add(ts, abc);
+                        s_DataProcessors.TryAdd(ts, abc);
                     }
                     return abc;
                 }
@@ -117,7 +118,7 @@ public sealed partial class DataTableProcessor
                     abc = new MapDataProcessor(keyProcessor, valueProcessor);
                     foreach (var ts in abc.GetTypeStrings())
                     {
-                        s_DataProcessors.Add(ts, abc);
+                        s_DataProcessors.TryAdd(ts, abc);
                     }
                     return abc;
                 }
@@ -135,7 +136,7 @@ public sealed partial class DataTableProcessor
                     abc = new JSONProcessor(str1);
                     foreach (var ts in abc.GetTypeStrings())
                     {
-                        s_DataProcessors.Add(ts, abc);
+                        s_DataProcessors.TryAdd(ts, abc);
                     }
                     return abc;
                 }
@@ -153,7 +154,7 @@ public sealed partial class DataTableProcessor
                     abc = new CustomProcessor(str1);
                     foreach (var ts in abc.GetTypeStrings())
                     {
-                        s_DataProcessors.Add(ts, abc);
+                        s_DataProcessors.TryAdd(ts, abc);
                     }
                     return abc;
                 }
@@ -191,11 +192,6 @@ public sealed partial class DataTableProcessor
             }
 
             return index;
-        }
-
-        private static void EnsureDataProcessor(string typeStr)
-        {
-
         }
     }
 }

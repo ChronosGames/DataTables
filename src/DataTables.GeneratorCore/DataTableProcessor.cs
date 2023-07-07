@@ -397,7 +397,7 @@ public sealed partial class DataTableProcessor : IDisposable
         }
     }
 
-    public void GenerateDataFile(string filePath, string outputDir, bool forceOverwrite, ISheet sheet, Action<string> logger)
+    internal void GenerateDataFile(string filePath, string outputDir, bool forceOverwrite, ISheet sheet, ILogger logger)
     {
         string outputFileName = Path.Combine(outputDir, m_Context.GetDataOutputFilePath());
 
@@ -416,7 +416,7 @@ public sealed partial class DataTableProcessor : IDisposable
                     // 标记为跳过
                     m_Context.Skiped = true;
 
-                    logger(string.Format("  > Generate {0}.bytes to: {1} (skiped)", m_Context.RealClassName, outputFileName));
+                    logger.Debug("  > Generate {0}.bytes to: {1} (skiped)", m_Context.RealClassName, outputFileName);
                     return;
                 }
             }
@@ -451,13 +451,12 @@ public sealed partial class DataTableProcessor : IDisposable
                 }
             }
 
-            logger(string.Format("  > Generate {0}.bytes to: {1}.", m_Context.RealClassName, outputFileName));
+            logger.Debug("  > Generate {0}.bytes to: {1}.", m_Context.RealClassName, outputFileName);
         }
         catch (Exception exception)
         {
             // 记录出错日志
-            Console.ForegroundColor = ConsoleColor.Red;
-            logger(string.Format("  > Generate {0}.bytes failure, exception is '{1}'.", m_Context.RealClassName, exception));
+            logger.Error("  > Generate {0}.bytes failure, exception is '{1}'.", m_Context.RealClassName, exception);
             Console.ResetColor();
 
             // 记录出错的情况

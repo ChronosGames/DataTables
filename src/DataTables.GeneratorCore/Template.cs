@@ -1,26 +1,31 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Text;
 
 namespace DataTables.GeneratorCore;
 
 public partial class DataTableManagerExtensionTemplate
 {
-    public string Namespace { get; set; }
+    public string Namespace { get; set; } = string.Empty;
 
-    public string DataRowPrefix { get; set; }
+    public string DataRowPrefix { get; set; } = string.Empty;
 
-    public Dictionary<string, string[]> DataTables { get; set; }
+    public SortedDictionary<string, string[]> DataTables { get; set; } = new SortedDictionary<string, string[]>();
 }
 
 public partial class DataRowTemplate
 {
-    public string Using { get; set; }
+    public string Using { get; set; } = string.Empty;
 
     public GenerationContext GenerationContext { get; set; }
 
     public string Namespace => GenerationContext.Namespace;
 
     public string ClassName => GenerationContext.RealClassName;
+
+    public DataRowTemplate(GenerationContext context)
+    {
+        this.GenerationContext = context;
+    }
 
     internal string GetPropertyTypeString(XField property)
     {

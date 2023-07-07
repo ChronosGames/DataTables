@@ -2,13 +2,10 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using NPOI.SS.Formula.Functions;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 
@@ -22,7 +19,7 @@ public sealed class DataTableGenerator
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
         prefixClassName ??= string.Empty;
-        var list = new ConcurrentQueue<GenerationContext>();
+        var list = new ConcurrentBag<GenerationContext>();
 
         // 拼接Import的命名空间
         string[] usingStrings = string.IsNullOrEmpty(importNamespaces) ? Array.Empty<string>() : importNamespaces.Split('&');
@@ -62,60 +59,21 @@ public sealed class DataTableGenerator
             Directory.CreateDirectory(dataOutputDir);
         }
 
-        Array.ForEach(filePaths, filePath =>
-        {
-            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-            {
-                var xssWorkbook = new XSSFWorkbook(stream);
-                for (int i = 0; i < xssWorkbook.NumberOfSheets; i++)
-                {
-                    var sheet = xssWorkbook.GetSheetAt(i);
-                    if (!ValidSheet(sheet))
-                    {
-                        continue;
-                    }
-
-                    var context = new GenerationContext
-                    {
-                        FileName = Path.GetFileNameWithoutExtension(filePath),
-                        Namespace = usingNamespace,
-                        PrefixClassName = prefixClassName,
-                        UsingStrings = usingStrings,
-                        SheetName = sheet.SheetName.Trim(),
-                    };
-
-                    logger(string.Format("Generate Excel File: [{0}]({1})", filePath.Replace(inputDirectory, "").Trim('\\'), context.SheetName));
-
-                    using (var processor = new DataTableProcessor(context, filterColumnTags))
-                    {
-                        // 初始化GenerateContext
-                        processor.CreateGenerateContext(sheet);
-                        if (!processor.ValidateGenerateContext())
-                        {
-                            continue;
-                        }
-
-                        list.Enqueue(context);
-
-                        // 收集全部的子表
-                        if (!string.IsNullOrEmpty(context.Child))
-                        {
-                            context.Children = list.Where(x => x.ClassName == context.ClassName && !string.IsNullOrEmpty(x.Child)).Select(x => x.Child).ToArray();
-                        }
-
-                        // 生成代码文件
-                        GenerateCodeFile(context, codeOutputDir, forceOverwrite, logger);
-
-                        // 生成数据文件
-                        processor.GenerateDataFile(filePath, dataOutputDir, forceOverwrite, sheet, logger);
-                    }
-                }
-            }
-        });
+        Parallel.ForEach(filePaths, filePath => GenerateExcel(filePath,
+            inputDir: inputDirectory,
+            usingNamespace: usingNamespace,
+            forceOverwrite: forceOverwrite,
+            dataOutputDir: dataOutputDir,
+            codeOutputDir: codeOutputDir,
+            list: list,
+            prefixClassName: prefixClassName,
+            usingStrings: usingStrings,
+            filterColumnTags: filterColumnTags,
+            log: logger));
 
         logger("Generate Manager Files:");
 
-        Dictionary<string, string[]> dataTables = new Dictionary<string, string[]>();
+        SortedDictionary<string, string[]> dataTables = new SortedDictionary<string, string[]>();
         foreach (var context in list)
         {
             if (dataTables.ContainsKey(context.ClassName))
@@ -147,6 +105,60 @@ public sealed class DataTableGenerator
         logger($"数据表导出完成: {list.Count(x => !x.Failed && !x.Skiped)} 成功，{list.Count(x => x.Failed)} 失败，{list.Count(x => x.Skiped)} 已跳过");
     }
 
+    private static void GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string inputDir, string codeOutputDir, string dataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log)
+    {
+        using (var logger = new ILogger(log))
+        { 
+            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            {
+                var xssWorkbook = new XSSFWorkbook(stream);
+                for (int i = 0; i < xssWorkbook.NumberOfSheets; i++)
+                {
+                    var sheet = xssWorkbook.GetSheetAt(i);
+                    if (!ValidSheet(sheet))
+                    {
+                        continue;
+                    }
+
+                    var context = new GenerationContext
+                    {
+                        FileName = Path.GetFileNameWithoutExtension(filePath),
+                        Namespace = usingNamespace,
+                        PrefixClassName = prefixClassName,
+                        UsingStrings = usingStrings,
+                        SheetName = sheet.SheetName.Trim(),
+                    };
+
+                    logger.Debug("Generate Excel File: [{0}]({1})", filePath.Replace(inputDir, "").Trim('\\'), context.SheetName);
+
+                    using (var processor = new DataTableProcessor(context, filterColumnTags))
+                    {
+                        // 初始化GenerateContext
+                        processor.CreateGenerateContext(sheet);
+                        if (!processor.ValidateGenerateContext())
+                        {
+                            continue;
+                        }
+
+                        list.Add(context);
+
+                        // 收集全部的子表
+                        if (!string.IsNullOrEmpty(context.Child))
+                        {
+                            context.Children = list.Where(x => x.ClassName == context.ClassName && !string.IsNullOrEmpty(x.Child)).Select(x => x.Child).ToArray();
+                        }
+
+                        // 生成代码文件
+                        GenerateCodeFile(context, codeOutputDir, forceOverwrite, logger);
+
+                        // 生成数据文件
+                        processor.GenerateDataFile(filePath, dataOutputDir, forceOverwrite, sheet, logger);
+                    }
+                }
+            }
+        }
+    }
+
     // 检验是否过滤该Sheet
     private static bool ValidSheet(ISheet? sheet)
     {
@@ -163,16 +175,15 @@ public sealed class DataTableGenerator
         return true;
     }
 
-    static void GenerateCodeFile(GenerationContext context, string outputDir, bool forceOverwrite, Action<string> logger)
+    static void GenerateCodeFile(GenerationContext context, string outputDir, bool forceOverwrite, ILogger logger)
     {
         // 生成代码文件
-        var dataRowTemplate = new DataRowTemplate()
+        var dataRowTemplate = new DataRowTemplate(context)
         {
             Using = string.Join(Environment.NewLine, context.UsingStrings),
-            GenerationContext = context,
         };
 
-        logger(WriteToFile(outputDir, context.RealClassName + ".cs", dataRowTemplate.TransformText(), forceOverwrite));
+        logger.Debug(WriteToFile(outputDir, context.RealClassName + ".cs", dataRowTemplate.TransformText(), forceOverwrite));
     }
 
     static string NormalizeNewLines(string content)

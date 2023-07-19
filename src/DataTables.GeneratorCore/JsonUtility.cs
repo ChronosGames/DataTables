@@ -1,4 +1,4 @@
-﻿namespace DataTables.GeneratorCore;
+namespace DataTables.GeneratorCore;
 
 public static class JsonUtility
 {

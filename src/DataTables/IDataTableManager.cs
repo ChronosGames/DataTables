@@ -57,14 +57,14 @@ namespace DataTables
         /// </summary>
         /// <typeparam name="T">数据表的类型。</typeparam>
         /// <returns>要获取的数据表。</returns>
-        T GetDataTable<T>() where T : DataTableBase;
+        T? GetDataTable<T>() where T : DataTableBase;
 
         /// <summary>
         /// 获取数据表。
         /// </summary>
         /// <param name="dataTableType">数据表的类型。</param>
         /// <returns>要获取的数据表。</returns>
-        DataTableBase GetDataTable(Type dataTableType);
+        DataTableBase? GetDataTable(Type dataTableType);
 
         /// <summary>
         /// 获取数据表。
@@ -72,7 +72,7 @@ namespace DataTables
         /// <typeparam name="T">数据表的类型。</typeparam>
         /// <param name="name">数据表名称。</param>
         /// <returns>要获取的数据表。</returns>
-        T GetDataTable<T>(string name) where T : DataTableBase;
+        T? GetDataTable<T>(string name) where T : DataTableBase;
 
         /// <summary>
         /// 获取数据表。
@@ -80,7 +80,7 @@ namespace DataTables
         /// <param name="dataTableType">数据表的类型。</param>
         /// <param name="name">数据表名称。</param>
         /// <returns>要获取的数据表。</returns>
-        DataTableBase GetDataTable(Type dataTableType, string name);
+        DataTableBase? GetDataTable(Type dataTableType, string name);
 
         /// <summary>
         /// 获取所有数据表。

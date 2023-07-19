@@ -8,7 +8,7 @@ namespace DataTables
     public sealed partial class DataTableManager : IDataTableManager
     {
         private readonly Dictionary<TypeNamePair, DataTableBase> m_DataTables;
-        private IDataTableHelper m_DataTableHelper;
+        private IDataTableHelper? m_DataTableHelper;
 
         /// <summary>
         /// 初始化数据表管理器的新实例。
@@ -124,9 +124,10 @@ namespace DataTables
         /// </summary>
         /// <typeparam name="T">数据表的类型。</typeparam>
         /// <returns>要获取的数据表。</returns>
-        public T GetDataTable<T>() where T : DataTableBase
+        public T? GetDataTable<T>() where T : DataTableBase
         {
-            return (T)InternalGetDataTable(new TypeNamePair(typeof(T)));
+            var dataTable = InternalGetDataTable(new TypeNamePair(typeof(T)));
+            return dataTable != null ? (T)dataTable : null;
         }
 
         /// <summary>
@@ -134,7 +135,7 @@ namespace DataTables
         /// </summary>
         /// <param name="dataTableType">数据表的类型。</param>
         /// <returns>要获取的数据表。</returns>
-        public DataTableBase GetDataTable(Type dataTableType)
+        public DataTableBase? GetDataTable(Type dataTableType)
         {
             if (dataTableType == null)
             {
@@ -155,9 +156,10 @@ namespace DataTables
         /// <typeparam name="T">数据表的类型。</typeparam>
         /// <param name="name">数据表名称。</param>
         /// <returns>要获取的数据表。</returns>
-        public T GetDataTable<T>(string name) where T : DataTableBase
+        public T? GetDataTable<T>(string name) where T : DataTableBase
         {
-            return (T)InternalGetDataTable(new TypeNamePair(typeof(T), name));
+            var dataTable = InternalGetDataTable(new TypeNamePair(typeof(T), name));
+            return dataTable != null ? (T)dataTable : null;
         }
 
         /// <summary>
@@ -166,7 +168,7 @@ namespace DataTables
         /// <param name="dataTableType">数据表的类型。</param>
         /// <param name="name">数据表名称。</param>
         /// <returns>要获取的数据表。</returns>
-        public DataTableBase GetDataTable(Type dataTableType, string name)
+        public DataTableBase? GetDataTable(Type dataTableType, string name)
         {
             if (dataTableType == null)
             {
@@ -254,7 +256,7 @@ namespace DataTables
                 throw new Exception(string.Format("Already exist data table '{0}'.", typeNamePair));
             }
 
-            var dataTable = (T)Activator.CreateInstance(typeof(T), name);
+            var dataTable = (T)Activator.CreateInstance(typeof(T), name)!;
             m_DataTableHelper.Read(dataTable.Type, name, (raw) => LoadDataTable(dataTable, raw, onCompleted));
         }
 
@@ -282,7 +284,7 @@ namespace DataTables
                 throw new Exception(string.Format("Already exist data table '{0}'.", typeNamePair));
             }
 
-            var dataTable = (DataTableBase)Activator.CreateInstance(dataTableType, name);
+            var dataTable = (DataTableBase)Activator.CreateInstance(dataTableType, name)!;
             m_DataTableHelper.Read(dataTable.Type, name, (raw) => LoadDataTable(dataTable, raw, onCompleted));
         }
 
@@ -401,20 +403,11 @@ namespace DataTables
             return m_DataTables.ContainsKey(pair);
         }
 
-        private DataTableBase InternalGetDataTable(TypeNamePair pair)
-        {
-            DataTableBase dataTable;
-            if (m_DataTables.TryGetValue(pair, out dataTable))
-            {
-                return dataTable;
-            }
-
-            return null;
-        }
+        private DataTableBase? InternalGetDataTable(TypeNamePair pair) => m_DataTables.TryGetValue(pair, out DataTableBase? dataTable) ? dataTable : null;
 
         private bool InternalDestroyDataTable(TypeNamePair pair)
         {
-            DataTableBase dataTable;
+            DataTableBase? dataTable;
             if (m_DataTables.TryGetValue(pair, out dataTable))
             {
                 dataTable.Shutdown();

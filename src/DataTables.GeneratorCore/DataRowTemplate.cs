@@ -40,25 +40,6 @@ namespace DataTables.GeneratorCore
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
             this.Write(">\r\n{\r\n");
 
-    if (GenerationContext.Children.Length > 0)
-    {
-        foreach (var child in GenerationContext.Children)
-        {
-            
-            this.Write("    public const string _");
-            this.Write(this.ToStringHelper.ToStringWithCulture(child));
-            this.Write(" = \"");
-            this.Write(this.ToStringHelper.ToStringWithCulture(child));
-            this.Write("\";");
-            this.Write(this.ToStringHelper.ToStringWithCulture(Environment.NewLine));
-
-        }
-
-        
-            this.Write(this.ToStringHelper.ToStringWithCulture(Environment.NewLine));
-
-    }
-
     if (GenerationContext.Indexs.Count > 0)
     {
         for (var i = 0; i < GenerationContext.Indexs.Count; i++)

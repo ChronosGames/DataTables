@@ -42,11 +42,6 @@ public class GenerationContext
     public string Child = string.Empty;
 
     /// <summary>
-    /// 全部子表的名称
-    /// </summary>
-    public string[] Children = Array.Empty<string>();
-
-    /// <summary>
     /// 导出时是否出错
     /// </summary>
     public bool Failed;

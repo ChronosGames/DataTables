@@ -73,30 +73,15 @@ public sealed class DataTableGenerator
 
         logger("Generate Manager Files:");
 
-        SortedDictionary<string, string[]> dataTables = new SortedDictionary<string, string[]>();
-        foreach (var context in list)
-        {
-            if (dataTables.ContainsKey(context.ClassName))
-            {
-                continue;
-            }
-
-            // 收集全部的子表
-            if (!string.IsNullOrEmpty(context.Child))
-            {
-                context.Children = list.Where(x => x.ClassName == context.ClassName && !string.IsNullOrEmpty(x.Child)).Select(x => x.Child).ToArray();
-            }
-
-            // 记录子表名称
-            dataTables.Add(context.ClassName, context.Children);
-        }
+        var dict = list.GroupBy(k => k.ClassName, v => v.Child).ToDictionary(k => k.Key, v => v.Where(x => !string.IsNullOrEmpty(x)).OrderBy(x => x));
+        var sortedDict = from entry in dict orderby entry.Key ascending select entry;
 
         // 生成DataTableManagerExtension代码文件(放在未尾确保类名前缀会正确附加)
         var dataTableManagerExtensionTemplate = new DataTableManagerExtensionTemplate()
         {
             Namespace = usingNamespace,
             DataRowPrefix = prefixClassName,
-            DataTables = dataTables,
+            DataTables = sortedDict,
         };
         logger(WriteToFile(codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
 
@@ -140,19 +125,14 @@ public sealed class DataTableGenerator
                             continue;
                         }
 
-                        list.Add(context);
-
-                        // 收集全部的子表
-                        if (!string.IsNullOrEmpty(context.Child))
-                        {
-                            context.Children = list.Where(x => x.ClassName == context.ClassName && !string.IsNullOrEmpty(x.Child)).Select(x => x.Child).ToArray();
-                        }
-
                         // 生成代码文件
                         GenerateCodeFile(context, codeOutputDir, forceOverwrite, logger);
 
                         // 生成数据文件
                         processor.GenerateDataFile(filePath, dataOutputDir, forceOverwrite, sheet, logger);
+
+                        // 注册至队列中
+                        list.Add(context);
                     }
                 }
             }

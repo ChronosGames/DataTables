@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace DataTables.GeneratorCore;
@@ -9,7 +10,7 @@ public partial class DataTableManagerExtensionTemplate
 
     public string DataRowPrefix { get; set; } = string.Empty;
 
-    public SortedDictionary<string, string[]> DataTables { get; set; } = new SortedDictionary<string, string[]>();
+    public IOrderedEnumerable<KeyValuePair<string, IOrderedEnumerable<string>>>? DataTables { get; set; }
 }
 
 public partial class DataRowTemplate

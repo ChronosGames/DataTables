@@ -280,7 +280,6 @@ public sealed partial class DataTableProcessor : IDisposable
     // 解析第一行的表头信息
     private bool ParseSheetInfoRow(string cellString)
     {
-        var context = m_Context;
         var arr = cellString.Split(',');
         foreach (var pair in arr)
         {
@@ -290,22 +289,22 @@ public sealed partial class DataTableProcessor : IDisposable
                 switch (args[0].Trim().ToLower())
                 {
                     case "title":
-                        context.Title = args[1].Trim();
+                        m_Context.Title = args[1].Trim();
                         break;
                     case "class":
-                        context.ClassName = args[1].Trim();
+                        m_Context.ClassName = args[1].Trim();
                         break;
                     case "enabletagsfilter":
-                        context.EnableTagsFilter = bool.Parse(args[1].Trim());
+                        m_Context.EnableTagsFilter = bool.Parse(args[1].Trim());
                         break;
                     case "index":
-                        context.Indexs.Add(args[1].Trim().Split('&'));
+                        m_Context.Indexs.Add(args[1].Trim().Split('&'));
                         break;
                     case "group":
-                        context.Groups.Add(args[1].Trim().Split('&'));
+                        m_Context.Groups.Add(args[1].Trim().Split('&'));
                         break;
                     case "child":
-                        context.Child = args[1].Trim();
+                        m_Context.Child = args[1].Trim();
                         break;
                 }
             }
@@ -314,24 +313,23 @@ public sealed partial class DataTableProcessor : IDisposable
                 switch (args[0].Trim().ToLower())
                 {
                     case "enabletagsfilter":
-                        context.EnableTagsFilter = true;
+                        m_Context.EnableTagsFilter = true;
                         break;
                 }
             }
         }
 
-        return !string.IsNullOrEmpty(context.ClassName);
+        return !string.IsNullOrEmpty(m_Context.ClassName);
     }
 
     private void ParseFieldCommentRow(IRow row)
     {
-        var context = m_Context;
-        context.Fields = new XField[row.LastCellNum - row.FirstCellNum + 1];
+        m_Context.Fields = new XField[row.LastCellNum - row.FirstCellNum + 1];
 
         for (int i = 0; i <= row.LastCellNum - row.FirstCellNum; i++)
         {
             var field = new XField(i + row.FirstCellNum);
-            context.Fields[i] = field;
+            m_Context.Fields[i] = field;
 
             // 修正列名行文本为空时解析报错
             var cell = row.GetCell(i + row.FirstCellNum);
@@ -343,7 +341,7 @@ public sealed partial class DataTableProcessor : IDisposable
             }
 
             // 是否允许导出
-            if (context.EnableTagsFilter)
+            if (m_Context.EnableTagsFilter)
             {
                 var index = text.LastIndexOf('@');
                 if (index != -1)

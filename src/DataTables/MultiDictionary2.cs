@@ -35,7 +35,7 @@ namespace DataTables
             return s.ToString();
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is MultiKey<TKey1, TKey2> multiKey)
             {
@@ -103,7 +103,7 @@ namespace DataTables
             return Remove(KeyCreator(key1, key2));
         }
 
-        public bool TryGetValue(TKey1 key1, TKey2 key2, out TValue value)
+        public bool TryGetValue(TKey1 key1, TKey2 key2, out TValue? value)
         {
             return TryGetValue(KeyCreator(key1, key2), out value);
         }

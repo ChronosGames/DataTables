@@ -41,7 +41,7 @@ namespace DataTables.GeneratorCore
             this.Write(this.ToStringHelper.ToStringWithCulture(DataRowPrefix));
             this.Write(this.ToStringHelper.ToStringWithCulture(pair.Key));
             this.Write("\", ");
-            this.Write(this.ToStringHelper.ToStringWithCulture((pair.Value.Length == 0 ? "Array.Empty<string>()" : "new string[] {\"" + string.Join("\", \"", pair.Value) + "\"}")));
+            this.Write(this.ToStringHelper.ToStringWithCulture((pair.Value.Count() == 0 ? "Array.Empty<string>()" : "new string[] {\"" + string.Join("\", \"", pair.Value) + "\"}")));
             this.Write(" },");
             this.Write(this.ToStringHelper.ToStringWithCulture(Environment.NewLine));
  
@@ -49,13 +49,13 @@ namespace DataTables.GeneratorCore
             this.Write("    };\r\n\r\n    /// <summary>\r\n    /// 预加载所有数据表。\r\n    /// </summary>\r\n    /// <para" +
                     "m name=\"onCompleted\">全部数据表预加载完成时回调。</param>\r\n    public static void Preload(this" +
                     " DataTableManager manager, Action onCompleted)\r\n    {\r\n        int done = ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(DataTables.Sum(pair => pair.Value.Length > 0 ? pair.Value.Length : 1)));
+            this.Write(this.ToStringHelper.ToStringWithCulture(DataTables.Sum(pair => pair.Value.Count() > 0 ? pair.Value.Count() : 1)));
             this.Write(";\r\n\r\n        void next()\r\n        { \r\n            if (--done == 0)\r\n             " +
                     "   onCompleted?.Invoke(); \r\n        };\r\n\r\n");
  
 foreach (var pair in DataTables)
 {
-    if (pair.Value.Length == 0)
+    if (pair.Value.Count() == 0)
     {
         
             this.Write("        manager.CreateDataTable<DT");

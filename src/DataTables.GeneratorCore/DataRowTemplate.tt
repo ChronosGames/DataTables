@@ -19,16 +19,6 @@ namespace <#= Namespace #>
 public sealed partial class DT<#= GenerationContext.ClassName #> : DataTable<<#= GenerationContext.RealClassName #>>
 {
 <#
-    if (GenerationContext.Children.Length > 0)
-    {
-        foreach (var child in GenerationContext.Children)
-        {
-            #>    public const string _<#=child #> = "<#=child#>";<#=Environment.NewLine#><#
-        }
-
-        #><#=Environment.NewLine#><#
-    }
-
     if (GenerationContext.Indexs.Count > 0)
     {
         for (var i = 0; i < GenerationContext.Indexs.Count; i++)

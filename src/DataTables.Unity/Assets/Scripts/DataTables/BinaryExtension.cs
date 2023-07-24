@@ -129,12 +129,12 @@ namespace DataTables
             Write7BitEncodedInt64(binaryWriter, (long)value);
         }
 
-        public static T ReadJson<T>(this BinaryReader binaryReader)
+        public static T? ReadJson<T>(this BinaryReader binaryReader)
         {
             var plain = binaryReader.ReadString();
             if (string.IsNullOrEmpty(plain))
             {
-                return default(T);
+                return default;
             }
 
 #if NET7_0_OR_GREATER

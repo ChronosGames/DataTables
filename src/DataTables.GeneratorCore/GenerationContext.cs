@@ -8,25 +8,27 @@ namespace DataTables.GeneratorCore;
 
 public class GenerationContext
 {
-    public string FileName { get; set; }
+    public string FileName { get; set; } = string.Empty;
 
-    public string SheetName { get; set; }
+    public string SheetName { get; set; } = string.Empty;
 
-    public string[] UsingStrings { get; set; }
+    public string[] UsingStrings { get; set; } = Array.Empty<string>();
 
-    public string Namespace { get; set; }
+    public string Namespace { get; set; } = string.Empty;
 
-    public string PrefixClassName { get; set; }
+    public string PrefixClassName { get; set; } = string.Empty;
 
-    public string Title { get; set; }
+    public string DataSetType { get; set; } = "table";
 
-    public string ClassName { get; set; }
+    public string Title { get; set; } = string.Empty;
+
+    public string ClassName { get; set; } = string.Empty;
 
     public string RealClassName => PrefixClassName + ClassName;
 
     public bool EnableTagsFilter { get; set; }
 
-    public XField[] Fields { get; set; }
+    public XField[] Fields { get; set; } = Array.Empty<XField>();
 
     /// <summary>字段索引列表</summary>
     public readonly List<string[]> Indexs = new List<string[]>();

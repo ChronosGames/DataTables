@@ -3,11 +3,7 @@
 DataTables
 ===
 
-专注于Excel配置表的导出：目前支持.NET Core的服务端与Unity客户端。
-
-<!-- ![image](https://user-images.githubusercontent.com/46207/61031896-61890800-a3fb-11e9-86b7-84c821d347a4.png) -->
-
-<!-- **4700** times faster than SQLite and achieves zero allocation per query. Also the DB size is small. When SQLite is 3560kb then MasterMemory is only 222kb. -->
+适用于.NET Core的服务端与Unity客户端的数据表解决方案。
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -33,15 +29,70 @@ DataTables
 Concept
 ---
 
-* **Support Many Input File**, Support Excel 2007-365(*.xlsx) as input file.
-* **Memory Efficient**, Only use underlying data memory and do aggressively string interning.
-* **Performance**, Similar as dictionary lookup.
-* **TypeSafe**, 100% Type safe by pre code-generation.
-* **Fast load speed**, DataTables Convert Excel files to binary files, so packed files is smaller and load speed is blazing fast.
+* **支持常见的数据表格式**, 如Excel 2007-365(*.xlsx), CSV等。
+* **支持数据表的并行导出**, 通过使用并行导出，大幅提高数据表的导出速度。
+* **支持表格型与矩阵形的数据配置**, 支持常见的数据表配置以及二维矩阵表配置。
+* **导出数据定义代码文件**, 通过数据表中定义的代码格式自动生成对应的数据格式代码文件，并提供方便的API接口，方便在终端环境内读取数据文件。
+* **导出数据内容二进制文件**, 通过紧凑组织的二进制文件，加快读取性能以及缩减配置文件体积大小。
 
-<!--
-These features are suitable for master data management(write-once, read-heavy) on embedded application such as role-playing game. MasterMemory has better performance than any other database solutions. [PalDB](https://github.com/linkedin/PalDB) developed by LinkedIn has a similar concept(embeddable write-once key-value store), but the implementation and performance characteristics are completely different.
--->
+DataTable configuration
+---
+
+标签页(sheet)定义格式：
+* 标签页名称以`#`开头将不会导出；
+
+## 表格型(Table)定义格式：
+* 第一行：表头格式定义行，使用`DTGen`开头，主要定义表级别的一些配置
+* 第二行：列名称定义行，支持列注释、标签过滤等功能
+* 第三行：字段名称定义行
+* 第四行：字段类型定义行
+
+### 表头格式定义行
+
+以`,`分隔的参数定义，大小写不敏感，支持以下功能：
+* DTGen: 标识该Sheet支持导出（实际可有可无，不强制要求），默认是`DTGen=Table`；
+* Title: 该Sheet的中文名称，将出现在类定义的注释栏里；
+* Class: 该Sheet的类名称，同时正确的格式才会导出该Sheet；
+* Child: 支持按Sheet进行分表，即同一个Class的若存在SubTitle定义，将会导出成多个数据文件，加载时单次仅仅加载一个文件；
+* EnableTagsFilter: 启用对各列按标签进行导出，输入标签由导出工具运行时提供；
+* Index: 对指定列进行索引，导出后将提供快捷接口进行查询，查询结果为单个记录；支持同时配置多个Index；支持同时配置多个列，以`&`拼接；
+* Group: 对指定列进行分组，导出后将提供快捷接口进行查询，查询结果为多个记录；支持同时配置多个Group；支持同时配置多个列，以`&`拼接；
+
+### 列名称定义行
+
+功能支持：
+* 支持在列字段文本以`#`字符开头，代表该列注释，不再参与后续的导出；
+* 支持在列字段文本以`@ + 大写英文字母`结尾，代表该列支持按标签导出，一个英文字母代表一个标签，具体导出哪些标签由命令行运行时指定；
+
+### 字段名称定义行
+
+由英文字母数字与下划线组成，同时不能以数字开头；大小写敏感；
+
+### 字段类型定义行
+
+支持以下字段定义：
+* `short`, `int`, `long`, `ushort`, `uint`, `ulong`
+* `float`, `double`
+* `bool`
+* `DateTime`
+* `Array` : StartWiths Array string, like Array<int>, Array<string>
+* `Enum` : StartWiths Enum string, like Enum<ColorT>
+* `Dictionary` : StartWiths Map string, like Map<int, int>, Map<int, string>
+* `JSON`: 支持将单元格文本转化为JSON对象
+* `Custom`: 支持自定义类的导出, 自定义类必须拥有带一个字符串形参的构造函数
+
+## 矩阵型(Matrix)定义格式：
+* 第一行：表头格式定义行，使用`DTGen=Matrix`开头，主要定义表级别的一些配置
+* 第一列：X轴值内容，剔除头两个单元格；
+* 第二行：Y轴值内容，剔除头一个单元格；
+
+### 表头格式定义行
+
+以`,`分隔的参数定义，大小写不敏感，支持以下功能：
+* DTGen: 标识该Sheet支持导出, 以`DTGen=Matrix`识别；
+* Title: 该Sheet的中文名称，将出现在类定义的注释栏里；
+* Class: 该Sheet的类名称，同时正确的格式才会导出该Sheet；
+* Matrix: 定义X轴、Y轴以及单元格的值类型，如`Matrix=<X轴值类型>&<Y轴值类型>&<单元格值类型>`；
 
 Getting Started(.NET Core)
 ---
@@ -191,52 +242,6 @@ The package is available on the [openupm registry](https://openupm.com). It's re
 ```
 openupm add game.phonix.datatables
 ```
-
-DataTable configuration
----
-
-标签页定义格式：
-* 标签页名称以`#`开头将不会导出；
-
-配置表定义格式：
-* 第一行：表头格式定义行，使用`DataTabeGenerator`开头，主要定义表级别的一些配置
-* 第二行：列名称定义行，支持列注释、标签过滤等功能
-* 第三行：字段名称定义行
-* 第四行：字段类型定义行
-
-## 表头格式定义行
-
-以`,`分隔的参数定义，大小写不敏感，支持以下功能：
-* DataTabeGenerator: 标识该Sheet支持导出（实际可有可无，不强制要求）；
-* Title: 该Sheet的中文名称，将出现在类定义的注释栏里；
-* Class: 该Sheet的类名称，同时正确的格式才会导出该Sheet；
-* Split: 支持按Sheet进行分表，即同一个Class的若存在SubTitle定义，将会导出成多个数据文件，加载时单次仅仅加载一个文件；
-* EnableTagsFilter: 启用对各列按标签进行导出，输入标签由导出工具运行时提供；
-* Index: 对指定列进行索引，导出后将提供快捷接口进行查询，查询结果为单个记录；支持同时配置多个Index；支持同时配置多个列，以`&`拼接；
-* Group: 对指定列进行分组，导出后将提供快捷接口进行查询，查询结果为多个记录；支持同时配置多个Group；支持同时配置多个列，以`&`拼接；
-
-## 列名称定义行
-
-功能支持：
-* 支持在列字段文本以`#`字符开头，代表该列注释，不再参与后续的导出；
-* 支持在列字段文本以`@ + 大写英文字母`结尾，代表该列支持按标签导出，一个英文字母代表一个标签，具体导出哪些标签由命令行运行时指定；
-
-## 字段名称定义行
-
-由英文字母数字与下划线组成，同时不能以数字开头；大小写敏感；
-
-## 字段类型定义行
-
-支持以下字段定义：
-* `short`, `int`, `long`, `ushort`, `uint`, `ulong`
-* `float`, `double`
-* `bool`
-* `DateTime`
-* `Array` : StartWiths Array string, like Array<int>, Array<string>
-* `Enum` : StartWiths Enum string, like Enum<ColorT>
-* `Dictionary` : StartWiths Map string, like Map<int, int>, Map<int, string>
-* `JSON`: 支持将单元格文本转化为JSON对象
-* `Custom`: 支持自定义类的导出, 自定义类必须拥有带一个字符串形参的构造函数
 
 Optimization
 ---

@@ -63,32 +63,53 @@ public sealed partial class DataTableProcessor : IDisposable
                 }
                 case 1: // 字段注释行
                 {
-                    if (m_RowFieldComment == -1)
+                    if (m_Context.DataSetType == "matrix")
                     {
-                        m_RowFieldComment = row.RowNum;
-                    }
 
-                    ParseFieldCommentRow(row);
+                    }
+                    else
+                    {
+                        if (m_RowFieldComment == -1)
+                        {
+                            m_RowFieldComment = row.RowNum;
+                        }
+
+                        ParseFieldCommentRow(row);
+                    }
                     break;
                 }
                 case 2: // 字段名称行
                 {
-                    if (m_RowFieldName == -1)
+                    if (m_Context.DataSetType == "matrix")
                     {
-                        m_RowFieldName = row.RowNum;
-                    }
 
-                    ParseFieldNameRow(row);
+                    }
+                    else
+                    {
+                        if (m_RowFieldName == -1)
+                        {
+                            m_RowFieldName = row.RowNum;
+                        }
+
+                        ParseFieldNameRow(row);
+                    }
                     break;
                 }
                 case 3: // 字段类型行
                 {
-                    if (m_RowFieldType == -1)
+                    if (m_Context.DataSetType == "matrix")
                     {
-                        m_RowFieldType = row.RowNum;
-                    }
 
-                    ParseFieldTypeRow(row);
+                    }
+                    else
+                    {
+                        if (m_RowFieldType == -1)
+                        {
+                            m_RowFieldType = row.RowNum;
+                        }
+
+                        ParseFieldTypeRow(row);
+                    }
                     break;
                 }
             }
@@ -288,6 +309,9 @@ public sealed partial class DataTableProcessor : IDisposable
             {
                 switch (args[0].Trim().ToLower())
                 {
+                    case "dtgen":
+                        m_Context.DataSetType = args[1].Trim();
+                        break;
                     case "title":
                         m_Context.Title = args[1].Trim();
                         break;

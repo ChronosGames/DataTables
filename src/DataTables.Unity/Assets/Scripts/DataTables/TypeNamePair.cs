@@ -87,7 +87,7 @@ namespace DataTables
         /// </summary>
         /// <param name="obj">要比较的对象。</param>
         /// <returns>被比较的对象是否与自身相等。</returns>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is TypeNamePair && Equals((TypeNamePair)obj);
         }

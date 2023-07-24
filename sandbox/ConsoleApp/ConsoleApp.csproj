@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Generated\*.bytes">
+    <None Update="DataTables\*.bytes">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

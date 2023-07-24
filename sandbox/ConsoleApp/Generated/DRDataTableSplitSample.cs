@@ -11,9 +11,6 @@ namespace ConsoleApp
 {
 public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitSample>
 {
-    public const string _x001 = "x001";
-    public const string _x002 = "x002";
-
     private Dictionary<int, DRDataTableSplitSample> m_Dict1 = new Dictionary<int, DRDataTableSplitSample>();
     private Dictionary<ConsoleApp.ColorT, DRDataTableSplitSample> m_Dict2 = new Dictionary<ConsoleApp.ColorT, DRDataTableSplitSample>();
     private MultiDictionary<int, short, DRDataTableSplitSample> m_Dict3 = new MultiDictionary<int, short, DRDataTableSplitSample>();

@@ -18,7 +18,7 @@ namespace DataTables.GeneratorCore
     /// Class to produce the template output
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.TextTemplating", "17.0.0.0")]
-    public partial class DataRowTemplate : DataRowTemplateBase
+    public partial class DataTableTemplate : DataTableTemplateBase
     {
         /// <summary>
         /// Create the template output
@@ -200,7 +200,7 @@ namespace DataTables.GeneratorCore
     /// Base class for this transformation
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.TextTemplating", "17.0.0.0")]
-    public class DataRowTemplateBase
+    public class DataTableTemplateBase
     {
         #region Fields
         private global::System.Text.StringBuilder generationEnvironmentField;

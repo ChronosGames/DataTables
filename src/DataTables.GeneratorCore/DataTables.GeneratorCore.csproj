@@ -16,10 +16,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="DataRowTemplate.cs">
-      <DependentUpon>DataRowTemplate.tt</DependentUpon>
+    <Compile Update="DataTableTemplate.cs">
+      <DependentUpon>DataTableTemplate.tt</DependentUpon>
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="DataMatrixTemplate.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>DataMatrixTemplate.tt</DependentUpon>
     </Compile>
     <Compile Update="DataTableManagerExtensionTemplate.cs">
       <DependentUpon>DataTableManagerExtensionTemplate.tt</DependentUpon>
@@ -29,9 +34,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="DataRowTemplate.tt">
-      <LastGenOutput>DataRowTemplate.cs</LastGenOutput>
+    <None Update="DataTableTemplate.tt">
+      <LastGenOutput>DataTableTemplate.cs</LastGenOutput>
       <Generator>TextTemplatingFilePreprocessor</Generator>
+    </None>
+    <None Update="DataMatrixTemplate.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>DataMatrixTemplate.cs</LastGenOutput>
     </None>
     <None Update="DataTableManagerExtensionTemplate.tt">
       <LastGenOutput>DataTableManagerExtensionTemplate.cs</LastGenOutput>

@@ -119,9 +119,10 @@ public sealed class DataTableGenerator
                     using (var processor = new DataTableProcessor(context, filterColumnTags))
                     {
                         // 初始化GenerateContext
-                        processor.CreateGenerateContext(sheet);
-                        if (!processor.ValidateGenerateContext())
+                        processor.CreateGenerationContext(sheet);
+                        if (!processor.ValidateGenerationContext())
                         {
+                            logger.Debug("  > (skip).");
                             continue;
                         }
 
@@ -158,12 +159,16 @@ public sealed class DataTableGenerator
     static void GenerateCodeFile(GenerationContext context, string outputDir, bool forceOverwrite, ILogger logger)
     {
         // 生成代码文件
-        var dataRowTemplate = new DataRowTemplate(context)
+        if (context.DataSetType == "matrix")
         {
-            Using = string.Join(Environment.NewLine, context.UsingStrings),
-        };
-
-        logger.Debug(WriteToFile(outputDir, context.RealClassName + ".cs", dataRowTemplate.TransformText(), forceOverwrite));
+            var dataRowTemplate = new DataMatrixTemplate(context);
+            logger.Debug(WriteToFile(outputDir, context.RealClassName + ".cs", dataRowTemplate.TransformText(), forceOverwrite));
+        }
+        else
+        {
+            var dataRowTemplate = new DataTableTemplate(context);
+            logger.Debug(WriteToFile(outputDir, context.RealClassName + ".cs", dataRowTemplate.TransformText(), forceOverwrite));
+        }
     }
 
     static string NormalizeNewLines(string content)

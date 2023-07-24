@@ -19,28 +19,22 @@ public sealed partial class DataTableProcessor : IDisposable
     private BinaryWriter? m_BinaryWriter;
 
     /// <summary>
-    /// 当前读取到第几行
+    /// 初始数据行序号
     /// </summary>
-    private int m_ReadRowIndex;
-
-    private int m_RowTitle;
-    private int m_RowFieldComment;
-    private int m_RowFieldName;
-    private int m_RowFieldType;
+    private int m_FirstDataRowIndex;
 
     public DataTableProcessor(GenerationContext context, string tags)
     {
         m_Context = context;
         m_Tags = tags;
 
-        m_RowTitle = -1;
-        m_RowFieldComment = -1;
-        m_RowFieldName = -1;
-        m_RowFieldType = -1;
+        m_FirstDataRowIndex = -1;
     }
 
-    public void CreateGenerateContext(ISheet sheet)
+    public void CreateGenerationContext(ISheet sheet)
     {
+        int rowIndex = 0;
+
         for (int i = sheet.FirstRowNum; i <= sheet.LastRowNum; i++)
         {
             var row = sheet.GetRow(i);
@@ -49,15 +43,10 @@ public sealed partial class DataTableProcessor : IDisposable
                 continue;
             }
 
-            switch (m_ReadRowIndex)
+            switch (rowIndex++)
             {
                 case 0: // 标题行
                 {
-                    if (m_RowTitle == -1)
-                    {
-                        m_RowTitle = row.RowNum;
-                    }
-
                     ParseSheetInfoRow(GetCellString(row.GetCell(row.FirstCellNum)));
                     break;
                 }
@@ -65,15 +54,12 @@ public sealed partial class DataTableProcessor : IDisposable
                 {
                     if (m_Context.DataSetType == "matrix")
                     {
-
+                        ParseMatrixInfo(row);
+                        m_FirstDataRowIndex = i + 1;
+                        return;
                     }
                     else
                     {
-                        if (m_RowFieldComment == -1)
-                        {
-                            m_RowFieldComment = row.RowNum;
-                        }
-
                         ParseFieldCommentRow(row);
                     }
                     break;
@@ -86,11 +72,6 @@ public sealed partial class DataTableProcessor : IDisposable
                     }
                     else
                     {
-                        if (m_RowFieldName == -1)
-                        {
-                            m_RowFieldName = row.RowNum;
-                        }
-
                         ParseFieldNameRow(row);
                     }
                     break;
@@ -103,20 +84,12 @@ public sealed partial class DataTableProcessor : IDisposable
                     }
                     else
                     {
-                        if (m_RowFieldType == -1)
-                        {
-                            m_RowFieldType = row.RowNum;
-                        }
-
                         ParseFieldTypeRow(row);
+                        m_FirstDataRowIndex = i + 1;
+                        return;
                     }
                     break;
                 }
-            }
-
-            if (++m_ReadRowIndex > 3)
-            {
-                return;
             }
         }
     }
@@ -240,7 +213,7 @@ public sealed partial class DataTableProcessor : IDisposable
         return plain;
     }
 
-    public bool ValidateGenerateContext()
+    public bool ValidateGenerationContext()
     {
         if (string.IsNullOrEmpty(m_Context.ClassName))
         {
@@ -253,7 +226,7 @@ public sealed partial class DataTableProcessor : IDisposable
             return false;
         }
 
-        if (m_RowFieldType == -1)
+        if (m_FirstDataRowIndex == -1)
         {
             throw new Exception("表格头部信息不全");
         }
@@ -310,7 +283,7 @@ public sealed partial class DataTableProcessor : IDisposable
                 switch (args[0].Trim().ToLower())
                 {
                     case "dtgen":
-                        m_Context.DataSetType = args[1].Trim();
+                        m_Context.DataSetType = args[1].Trim().ToLower();
                         break;
                     case "title":
                         m_Context.Title = args[1].Trim();
@@ -330,6 +303,22 @@ public sealed partial class DataTableProcessor : IDisposable
                     case "child":
                         m_Context.Child = args[1].Trim();
                         break;
+                    case "matrix":
+                    {
+                        var fields = args[1].Trim().Split('&');
+                        m_Context.Fields = new XField[]
+                        {
+                            new XField(0) { Name = DataMatrixTemplate.kKey1, TypeName = fields[0] },
+                            new XField(1) { Name = DataMatrixTemplate.kKey2, TypeName = fields[1] },
+                            new XField(2) { Name = DataMatrixTemplate.kValue, TypeName = fields[2] },
+                        };
+                        break;
+                    }
+                    case "matrixdefaultvalue":
+                    {
+                        m_Context.MatrixDefaultValue = args[1].Trim();
+                        break;
+                    }
                 }
             }
             else if (args.Length == 1)
@@ -344,6 +333,20 @@ public sealed partial class DataTableProcessor : IDisposable
         }
 
         return !string.IsNullOrEmpty(m_Context.ClassName);
+    }
+
+    private void ParseMatrixInfo(IRow row)
+    {
+        for (int cellNum = row.FirstCellNum; cellNum < row.LastCellNum; cellNum++)
+        {
+            var cellString = GetCellString(row.GetCell(cellNum));
+            if (string.IsNullOrEmpty(cellString))
+            {
+                continue;
+            }
+
+            m_Context.ColumnIndexToKey2.Add(cellNum, cellString);
+        }
     }
 
     private void ParseFieldCommentRow(IRow row)
@@ -450,22 +453,13 @@ public sealed partial class DataTableProcessor : IDisposable
             {
                 using (BinaryWriter binaryWriter = new BinaryWriter(fileStream, Encoding.UTF8))
                 {
-                    // 写入行数
+                    // 写入行数占位
                     binaryWriter.Write(0);
 
-                    int dataRowCount = 0;
-                    for (int i = m_RowFieldType + 1; i <= sheet.LastRowNum; i++)
-                    {
-                        var row = sheet.GetRow(i);
-                        if (!VaildDataRow(row))
-                        {
-                            continue;
-                        }
+                    // 写入数据集
+                    int dataRowCount = WriteDataRows(sheet, binaryWriter);
 
-                        dataRowCount++;
-                        WriteRowBytes(binaryWriter, row);
-                    }
-
+                    // 重写行数
                     var endPosition = fileStream.Position;
                     fileStream.Position = 0;
                     binaryWriter.Write(dataRowCount);
@@ -492,22 +486,98 @@ public sealed partial class DataTableProcessor : IDisposable
         }
     }
 
-    private void WriteRowBytes(BinaryWriter writer, IRow row)
+    private int WriteDataRows(ISheet sheet, BinaryWriter writer)
     {
-        foreach (var field in m_Context.Fields)
+        int dataRowCount = 0;
+        for (int i = m_FirstDataRowIndex; i <= sheet.LastRowNum; i++)
         {
-            if (field.IsIgnore) { continue; }
-
-            var processor = DataProcessorUtility.GetDataProcessor(field.TypeName);
-            try
+            var row = sheet.GetRow(i);
+            if (!VaildDataRow(row))
             {
-                processor.WriteToStream(writer, GetCellString(row.GetCell(field.Index)));
+                continue;
             }
-            catch (Exception e)
+
+            if (WriteRowBytes(writer, row))
             {
-                throw new Exception($"解析单元格内容时出错: {GetRowColString(row.RowNum, field.Index)}", e);
+                dataRowCount++;
             }
         }
+        return dataRowCount;
+    }
+
+    /// <summary>
+    /// 将指定数据行写入目标流中
+    /// </summary>
+    /// <param name="writer"></param>
+    /// <param name="row"></param>
+    /// <returns>是否写入该行的数据</returns>
+    /// <exception cref="Exception"></exception>
+    private bool WriteRowBytes(BinaryWriter writer, IRow row)
+    {
+        if (m_Context.DataSetType == "matrix")
+        {
+            var processor1 = DataProcessorUtility.GetDataProcessor(m_Context.GetField(DataMatrixTemplate.kKey1)!.TypeName);
+            var processor2 = DataProcessorUtility.GetDataProcessor(m_Context.GetField(DataMatrixTemplate.kKey2)!.TypeName);
+            var processor3 = DataProcessorUtility.GetDataProcessor(m_Context.GetField(DataMatrixTemplate.kValue)!.TypeName);
+
+            foreach (var pair in m_Context.ColumnIndexToKey2)
+            {
+                var cellString = GetCellString(row.GetCell(pair.Key));
+                if (cellString == m_Context.MatrixDefaultValue)
+                {
+                    return false;
+                }
+
+                // 写入TKey1的值
+                try
+                {
+                    processor1.WriteToStream(writer, GetCellString(row.GetCell(row.FirstCellNum)));
+                }
+                catch (Exception e)
+                {
+                    throw new Exception($"解析单元格内容时出错: {GetRowColString(row.RowNum, row.FirstCellNum)}", e);
+                }
+
+                // 写入TKey2的值
+                try
+                {
+                    processor2.WriteToStream(writer, pair.Value);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception($"解析单元格内容时出错: {GetRowColString(1, pair.Key)}", e);
+                }
+
+                // 写入TValue值
+                try
+                {
+                    processor3.WriteToStream(writer, cellString);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception($"解析单元格内容时出错: {GetRowColString(row.RowNum, pair.Key)}", e);
+                }
+            }
+        }
+        else
+        {
+            foreach (var field in m_Context.Fields)
+            {
+                if (field.IsIgnore) { continue; }
+
+                var processor = DataProcessorUtility.GetDataProcessor(field.TypeName);
+                try
+                {
+                    processor.WriteToStream(writer, GetCellString(row.GetCell(field.Index)));
+                }
+                catch (Exception e)
+                {
+                    throw new Exception($"解析单元格内容时出错: {GetRowColString(row.RowNum, field.Index)}", e);
+                }
+            }
+        }
+        
+        return true;
     }
 
     public static string GetDeserializeMethodString(GenerationContext context, XField property)

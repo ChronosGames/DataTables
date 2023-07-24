@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,17 +14,17 @@ public partial class DataTableManagerExtensionTemplate
     public IOrderedEnumerable<KeyValuePair<string, IOrderedEnumerable<string>>>? DataTables { get; set; }
 }
 
-public partial class DataRowTemplate
+public partial class DataTableTemplate
 {
-    public string Using { get; set; } = string.Empty;
+    public GenerationContext GenerationContext { get; private set; }
 
-    public GenerationContext GenerationContext { get; set; }
+    public string Using => string.Join(Environment.NewLine, this.GenerationContext.UsingStrings);
 
     public string Namespace => GenerationContext.Namespace;
 
     public string ClassName => GenerationContext.RealClassName;
 
-    public DataRowTemplate(GenerationContext context)
+    public DataTableTemplate(GenerationContext context)
     {
         this.GenerationContext = context;
     }
@@ -66,4 +67,21 @@ public partial class DataRowTemplate
             return sb.ToString();
         }
     }
+}
+
+public partial class DataMatrixTemplate
+{
+    internal const string kKey1 = "_key1";
+    internal const string kKey2 = "_key2";
+    internal const string kValue = "_value";
+
+    public GenerationContext GenerationContext { get; private set; }
+
+    public DataMatrixTemplate(GenerationContext generationContext)
+    {
+        this.GenerationContext = generationContext;
+    }
+
+    internal string BuildTypeString(string fieldName) => DataTableProcessor.GetLanguageKeyword(this.GenerationContext.GetField(fieldName)!);
+    internal string BuildDeserializeMethodString(string fieldName) => DataTableProcessor.GetDeserializeMethodString(GenerationContext, this.GenerationContext.GetField(fieldName)!);
 }

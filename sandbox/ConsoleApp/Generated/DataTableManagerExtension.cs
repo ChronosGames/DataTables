@@ -11,6 +11,7 @@ public static class DataTableManagerExtension
     {
         { "DRDataTableSample", Array.Empty<string>() },
         { "DRDataTableSplitSample", new string[] {"x001", "x002"} },
+        { "DRMatrixSample", Array.Empty<string>() },
     };
 
     /// <summary>
@@ -19,7 +20,7 @@ public static class DataTableManagerExtension
     /// <param name="onCompleted">全部数据表预加载完成时回调。</param>
     public static void Preload(this DataTableManager manager, Action onCompleted)
     {
-        int done = 3;
+        int done = 4;
 
         void next()
         { 
@@ -30,6 +31,7 @@ public static class DataTableManagerExtension
         manager.CreateDataTable<DTDataTableSample>(next);
         manager.CreateDataTable<DTDataTableSplitSample>("x001", next);
         manager.CreateDataTable<DTDataTableSplitSample>("x002", next);
+        manager.CreateDataTable<DTMatrixSample>(next);
     }
 }
 }

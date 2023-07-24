@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using NPOI.SS.UserModel;
 
 namespace DataTables.GeneratorCore;
 
@@ -30,18 +29,26 @@ public class GenerationContext
 
     public XField[] Fields { get; set; } = Array.Empty<XField>();
 
-    /// <summary>字段索引列表</summary>
+    /// <summary>按特定字段进行单体索引列表</summary>
     public readonly List<string[]> Indexs = new List<string[]>();
 
-    /// <summary>
-    /// 列分组索引列表
-    /// </summary>
+    /// <summary>按特定字段进行分组索引列表</summary>
     public readonly List<string[]> Groups = new List<string[]>();
 
-    /// <summary>
-    /// 子表的名称
-    /// </summary>
+    /// <summary>子表的名称</summary>
     public string Child = string.Empty;
+
+    /// <summary>
+    /// 默认值
+    /// <para>Matrix模式专用</para>
+    /// </summary>
+    public string MatrixDefaultValue { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 记录列编号与名称的对照关系
+    /// <para>Matrix模式专用</para>
+    /// </summary>
+    public readonly Dictionary<int, string> ColumnIndexToKey2 = new Dictionary<int, string>();
 
     /// <summary>
     /// 导出时是否出错
@@ -162,32 +169,32 @@ public class XField
     /// <summary>
     /// 列序号
     /// </summary>
-    public readonly int Index;
+    public int Index { get; private set; }
 
     /// <summary>
     /// 中文名称行上的单元格的文本内容
     /// </summary>
-    public string Title { get; set; }
+    public string Title { get; set; } = string.Empty;
 
     /// <summary>
     /// 字段类型
     /// </summary>
-    public string TypeName { get; set; }
+    public string TypeName { get; set; } = string.Empty;
 
     /// <summary>
     /// 字段名
     /// </summary>
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// 中文名称行上单元格的批注信息
     /// </summary>
-    public string Note { get; set; }
+    public string Note { get; set; } = string.Empty;
 
     /// <summary>
     /// 是否忽略
     /// </summary>
-    public bool IsIgnore { get; set; }
+    public bool IsIgnore { get; set; } = false;
 
     public XField(int index)
     {

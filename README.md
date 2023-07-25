@@ -249,6 +249,9 @@ openupm add game.phonix.datatables
 Optimization
 ---
 
+在提供的API中有一些宏定义，可用于调整API接口相关：
+* `DT_CHECK_NOT_FOUND`: 在Unity中定义该宏，可在调用查询相关接口时，检测到目标条目不存在时，会输出警告级别日志。
+
 <!--
 When invoking `new MemoryDatabase(byte[] databaseBinary...)`, read and construct database from binary. If binary size is large then construct performance will slow down. `MemoryDatabase` has `ctor(..., int maxDegreeOfParallelism = 1)` option in constructor to construct in parallel.
 

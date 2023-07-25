@@ -49,7 +49,7 @@ public sealed partial class DataTableProcessor
                 value = "{}";
             }
 
-            var dict = JsonUtility.Deserialize<Hashtable>(value);
+            var dict = JsonUtility.Deserialize<Hashtable>(value)!;
 
             binaryWriter.Write7BitEncodedInt32(dict.Count);
             foreach (DictionaryEntry item in dict)

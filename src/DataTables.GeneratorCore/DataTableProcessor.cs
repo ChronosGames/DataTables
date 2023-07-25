@@ -188,7 +188,7 @@ public sealed partial class DataTableProcessor : IDisposable
             case CellType.Error:
                 return FormulaError.ForInt(cell.ErrorCellValue).String;
             default:
-                return cell.ToString().Trim();
+                return cell.ToString()!.Trim();
         }
     }
 

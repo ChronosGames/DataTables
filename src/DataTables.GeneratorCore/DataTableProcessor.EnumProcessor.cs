@@ -39,7 +39,7 @@ public sealed partial class DataTableProcessor
 
         public override string Parse(string value)
         {
-            return value.StartsWith("\"") ? JsonUtility.Deserialize<string>(value) : value;
+            return value.StartsWith("\"") ? JsonUtility.Deserialize<string>(value)! : value;
         }
 
         public override void WriteToStream(BinaryWriter binaryWriter, string value)

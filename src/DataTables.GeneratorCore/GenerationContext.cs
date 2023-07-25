@@ -106,7 +106,7 @@ public class GenerationContext
 
         for (int i = 0; i < fields.Length; i++)
         {
-            result[i] = $"{DataTableProcessor.GetLanguageKeyword(GetField(fields[i]))} {fields[i]}";
+            result[i] = $"{DataTableProcessor.GetLanguageKeyword(GetField(fields[i])!)} {fields[i]}";
         }
 
         return string.Join(", ", result);
@@ -127,7 +127,7 @@ public class GenerationContext
 
         foreach (var fieldName in fields)
         {
-            sb.Append(DataTableProcessor.GetLanguageKeyword(GetField(fieldName)));
+            sb.Append(DataTableProcessor.GetLanguageKeyword(GetField(fieldName)!));
             sb.Append(", ");
         }
 
@@ -152,7 +152,7 @@ public class GenerationContext
 
         foreach (var fieldName in fields)
         {
-            sb.Append(DataTableProcessor.GetLanguageKeyword(GetField(fieldName)));
+            sb.Append(DataTableProcessor.GetLanguageKeyword(GetField(fieldName)!));
             sb.Append(", ");
         }
 

@@ -25,7 +25,7 @@ public sealed partial class DataTableProcessor
 
                 if (dataProcessorBaseType.IsAssignableFrom(types[i]))
                 {
-                    DataProcessor dataProcessor = (DataProcessor)Activator.CreateInstance(types[i]);
+                    DataProcessor dataProcessor = (DataProcessor)Activator.CreateInstance(types[i])!;
                     if (!dataProcessor.IsSystem)
                     {
                         continue;

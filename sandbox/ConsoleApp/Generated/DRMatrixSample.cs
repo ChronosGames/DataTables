@@ -16,9 +16,15 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
 
     protected override bool Deserialize(BinaryReader reader)
     {
-        var _key1 = reader.ReadInt16();
-        var _key2 = reader.Read7BitEncodedInt64();
-        var _value = reader.ReadBoolean();
+        short _key1;
+        _key1 = reader.ReadInt16();
+
+        long _key2;
+        _key2 = reader.Read7BitEncodedInt64();
+
+        bool _value;
+        _value = reader.ReadBoolean();
+
         AddDataSet(_key1, _key2, _value);
         return true;
     }

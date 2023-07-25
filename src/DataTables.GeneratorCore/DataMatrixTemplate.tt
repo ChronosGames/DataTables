@@ -20,9 +20,15 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
 
     protected override bool Deserialize(BinaryReader reader)
     {
-        var <#= BuildDeserializeMethodString(kKey1) #>
-        var <#= BuildDeserializeMethodString(kKey2) #>
-        var <#= BuildDeserializeMethodString(kValue) #>
+        <#= BuildTypeString(kKey1) #> <#= kKey1 #>;
+        <#= BuildDeserializeMethodString(kKey1) #>
+
+        <#= BuildTypeString(kKey2) #> <#= kKey2 #>;
+        <#= BuildDeserializeMethodString(kKey2) #>
+
+        <#= BuildTypeString(kValue) #> <#= kValue #>;
+        <#= BuildDeserializeMethodString(kValue) #>
+
         AddDataSet(<#= kKey1 #>, <#= kKey2 #>, <#= kValue #>);
         return true;
     }

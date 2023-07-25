@@ -54,7 +54,7 @@ namespace DataTables
             get;
         }
 
-        public virtual string GetFileName() => Type.Name + (string.IsNullOrEmpty(m_Name) ? string.Empty : '.' + m_Name) + ".bytes";
+        public virtual string GetFileName() => Type.Name + (string.IsNullOrEmpty(m_Name) ? string.Empty : '.' + m_Name);
 
         /// <summary>
         /// 初始化数据集。

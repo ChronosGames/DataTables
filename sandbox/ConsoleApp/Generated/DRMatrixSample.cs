@@ -12,7 +12,7 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
     public DTMatrixSample(string name) : base(name)
     { }
 
-    public override string GetFileName() => "DRMatrixSample" + (string.IsNullOrEmpty(this.Name) ? string.Empty : '.' + this.Name) + ".bytes";
+    public override string GetFileName() => "DRMatrixSample" + (string.IsNullOrEmpty(this.Name) ? string.Empty : '.' + this.Name);
 
     protected override bool Deserialize(BinaryReader reader)
     {

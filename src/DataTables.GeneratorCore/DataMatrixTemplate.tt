@@ -16,7 +16,7 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
     public DT<#= GenerationContext.ClassName #>(string name) : base(name)
     { }
 
-    public override string GetFileName() => "<#= GenerationContext.RealClassName #>" + (string.IsNullOrEmpty(this.Name) ? string.Empty : '.' + this.Name) + ".bytes";
+    public override string GetFileName() => "<#= GenerationContext.RealClassName #>" + (string.IsNullOrEmpty(this.Name) ? string.Empty : '.' + this.Name);
 
     protected override bool Deserialize(BinaryReader reader)
     {

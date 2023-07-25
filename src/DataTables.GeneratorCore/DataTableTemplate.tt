@@ -42,7 +42,6 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataTable<<#=
         #><#=Environment.NewLine#><#
     }
 #>
-    public DT<#= GenerationContext.ClassName #>() : base() { }
     public DT<#= GenerationContext.ClassName #>(string name) : base(name) { }
 <#  for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {

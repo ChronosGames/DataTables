@@ -18,7 +18,6 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     private MultiDictionary<string, bool, List<DRDataTableSample>> m_Dict4 = new MultiDictionary<string, bool, List<DRDataTableSample>>();
     private Dictionary<string, List<DRDataTableSample>> m_Dict5 = new Dictionary<string, List<DRDataTableSample>>();
 
-    public DTDataTableSample() : base() { }
     public DTDataTableSample(string name) : base(name) { }
 
     public DRDataTableSample GetDataRowById(int Id)

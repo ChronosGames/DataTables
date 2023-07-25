@@ -87,8 +87,6 @@ namespace DataTables.GeneratorCore
 
             this.Write("    public DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
-            this.Write("() : base() { }\r\n    public DT");
-            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write("(string name) : base(name) { }\r\n");
   for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {

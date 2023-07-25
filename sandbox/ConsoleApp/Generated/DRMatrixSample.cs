@@ -9,6 +9,11 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
 {
     protected override bool DefaultValue => true;
 
+    public DTMatrixSample(string name) : base(name)
+    { }
+
+    public override string GetFileName() => "DRMatrixSample" + (string.IsNullOrEmpty(this.Name) ? string.Empty : '.' + this.Name) + ".bytes";
+
     protected override bool Deserialize(BinaryReader reader)
     {
         var _key1 = reader.ReadInt16();

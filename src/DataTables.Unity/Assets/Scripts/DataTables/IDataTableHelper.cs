@@ -7,6 +7,6 @@ namespace DataTables
     /// </summary>
     public interface IDataTableHelper
     {
-        void Read(Type dataTableType, string name, Action<byte[]> callback);
+        void Read(string fileName, Action<byte[]> callback);
     }
 }

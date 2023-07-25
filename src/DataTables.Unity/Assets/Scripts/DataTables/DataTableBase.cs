@@ -10,13 +10,6 @@ namespace DataTables
         /// <summary>
         /// 初始化数据表基类的新实例。
         /// </summary>
-        public DataTableBase() : this(string.Empty)
-        {
-        }
-
-        /// <summary>
-        /// 初始化数据表基类的新实例。
-        /// </summary>
         /// <param name="name">数据表名称。</param>
         public DataTableBase(string name)
         {
@@ -61,6 +54,8 @@ namespace DataTables
             get;
         }
 
+        public virtual string GetFileName() => Type.Name + (string.IsNullOrEmpty(m_Name) ? string.Empty : '.' + m_Name) + ".bytes";
+
         /// <summary>
         /// 初始化数据集。
         /// </summary>
@@ -71,9 +66,9 @@ namespace DataTables
         /// 增加数据表行。
         /// </summary>
         /// <param name="index">将要增加的数据表行的索引值。</param>
-        /// <param name="binaryReader">要解析的数据表行二进制流。</param>
+        /// <param name="reader">要解析的数据表行二进制流。</param>
         /// <returns>是否增加数据表行成功。</returns>
-        internal abstract bool SetDataRow(int index, BinaryReader binaryReader);
+        internal abstract bool SetDataRow(int index, BinaryReader reader);
 
         /// <summary>
         /// 配置表加载完成

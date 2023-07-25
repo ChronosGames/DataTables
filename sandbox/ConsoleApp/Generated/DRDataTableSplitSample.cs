@@ -18,7 +18,6 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     private MultiDictionary<string, bool, List<DRDataTableSplitSample>> m_Dict4 = new MultiDictionary<string, bool, List<DRDataTableSplitSample>>();
     private Dictionary<string, List<DRDataTableSplitSample>> m_Dict5 = new Dictionary<string, List<DRDataTableSplitSample>>();
 
-    public DTDataTableSplitSample() : base() { }
     public DTDataTableSplitSample(string name) : base(name) { }
 
     public DRDataTableSplitSample GetDataRowById(int Id)

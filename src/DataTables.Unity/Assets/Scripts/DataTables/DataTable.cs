@@ -13,15 +13,6 @@ namespace DataTables
         /// <summary>
         /// 初始化数据表的新实例。
         /// </summary>
-        public DataTable()
-            : base(string.Empty)
-        {
-            m_DataSet = Array.Empty<T>();
-        }
-
-        /// <summary>
-        /// 初始化数据表的新实例。
-        /// </summary>
         /// <param name="name">数据表名称。</param>
         public DataTable(string name)
             : base(name)

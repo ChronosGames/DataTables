@@ -79,9 +79,9 @@ namespace ConsoleApp
             Debug.Assert(dtSample.GetDataRowById(1) != null, "加载配置表失败1");
             manager.DestroyDataTable(dtSample);
 
-            //Debug.Assert(!manager.HasDataTable<DTDataTableSplitSample>(), "加载配置表失败");
-            //manager.CreateDataTable<DTDataTableSplitSample>();
-            //Debug.Assert(manager.HasDataTable<DTDataTableSplitSample>(), "加载配置表失败");
+            Debug.Assert(manager.GetDataTable<DTMatrixSample>() != null, "加载MatrixSample失败");
+            Debug.Assert(manager.GetDataTable<DTMatrixSample>()!.Get(2, 1) == false, "加载MatrixSample失败");
+            Debug.Assert(manager.GetDataTable<DTMatrixSample>()!.Get(5, 3) == true, "加载MatrixSample失败");
         }
 
     }

@@ -257,7 +257,7 @@ namespace DataTables
             }
 
             var dataTable = (T)Activator.CreateInstance(typeof(T), name)!;
-            m_DataTableHelper.Read(dataTable.Type, name, (raw) => LoadDataTable(dataTable, raw, onCompleted));
+            m_DataTableHelper.Read(dataTable.GetFileName(), (raw) => LoadDataTable(dataTable, raw, onCompleted));
         }
 
         /// <summary>
@@ -285,7 +285,7 @@ namespace DataTables
             }
 
             var dataTable = (DataTableBase)Activator.CreateInstance(dataTableType, name)!;
-            m_DataTableHelper.Read(dataTable.Type, name, (raw) => LoadDataTable(dataTable, raw, onCompleted));
+            m_DataTableHelper.Read(dataTable.GetFileName(), (raw) => LoadDataTable(dataTable, raw, onCompleted));
         }
 
         private void LoadDataTable(DataTableBase dataTable, byte[] raw, Action onCompleted)

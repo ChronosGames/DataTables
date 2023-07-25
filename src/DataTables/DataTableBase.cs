@@ -10,13 +10,6 @@ namespace DataTables
         /// <summary>
         /// 初始化数据表基类的新实例。
         /// </summary>
-        public DataTableBase() : this(string.Empty)
-        {
-        }
-
-        /// <summary>
-        /// 初始化数据表基类的新实例。
-        /// </summary>
         /// <param name="name">数据表名称。</param>
         public DataTableBase(string name)
         {
@@ -60,6 +53,8 @@ namespace DataTables
         {
             get;
         }
+
+        public virtual string GetFileName() => Type.Name + (string.IsNullOrEmpty(m_Name) ? string.Empty : '.' + m_Name) + ".bytes";
 
         /// <summary>
         /// 初始化数据集。

@@ -12,9 +12,9 @@ namespace DataTables
             m_DataDir = dataDir;
         }
 
-        public void Read(Type dataTableType, string name, Action<byte[]> callback)
+        public void Read(string fileName, Action<byte[]> callback)
         {
-            var raw = File.ReadAllBytes(Path.Combine(m_DataDir, dataTableType.Name + (string.IsNullOrEmpty(name) ? string.Empty : '.' + name) + ".bytes"));
+            var raw = File.ReadAllBytes(Path.Combine(m_DataDir, fileName));
             callback(raw);
         }
     }

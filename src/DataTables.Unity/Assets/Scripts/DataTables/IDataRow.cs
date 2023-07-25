@@ -10,8 +10,8 @@ namespace DataTables
         /// <summary>
         /// 解锁数据表行
         /// </summary>
-        /// <param name="binaryReader">要解析的数据表行二进制流</param>
+        /// <param name="reader">要解析的数据表行二进制流</param>
         /// <returns>是否解析数据表行成功</returns>
-        bool Deserialize(BinaryReader binaryReader);
+        bool Deserialize(BinaryReader reader);
     }
 }

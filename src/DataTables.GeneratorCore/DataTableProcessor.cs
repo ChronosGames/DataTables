@@ -489,6 +489,7 @@ public sealed partial class DataTableProcessor : IDisposable
     private int WriteDataRows(ISheet sheet, BinaryWriter writer)
     {
         int dataRowCount = 0;
+
         for (int i = m_FirstDataRowIndex; i <= sheet.LastRowNum; i++)
         {
             var row = sheet.GetRow(i);
@@ -497,11 +498,9 @@ public sealed partial class DataTableProcessor : IDisposable
                 continue;
             }
 
-            if (WriteRowBytes(writer, row))
-            {
-                dataRowCount++;
-            }
+            dataRowCount += WriteRowBytes(writer, row);
         }
+
         return dataRowCount;
     }
 
@@ -512,7 +511,7 @@ public sealed partial class DataTableProcessor : IDisposable
     /// <param name="row"></param>
     /// <returns>是否写入该行的数据</returns>
     /// <exception cref="Exception"></exception>
-    private bool WriteRowBytes(BinaryWriter writer, IRow row)
+    private int WriteRowBytes(BinaryWriter writer, IRow row)
     {
         if (m_Context.DataSetType == "matrix")
         {
@@ -520,13 +519,18 @@ public sealed partial class DataTableProcessor : IDisposable
             var processor2 = DataProcessorUtility.GetDataProcessor(m_Context.GetField(DataMatrixTemplate.kKey2)!.TypeName);
             var processor3 = DataProcessorUtility.GetDataProcessor(m_Context.GetField(DataMatrixTemplate.kValue)!.TypeName);
 
+            int dataRowCount = 0;
+
             foreach (var pair in m_Context.ColumnIndexToKey2)
             {
                 var cellString = GetCellString(row.GetCell(pair.Key));
                 if (cellString == m_Context.MatrixDefaultValue)
                 {
-                    return false;
+                    continue;
                 }
+
+                // 累计数量
+                dataRowCount++;
 
                 // 写入TKey1的值
                 try
@@ -558,6 +562,8 @@ public sealed partial class DataTableProcessor : IDisposable
                     throw new Exception($"解析单元格内容时出错: {GetRowColString(row.RowNum, pair.Key)}", e);
                 }
             }
+
+            return dataRowCount;
         }
         else
         {
@@ -575,9 +581,9 @@ public sealed partial class DataTableProcessor : IDisposable
                     throw new Exception($"解析单元格内容时出错: {GetRowColString(row.RowNum, field.Index)}", e);
                 }
             }
+
+            return 1;
         }
-        
-        return true;
     }
 
     public static string GetDeserializeMethodString(GenerationContext context, XField property)

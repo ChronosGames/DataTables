@@ -83,5 +83,6 @@ public partial class DataMatrixTemplate
     }
 
     internal string BuildTypeString(string fieldName) => DataTableProcessor.GetLanguageKeyword(this.GenerationContext.GetField(fieldName)!);
+    internal string BuildTypeValueString(string fieldName, string fieldValueString) => DataTableProcessor.GetLanguageValue(this.GenerationContext.GetField(fieldName)!, fieldValueString);
     internal string BuildDeserializeMethodString(string fieldName) => DataTableProcessor.GetDeserializeMethodString(GenerationContext, this.GenerationContext.GetField(fieldName)!);
 }

@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 namespace DataTables.GeneratorCore;
@@ -35,6 +36,8 @@ public sealed partial class DataTableProcessor
         {
             return sbyte.Parse(value);
         }
+
+        public override string GenerateTypeValue(string text) => throw new NotImplementedException();
 
         public override void WriteToStream(BinaryWriter binaryWriter, string value)
         {

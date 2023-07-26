@@ -524,7 +524,7 @@ public sealed partial class DataTableProcessor : IDisposable
             foreach (var pair in m_Context.ColumnIndexToKey2)
             {
                 var cellString = GetCellString(row.GetCell(pair.Key));
-                if (cellString == m_Context.MatrixDefaultValue)
+                if (string.IsNullOrEmpty(cellString) || cellString == m_Context.MatrixDefaultValue)
                 {
                     continue;
                 }
@@ -596,6 +596,11 @@ public sealed partial class DataTableProcessor : IDisposable
     {
         var processor = DataProcessorUtility.GetDataProcessor(property.TypeName);
         return processor.LanguageKeyword;
+    }
+
+    public static string GetLanguageValue(XField field, string text)
+    {
+        return DataProcessorUtility.GetDataProcessor(field.TypeName).GenerateTypeValue(text);
     }
 
     private static string GetRowColString(int row, int col)

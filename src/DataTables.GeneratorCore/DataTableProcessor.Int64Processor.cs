@@ -42,6 +42,8 @@ public sealed partial class DataTableProcessor
             return JsonUtility.Deserialize<long>(value);
         }
 
+        public override string GenerateTypeValue(string text) => Parse(text).ToString() + 'L';
+
         public override void WriteToStream(BinaryWriter binaryWriter, string value)
         {
             binaryWriter.Write7BitEncodedInt64(Parse(value));

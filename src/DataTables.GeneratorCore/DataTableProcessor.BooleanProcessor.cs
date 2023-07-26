@@ -34,6 +34,11 @@ public sealed partial class DataTableProcessor
                 "system.boolean"
             };
         }
+        
+        public override string GenerateTypeValue(string text)
+        {
+            return Parse(text) ? "true" : "false";
+        }
 
         public override bool Parse(string value)
         {

@@ -38,6 +38,8 @@ public sealed partial class DataTableProcessor
             };
         }
 
+        public override string GenerateTypeValue(string text) => throw new NotImplementedException();
+
         public override void WriteToStream(BinaryWriter binaryWriter, string value)
         {
             // 默认为空时自动补齐为空数组

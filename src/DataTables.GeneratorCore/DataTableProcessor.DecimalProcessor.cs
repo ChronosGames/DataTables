@@ -34,6 +34,8 @@ public sealed partial class DataTableProcessor
 
         public override Type Type => typeof(decimal);
 
+        public override string GenerateTypeValue(string text) => Parse(text).ToString() + 'm';
+
         public override decimal Parse(string value)
         {
             return decimal.Parse(value);

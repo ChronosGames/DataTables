@@ -151,7 +151,7 @@ public sealed partial class DataTableProcessor
                 }
                 else
                 {
-                    abc = new CustomProcessor(str1);
+                    abc = new CustomizeProcessor(str1);
                     foreach (var ts in abc.GetTypeStrings())
                     {
                         s_DataProcessors.TryAdd(ts, abc);

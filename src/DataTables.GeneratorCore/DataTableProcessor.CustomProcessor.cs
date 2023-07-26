@@ -5,7 +5,7 @@ namespace DataTables.GeneratorCore;
 
 public sealed partial class DataTableProcessor
 {
-    private sealed class CustomProcessor : GenericDataProcessor<string>
+    private sealed class CustomizeProcessor : GenericDataProcessor<string>
     {
         public override bool IsSystem
         {
@@ -29,15 +29,17 @@ public sealed partial class DataTableProcessor
 
         private readonly string m_TypeString;
 
-        public CustomProcessor()
+        public CustomizeProcessor()
         {
             m_TypeString = string.Empty;
         }
 
-        public CustomProcessor(string typeString)
+        public CustomizeProcessor(string typeString)
         {
             m_TypeString = typeString;
         }
+
+        public override string GenerateTypeValue(string text) => $"new {m_TypeString}(@\"{text}\")";
 
         public override string Parse(string value)
         {

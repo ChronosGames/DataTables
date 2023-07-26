@@ -28,8 +28,16 @@ public sealed partial class DataTableProcessor
 
         public override Type Type => typeof(DateTime);
 
+        public override string GenerateTypeValue(string text)
+        {
+            var datetime = Parse(text);
+            return $"new DateTime({datetime.Year}, {datetime.Month}, {datetime.Day}, {datetime.Hour}, {datetime.Minute}, {datetime.Second})";
+        }
+
         public override DateTime Parse(string value)
         {
+            new DateTime(2012, 2, 2, 3, 4, 5);
+
             return DateTime.Parse(value);
         }
 

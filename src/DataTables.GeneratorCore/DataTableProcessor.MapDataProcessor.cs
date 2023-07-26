@@ -41,6 +41,8 @@ public sealed partial class DataTableProcessor
             };
         }
 
+        public override string GenerateTypeValue(string text) => throw new NotImplementedException();
+
         public override void WriteToStream(BinaryWriter binaryWriter, string value)
         {
             // 空的单元格时，自动补齐为空字母

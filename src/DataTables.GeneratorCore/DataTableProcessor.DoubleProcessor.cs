@@ -34,6 +34,8 @@ public sealed partial class DataTableProcessor
 
         public override Type Type => typeof(double);
 
+        public override string GenerateTypeValue(string text) => Parse(text).ToString() + 'd';
+
         public override double Parse(string value)
         {
             return string.IsNullOrEmpty(value) ? 0d : double.Parse(value);

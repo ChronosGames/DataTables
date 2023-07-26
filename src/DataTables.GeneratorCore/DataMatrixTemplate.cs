@@ -36,7 +36,7 @@ namespace DataTables.GeneratorCore
             this.Write(", ");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kValue)));
             this.Write(">\r\n{\r\n    ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(string.IsNullOrEmpty(GenerationContext.MatrixDefaultValue) ? string.Empty : "protected override bool DefaultValue => " + GenerationContext.MatrixDefaultValue + ";" + Environment.NewLine));
+            this.Write(this.ToStringHelper.ToStringWithCulture(string.IsNullOrEmpty(GenerationContext.MatrixDefaultValue) ? string.Empty : "protected override " + BuildTypeString(kValue) + " DefaultValue => " + BuildTypeValueString(kValue, GenerationContext.MatrixDefaultValue) + ";" + Environment.NewLine));
             this.Write("\r\n    public DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write("(string name) : base(name)\r\n    { }\r\n\r\n    public override string GetFileName() =" +

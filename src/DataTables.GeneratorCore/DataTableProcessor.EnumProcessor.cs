@@ -37,6 +37,8 @@ public sealed partial class DataTableProcessor
             m_TypeString = typeString;
         }
 
+        public override string GenerateTypeValue(string text) => m_TypeString + '.' + text;
+
         public override string Parse(string value)
         {
             return value.StartsWith("\"") ? JsonUtility.Deserialize<string>(value)! : value;

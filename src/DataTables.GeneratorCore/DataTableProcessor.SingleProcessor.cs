@@ -37,6 +37,8 @@ public sealed partial class DataTableProcessor
             return string.IsNullOrEmpty(value) ? 0 : float.Parse(value);
         }
 
+        public override string GenerateTypeValue(string text) => Parse(text).ToString() + 'f';
+
         public override void WriteToStream(BinaryWriter binaryWriter, string value)
         {
             binaryWriter.Write(Parse(value));

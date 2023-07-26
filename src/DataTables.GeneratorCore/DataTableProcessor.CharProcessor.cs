@@ -34,6 +34,8 @@ public sealed partial class DataTableProcessor
 
         public override Type Type => typeof(char);
 
+        public override string GenerateTypeValue(string text) => Parse(text).ToString();
+
         public override char Parse(string value)
         {
             return string.IsNullOrEmpty(value) ? default : char.Parse(value);

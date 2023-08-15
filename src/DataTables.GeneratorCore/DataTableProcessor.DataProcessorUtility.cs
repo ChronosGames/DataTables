@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Reflection;
 
 namespace DataTables.GeneratorCore;
@@ -13,19 +12,18 @@ public sealed partial class DataTableProcessor
 
         static DataProcessorUtility()
         {
-            System.Type dataProcessorBaseType = typeof(DataProcessor);
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            System.Type[] types = assembly.GetTypes();
-            for (int i = 0; i < types.Length; i++)
+            var dataProcessorBaseType = typeof(DataProcessor);
+            var types = Assembly.GetExecutingAssembly().GetTypes();
+            foreach (var type in types)
             {
-                if (!types[i].IsClass || types[i].IsAbstract)
+                if (!type.IsClass || type.IsAbstract)
                 {
                     continue;
                 }
 
-                if (dataProcessorBaseType.IsAssignableFrom(types[i]))
+                if (dataProcessorBaseType.IsAssignableFrom(type))
                 {
-                    DataProcessor dataProcessor = (DataProcessor)Activator.CreateInstance(types[i])!;
+                    DataProcessor dataProcessor = (DataProcessor)Activator.CreateInstance(type)!;
                     if (!dataProcessor.IsSystem)
                     {
                         continue;

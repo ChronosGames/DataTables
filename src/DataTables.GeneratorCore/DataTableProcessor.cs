@@ -592,12 +592,23 @@ public sealed partial class DataTableProcessor : IDisposable
         return processor.GenerateDeserializeCode(context, processor.Type.Name, property.Name, 0);
     }
 
+    /// <summary>
+    /// 生成字段的类型定义文本
+    /// </summary>
+    /// <param name="property"></param>
+    /// <returns></returns>
     public static string GetLanguageKeyword(XField property)
     {
         var processor = DataProcessorUtility.GetDataProcessor(property.TypeName);
         return processor.LanguageKeyword;
     }
 
+    /// <summary>
+    /// 生成字段的类型值定义文本
+    /// </summary>
+    /// <param name="field"></param>
+    /// <param name="text"></param>
+    /// <returns></returns>
     public static string GetLanguageValue(XField field, string text)
     {
         return DataProcessorUtility.GetDataProcessor(field.TypeName).GenerateTypeValue(text);

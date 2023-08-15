@@ -16,6 +16,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\src\DataTables.GeneratorCore\DataTables.GeneratorCore.csproj" />
 		<ProjectReference Include="..\..\src\DataTables\DataTables.csproj" />
 	</ItemGroup>
 

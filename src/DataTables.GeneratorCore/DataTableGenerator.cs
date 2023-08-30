@@ -175,7 +175,7 @@ public sealed class DataTableGenerator
     {
         // The T4 generated code may be text with mixed line ending types. (CR + CRLF)
         // We need to normalize the line ending type in each Operating Systems. (e.g. Windows=CRLF, Linux/macOS=LF)
-        return content.Replace("\r\n", "\n").Replace("\n", Environment.NewLine);
+        return content.Replace("\r\n", "\n");
     }
 
     static string WriteToFile(string directory, string fileName, string content, bool forceOverwrite)

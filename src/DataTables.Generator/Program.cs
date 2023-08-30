@@ -25,6 +25,9 @@ public class Program : ConsoleAppBase
         [Option("t", "Tags of filter columns.")] string filterColumnTags = "",
         [Option("f", "Overwrite generated files if the content is unchanged.")] bool forceOverwrite = false)
     {
+        var oldEncoding = Console.OutputEncoding;
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
+
         var sw = Stopwatch.StartNew();
         Console.WriteLine("Start DataTables CodeGeneration");
 
@@ -44,5 +47,7 @@ public class Program : ConsoleAppBase
         }
 
         Console.WriteLine("Complete DataTables Generation, elapsed: " + sw.Elapsed);
+
+        Console.OutputEncoding = oldEncoding;
     }
 }

@@ -275,16 +275,15 @@ DataTables has one kinds of code-generator. `.NET Core Global/Local Tools`.
 `dotnet tool install --global DataTables.Generator`
 
 ```
-Usage: DataTables.Generator [options...]
-
 Options:
-  -i, -inputDirectory <String>              Input file directory(search recursive). (Required)
-  -co, -codeOutputDirectory <String>        Code Output file directory. (Required)
-  -do, -dataOutputDirectory <String>        Data Output file directory. (Required)
-  -n, -usingNamespace <String>              Namespace of generated files. (Required)
-  -p, -prefixClassName <String>             Prefix of class names. (Default: )
-  -t, -filterColumnTags <String>            Tags of filter columns. (Default: )
-  -f, -forceOverwrite <Boolean>             Overwrite generated files if the content is unchanged. (Default: false)
+  -i, -inputdirectories <String[]>    Input file directory(search recursive). (Required)
+  -co, -codeoutputdir <String>        Code output file directory. (Required)
+  -do, -dataoutputdir <String>        Data output file directory. (Required)
+  -ins, -importnamespaces <String>    Import namespaces of generated files, split with char '&' for multiple namespaces. (Default: )
+  -n, -usingnamespace <String>        Namespace of generated files. (Default: )
+  -p, -prefixclassname <String>       Prefix of class names. (Default: )
+  -t, -filtercolumntags <String>      Tags of filter columns. (Default: )
+  -f, -forceoverwrite                 Overwrite generated files if the content is unchanged. (Optional)
 ```
 
 After install, you can call by `dotnet DataTables.Generator` command. This is useful to use in CI. Here is the sample of CircleCI config.

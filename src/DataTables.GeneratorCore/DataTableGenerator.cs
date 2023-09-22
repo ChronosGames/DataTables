@@ -36,11 +36,31 @@ public sealed class DataTableGenerator
 
         // Collect
         List<string> filePaths = new List<string>();
-        foreach (var s in inputDirectories)
+        foreach (var abc in inputDirectories)
         {
-            if (s.Contains('*') || s.Contains('?'))
+            var str1 = Path.GetFullPath(abc);
+            var str2 = Path.GetFileName(abc);
+
+            if (string.IsNullOrEmpty(str2) || !str2.Contains('.'))
             {
-                foreach (var filePath in Directory.EnumerateFiles(s))
+                if (Directory.Exists(str1))
+                {
+                    foreach (var filePath in Directory.GetFiles(str1))
+                    {
+                        if (filePath.EndsWith(".xlsx") || filePath.EndsWith(".xlsb") || filePath.EndsWith(".xls") || filePath.EndsWith(".csv"))
+                        {
+                            filePaths.Add(filePath);
+                        }
+                    }
+                }
+                else
+                {
+                    throw new InvalidOperationException("Not found Excel files, realDir: " + str1);
+                }
+            }
+            else if (str2.Contains('*') || str2.Contains('?'))
+            {
+                foreach (var filePath in Directory.EnumerateFiles(str1.Replace(str2, ""), str2, SearchOption.AllDirectories))
                 {
                     if (filePath.EndsWith(".xlsx") || filePath.EndsWith(".xlsb") || filePath.EndsWith(".xls") || filePath.EndsWith(".csv"))
                     {
@@ -48,23 +68,13 @@ public sealed class DataTableGenerator
                     }
                 }
             }
-            else if (s.EndsWith(".xlsx") || s.EndsWith(".xlsb") || s.EndsWith(".xls") || s.EndsWith(".csv"))
+            else if (str2.EndsWith(".xlsx") || str2.EndsWith(".xlsb") || str2.EndsWith(".xls") || str2.EndsWith(".csv"))
             {
-                filePaths.Add(s);
-            }
-            else if (Directory.Exists(s))
-            {
-                foreach (var filePath in Directory.GetFiles(s))
-                {
-                    if (filePath.EndsWith(".xlsx") || filePath.EndsWith(".xlsb") || filePath.EndsWith(".xls") || filePath.EndsWith(".csv"))
-                    {
-                        filePaths.Add(filePath);
-                    }
-                }
+                filePaths.Add(str1);
             }
             else
             {
-                throw new InvalidOperationException("Not found Excel files, inputDir: " + s);
+                throw new InvalidOperationException("Not found Excel files, inputDir: " + abc);
             }
         }
 

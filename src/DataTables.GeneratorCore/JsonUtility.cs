@@ -16,7 +16,8 @@ public static class JsonUtility
 #if NET7_0_OR_GREATER
         return System.Text.Json.JsonSerializer.Deserialize<T>(plain);
 #else
-        return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(plain);
+        var settings = new Newtonsoft.Json.JsonSerializerSettings { TypeNameHandling = Newtonsoft.Json.TypeNameHandling.None };
+        return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(plain, settings);
 #endif
     }
 }

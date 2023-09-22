@@ -29,7 +29,7 @@ DataTables
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-Concept
+# Concept
 ---
 
 * **支持常见的数据表格式**, 如Excel 2007-365(*.xlsx), CSV等。
@@ -38,13 +38,14 @@ Concept
 * **导出数据定义代码文件**, 通过数据表中定义的代码格式自动生成对应的数据格式代码文件，并提供方便的API接口，方便在终端环境内读取数据文件。
 * **导出数据内容二进制文件**, 通过紧凑组织的二进制文件，加快读取性能以及缩减配置文件体积大小。
 
-DataTable configuration
+# 数据表格式定义
 ---
 
 标签页(sheet)定义格式：
 * 标签页名称以`#`开头将不会导出；
 
 ## 表格型(Table)定义格式：
+
 * 第一行：表头格式定义行，使用`DTGen`开头，主要定义表级别的一些配置
 * 第二行：列名称定义行，支持列注释、标签过滤等功能
 * 第三行：字段名称定义行
@@ -97,7 +98,8 @@ DataTable configuration
 * Class: 该Sheet的类名称，同时正确的格式才会导出该Sheet；
 * Matrix: 定义X轴、Y轴以及单元格的值类型，如`Matrix=<X轴值类型>&<Y轴值类型>&<单元格值类型>`；
 
-Getting Started(.NET Core)
+
+# Getting Started(.NET Core)
 ---
 DataTables uses C# to C# code-generator. Runtime library API is the same but how to code-generate has different way between .NET Core and Unity. This sample is for .NET Core(for Unity is in below sections).
 
@@ -162,7 +164,7 @@ var drScene2 = manager.GetDataTable<DRScene>().GetDataRowById(2000);
 
 You can invoke all indexed query by IntelliSense.
 
-Getting Started(Unity)
+# Getting Started(Unity)
 ---
 Check the [releases](https://github.com/PhonixGame/DataTables/releases) page, download `DataTables.Unity.unitypackage`(runtime) and `DataTables.Generator.zip`(cli code-generator).
 
@@ -224,7 +226,7 @@ var drScene2 = manager.GetDataTable<DRScene>().GetDataRowById(2000);
 
 You can invoke all indexed query by IntelliSense.
 
-UPM Package
+## UPM Package
 ---
 ### Install via git URL
 
@@ -246,7 +248,7 @@ The package is available on the [openupm registry](https://openupm.com). It's re
 openupm add game.phonix.datatables
 ```
 
-Optimization
+# Optimization
 ---
 
 在提供的API中有一些宏定义，可用于调整API接口相关：
@@ -264,23 +266,9 @@ The use of Parallel can greatly improve the construct performance. Recommend to 
 If you want to reduce code size of generated code, Validator and MetaDatabase info can omit in runtime. Generated code has two symbols `DISABLE_MASTERMEMORY_VALIDATOR` and `DISABLE_MASTERMEMORY_METADATABASE`.  By defining them, can be erased from the build code.
 -->
 
-Code Generator
+# Code Generator
 ---
-DataTables has two kinds of code-generator. `MSBuild Task`, `.NET Core Global/Local Tools`.
-
-MSBuild Task(`DataTables.MSBuild.Tasks`) is recommended way to use in .NET Core csproj.
-
-```xml
-<DataTablesGenerator
-    UsingNamespace="string:required"
-    InputDirectory="string:required"
-    CodeOutputDirectory="string:required"
-    DataOutputDirectory="string:required"
-    PrefixClassName="string:optional, default= "
-    FilterColumnTags="string:optional, default= "
-    ForceOverwrite="bool:optional, default=false"
-/>
-```
+DataTables has one kinds of code-generator. `.NET Core Global/Local Tools`.
 
 `.NET Core Global/Local Tools` can install from NuGet(`DataTables.Generator`), you need to install .NET runtime. Here is the sample command of install global tool.
 

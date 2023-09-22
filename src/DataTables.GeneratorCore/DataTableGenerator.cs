@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -13,7 +12,7 @@ namespace DataTables.GeneratorCore;
 
 public sealed class DataTableGenerator
 {
-    public void GenerateFile(string inputDirectory, string codeOutputDir, string dataOutputDir, string usingNamespace, string prefixClassName, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger)
+    public void GenerateFile(string[] inputDirectories, string codeOutputDir, string dataOutputDir, string usingNamespace, string prefixClassName, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger)
     {
         // By default, ExcelDataReader throws a NotSupportedException "No data is available for encoding 1252." on .NET Core.
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -36,17 +35,42 @@ public sealed class DataTableGenerator
         }
 
         // Collect
-        if (inputDirectory.EndsWith(".csproj"))
+        List<string> filePaths = new List<string>();
+        foreach (var s in inputDirectories)
         {
-            throw new InvalidOperationException("Path must be directory but it is csproj. inputDirectory:" + inputDirectory);
+            if (s.Contains('*') || s.Contains('?'))
+            {
+                foreach (var filePath in Directory.EnumerateFiles(s))
+                {
+                    if (filePath.EndsWith(".xlsx") || filePath.EndsWith(".xlsb") || filePath.EndsWith(".xls") || filePath.EndsWith(".csv"))
+                    {
+                        filePaths.Add(filePath);
+                    }
+                }
+            }
+            else if (s.EndsWith(".xlsx") || s.EndsWith(".xlsb") || s.EndsWith(".xls") || s.EndsWith(".csv"))
+            {
+                filePaths.Add(s);
+            }
+            else if (Directory.Exists(s))
+            {
+                foreach (var filePath in Directory.GetFiles(s))
+                {
+                    if (filePath.EndsWith(".xlsx") || filePath.EndsWith(".xlsb") || filePath.EndsWith(".xls") || filePath.EndsWith(".csv"))
+                    {
+                        filePaths.Add(filePath);
+                    }
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException("Not found Excel files, inputDir: " + s);
+            }
         }
-
-        var filePaths = Directory.EnumerateFiles(inputDirectory, "*.*", SearchOption.AllDirectories)
-                    .Where(s => s.EndsWith(".xlsx") || s.EndsWith(".xlsb") || s.EndsWith(".xls") || s.EndsWith(".csv")).ToArray();
 
         if (filePaths.Count() == 0)
         {
-            throw new InvalidOperationException("Not found Excel files, inputDir:" + inputDirectory);
+            throw new InvalidOperationException("Not found Excel files, inputDir: " + inputDirectories.Length);
         }
 
         if (!Directory.Exists(codeOutputDir))
@@ -60,7 +84,6 @@ public sealed class DataTableGenerator
         }
 
         Parallel.ForEach(filePaths, filePath => GenerateExcel(filePath,
-            inputDir: inputDirectory,
             usingNamespace: usingNamespace,
             forceOverwrite: forceOverwrite,
             dataOutputDir: dataOutputDir,
@@ -90,10 +113,10 @@ public sealed class DataTableGenerator
         logger($"数据表导出完成: {list.Count(x => !x.Failed && !x.Skiped)} 成功，{list.Count(x => x.Failed)} 失败，{list.Count(x => x.Skiped)} 已跳过");
     }
 
-    private static void GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string inputDir, string codeOutputDir, string dataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log)
+    private static void GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string dataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log)
     {
         using (var logger = new ILogger(log))
-        { 
+        {
             using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
                 var xssWorkbook = new XSSFWorkbook(stream);
@@ -114,7 +137,7 @@ public sealed class DataTableGenerator
                         SheetName = sheet.SheetName.Trim(),
                     };
 
-                    logger.Debug("Generate Excel File: [{0}]({1})", filePath.Replace(inputDir, "").Trim('\\'), context.SheetName);
+                    logger.Debug("Generate Excel File: [{0}]({1})", filePath.Trim('\\'), context.SheetName);
 
                     using (var processor = new DataTableProcessor(context, filterColumnTags))
                     {

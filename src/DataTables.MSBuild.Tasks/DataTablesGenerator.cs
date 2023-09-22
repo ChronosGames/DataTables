@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using DataTables.GeneratorCore;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -8,7 +8,7 @@ namespace DataTables.MSBuild.Tasks
     public class DataTablesGenerator : Task
     {
         [Required]
-        public string InputDirectory { get; set; } = string.Empty;
+        public string[] InputDirectories { get; set; } = Array.Empty<string>();
         [Required]
         public string CodeOutputDirectory { get; set; } = string.Empty;
         [Required]
@@ -28,7 +28,7 @@ namespace DataTables.MSBuild.Tasks
         {
             try
             {
-                new DataTableGenerator().GenerateFile(InputDirectory, CodeOutputDirectory, DataOutputDirectory, UsingNamespace, PrefixClassName, ImportNamespaces, FilterColumnTags, ForceOverwrite, x => this.Log.LogMessage(x));
+                new DataTableGenerator().GenerateFile(InputDirectories, CodeOutputDirectory, DataOutputDirectory, UsingNamespace, PrefixClassName, ImportNamespaces, FilterColumnTags, ForceOverwrite, x => this.Log.LogMessage(x));
             }
             catch (Exception ex)
             {

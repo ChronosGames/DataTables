@@ -7,4 +7,4 @@ on:
 
 jobs:
   stale:
-    uses: Cysharp/Actions/.github/workflows/stale-issue.yaml@main
+    uses: ChronosGames/Actions/.github/workflows/stale-issue.yaml@main

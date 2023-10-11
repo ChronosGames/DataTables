@@ -9,10 +9,10 @@
 
         <!-- NuGet Packaging -->
         <PackageVersion>$(Version)</PackageVersion>
-        <Company>PhonixGame</Company>
-        <Authors>PhonixGame</Authors>
-        <Copyright>© PhonixGame, Inc.</Copyright>
-        <PackageProjectUrl>https://github.com/PhonixGame/DataTables</PackageProjectUrl>
+        <Company>ChronosGames</Company>
+        <Authors>yunjing</Authors>
+        <Copyright>© ChronosGames, Inc.</Copyright>
+        <PackageProjectUrl>https://github.com/ChronosGames/DataTables</PackageProjectUrl>
         <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>

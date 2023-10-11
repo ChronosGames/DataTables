@@ -291,8 +291,8 @@ public sealed partial class DataTableProcessor : IDisposable
                     case "class":
                         m_Context.ClassName = args[1].Trim();
                         break;
-                    case "enabletagsfilter":
-                        m_Context.EnableTagsFilter = bool.Parse(args[1].Trim());
+                    case "disabletagsfilter":
+                        m_Context.DisableTagsFilter = bool.Parse(args[1].Trim());
                         break;
                     case "index":
                         m_Context.Indexs.Add(args[1].Trim().Split('&'));
@@ -325,8 +325,8 @@ public sealed partial class DataTableProcessor : IDisposable
             {
                 switch (args[0].Trim().ToLower())
                 {
-                    case "enabletagsfilter":
-                        m_Context.EnableTagsFilter = true;
+                    case "disabletagsfilter":
+                        m_Context.DisableTagsFilter = true;
                         break;
                 }
             }
@@ -368,7 +368,7 @@ public sealed partial class DataTableProcessor : IDisposable
             }
 
             // 是否允许导出
-            if (m_Context.EnableTagsFilter)
+            if (!m_Context.DisableTagsFilter)
             {
                 var index = text.LastIndexOf('@');
                 if (index != -1)

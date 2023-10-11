@@ -25,7 +25,7 @@ public class GenerationContext
 
     public string RealClassName => PrefixClassName + ClassName;
 
-    public bool EnableTagsFilter { get; set; }
+    public bool DisableTagsFilter { get; set; }
 
     public XField[] Fields { get; set; } = Array.Empty<XField>();
 

@@ -40,7 +40,7 @@ public sealed class DataTableGenerator
         {
             foreach (var searchPattern in searchPatterns)
             {
-                foreach (var filePath in Directory.EnumerateFiles(dir, searchPattern).Where(s => s.EndsWith(".xlsx") || s.EndsWith(".xlsb") || s.EndsWith(".xls") || s.EndsWith(".csv")))
+                foreach (var filePath in Directory.EnumerateFiles(dir, searchPattern, SearchOption.AllDirectories).Where(s => s.EndsWith(".xlsx") || s.EndsWith(".xlsb") || s.EndsWith(".xls") || s.EndsWith(".csv")))
                 {
                     var id = filePath.Replace(dir, "");
                     if (filePaths.ContainsKey(id))

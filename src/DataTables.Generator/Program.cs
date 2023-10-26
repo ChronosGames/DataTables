@@ -17,6 +17,7 @@ public class Program : ConsoleAppBase
 
     public void Execute(
         [Option("i", "Input file directory(search recursive).")] string[] inputDirectories,
+        [Option("patterns", "Input file wildcard.")] string[] searchPattern,
         [Option("co", "Code output file directory.")] string codeOutputDir,
         [Option("do", "Data output file directory.")] string dataOutputDir,
         [Option("ins", "Import namespaces of generated files, split with char '&' for multiple namespaces.")] string importNamespaces = "",
@@ -33,7 +34,7 @@ public class Program : ConsoleAppBase
 
         try
         {
-            new DataTableGenerator().GenerateFile(inputDirectories, codeOutputDir, dataOutputDir, usingNamespace, prefixClassName,
+            new DataTableGenerator().GenerateFile(inputDirectories, searchPattern, codeOutputDir, dataOutputDir, usingNamespace, prefixClassName,
                 importNamespaces: importNamespaces,
                 filterColumnTags: filterColumnTags,
                 forceOverwrite,

@@ -12,7 +12,7 @@ namespace DataTables.GeneratorCore;
 
 public sealed class DataTableGenerator
 {
-    public void GenerateFile(string[] inputDirectories, string codeOutputDir, string dataOutputDir, string usingNamespace, string prefixClassName, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger)
+    public void GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string prefixClassName, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger)
     {
         // By default, ExcelDataReader throws a NotSupportedException "No data is available for encoding 1252." on .NET Core.
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -35,46 +35,22 @@ public sealed class DataTableGenerator
         }
 
         // Collect
-        List<string> filePaths = new List<string>();
-        foreach (var abc in inputDirectories)
+        var filePaths = new Dictionary<string, string>();
+        foreach (var dir in inputDirectories)
         {
-            var str1 = Path.GetFullPath(abc);
-            var str2 = Path.GetFileName(abc);
+            foreach (var searchPattern in searchPatterns)
+            {
+                foreach (var filePath in Directory.EnumerateFiles(dir, searchPattern).Where(s => s.EndsWith(".xlsx") || s.EndsWith(".xlsb") || s.EndsWith(".xls") || s.EndsWith(".csv")))
+                {
+                    var id = filePath.Replace(dir, "");
+                    if (filePaths.ContainsKey(id))
+                    {
+                        logger($"Repeated file: {id}");
+                        continue;
+                    }
 
-            if (string.IsNullOrEmpty(str2) || !str2.Contains('.'))
-            {
-                if (Directory.Exists(str1))
-                {
-                    foreach (var filePath in Directory.GetFiles(str1))
-                    {
-                        if (filePath.EndsWith(".xlsx") || filePath.EndsWith(".xlsb") || filePath.EndsWith(".xls") || filePath.EndsWith(".csv"))
-                        {
-                            filePaths.Add(filePath);
-                        }
-                    }
+                    filePaths.Add(id, filePath);
                 }
-                else
-                {
-                    throw new InvalidOperationException("Not found Excel files, realDir: " + str1);
-                }
-            }
-            else if (str2.Contains('*') || str2.Contains('?'))
-            {
-                foreach (var filePath in Directory.EnumerateFiles(str1.Replace(str2, ""), str2, SearchOption.AllDirectories))
-                {
-                    if (filePath.EndsWith(".xlsx") || filePath.EndsWith(".xlsb") || filePath.EndsWith(".xls") || filePath.EndsWith(".csv"))
-                    {
-                        filePaths.Add(filePath);
-                    }
-                }
-            }
-            else if (str2.EndsWith(".xlsx") || str2.EndsWith(".xlsb") || str2.EndsWith(".xls") || str2.EndsWith(".csv"))
-            {
-                filePaths.Add(str1);
-            }
-            else
-            {
-                throw new InvalidOperationException("Not found Excel files, inputDir: " + abc);
             }
         }
 
@@ -93,7 +69,7 @@ public sealed class DataTableGenerator
             Directory.CreateDirectory(dataOutputDir);
         }
 
-        Parallel.ForEach(filePaths, filePath => GenerateExcel(filePath,
+        Parallel.ForEach(filePaths, pair => GenerateExcel(pair.Value,
             usingNamespace: usingNamespace,
             forceOverwrite: forceOverwrite,
             dataOutputDir: dataOutputDir,

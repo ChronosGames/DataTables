@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DataTables
 {
@@ -57,7 +58,7 @@ namespace DataTables
         /// </summary>
         /// <param name="condition">要检查的条件。</param>
         /// <returns>符合条件的数据表行。</returns>
-        T[] GetDataRows(Predicate<T> condition);
+        IEnumerable<T> GetDataRows(Predicate<T> condition);
 
         /// <summary>
         /// 获取符合条件的数据表行。
@@ -86,7 +87,7 @@ namespace DataTables
         /// <param name="condition">要检查的条件。</param>
         /// <param name="comparison">要排序的条件。</param>
         /// <returns>排序后的符合条件的数据表行。</returns>
-        T[] GetDataRows(Predicate<T> condition, Comparison<T> comparison);
+        IOrderedEnumerable<T> GetDataRows(Predicate<T> condition, Comparison<T> comparison);
 
         /// <summary>
         /// 获取排序后的符合条件的数据表行。

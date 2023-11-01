@@ -14,7 +14,7 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
 
     public override string GetFileName() => "DRMatrixSample" + (string.IsNullOrEmpty(this.Name) ? string.Empty : '.' + this.Name);
 
-    protected override bool Deserialize(BinaryReader reader)
+    protected override bool Deserialize(int index, BinaryReader reader)
     {
         short _key1;
         _key1 = reader.ReadInt16();
@@ -25,7 +25,7 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
         bool _value;
         _value = reader.ReadBoolean();
 
-        AddDataSet(_key1, _key2, _value);
+        AddDataSet(index, _key1, _key2, _value);
         return true;
     }
 }

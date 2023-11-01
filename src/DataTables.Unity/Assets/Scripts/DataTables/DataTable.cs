@@ -101,14 +101,14 @@ namespace DataTables
         /// </summary>
         /// <param name="condition">要检查的条件。</param>
         /// <returns>符合条件的数据表行。</returns>
-        public T[] GetDataRows(Predicate<T> condition)
+        public IEnumerable<T> GetDataRows(Predicate<T> condition)
         {
             if (condition == null)
             {
                 throw new Exception("Condition is invalid.");
             }
 
-            return m_DataSet.Where(x => condition(x)).ToArray();
+            return m_DataSet.Where(x => condition(x));
         }
 
         /// <summary>
@@ -150,9 +150,15 @@ namespace DataTables
                 throw new Exception("Comparison is invalid.");
             }
 
-            List<T> results = new List<T>(m_DataSet);
-            results.Sort(comparison);
-            return results.ToArray();
+            if (m_DataSet.Length == 0)
+            {
+                return Array.Empty<T>();
+            }
+
+            var result = new T[m_DataSet.Length];
+            Array.Copy(m_DataSet, result, m_DataSet.Length);
+            Array.Sort(m_DataSet, comparison);
+            return result;
         }
 
         /// <summary>
@@ -183,7 +189,7 @@ namespace DataTables
         /// <param name="condition">要检查的条件。</param>
         /// <param name="comparison">要排序的条件。</param>
         /// <returns>排序后的符合条件的数据表行。</returns>
-        public T[] GetDataRows(Predicate<T> condition, Comparison<T> comparison)
+        public IOrderedEnumerable<T> GetDataRows(Predicate<T> condition, Comparison<T> comparison)
         {
             if (condition == null)
             {
@@ -195,9 +201,7 @@ namespace DataTables
                 throw new Exception("Comparison is invalid.");
             }
 
-            var results = m_DataSet.Where(x => condition(x)).ToArray();
-            Array.Sort(results, comparison);
-            return results;
+            return m_DataSet.Where(x => condition(x)).OrderBy(x => comparison);
         }
 
         /// <summary>

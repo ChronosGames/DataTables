@@ -43,7 +43,8 @@ namespace DataTables.GeneratorCore
                     "> \"");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
             this.Write("\" + (string.IsNullOrEmpty(this.Name) ? string.Empty : \'.\' + this.Name);\r\n\r\n    pr" +
-                    "otected override bool Deserialize(BinaryReader reader)\r\n    {\r\n        ");
+                    "otected override bool Deserialize(int index, BinaryReader reader)\r\n    {\r\n      " +
+                    "  ");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));
             this.Write(" ");
             this.Write(this.ToStringHelper.ToStringWithCulture(kKey1));
@@ -61,7 +62,7 @@ namespace DataTables.GeneratorCore
             this.Write(this.ToStringHelper.ToStringWithCulture(kValue));
             this.Write(";\r\n        ");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildDeserializeMethodString(kValue)));
-            this.Write("\r\n\r\n        AddDataSet(");
+            this.Write("\r\n\r\n        AddDataSet(index, ");
             this.Write(this.ToStringHelper.ToStringWithCulture(kKey1));
             this.Write(", ");
             this.Write(this.ToStringHelper.ToStringWithCulture(kKey2));

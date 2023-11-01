@@ -18,7 +18,7 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
 
     public override string GetFileName() => "<#= GenerationContext.RealClassName #>" + (string.IsNullOrEmpty(this.Name) ? string.Empty : '.' + this.Name);
 
-    protected override bool Deserialize(BinaryReader reader)
+    protected override bool Deserialize(int index, BinaryReader reader)
     {
         <#= BuildTypeString(kKey1) #> <#= kKey1 #>;
         <#= BuildDeserializeMethodString(kKey1) #>
@@ -29,7 +29,7 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
         <#= BuildTypeString(kValue) #> <#= kValue #>;
         <#= BuildDeserializeMethodString(kValue) #>
 
-        AddDataSet(<#= kKey1 #>, <#= kKey2 #>, <#= kValue #>);
+        AddDataSet(index, <#= kKey1 #>, <#= kKey2 #>, <#= kValue #>);
         return true;
     }
 }

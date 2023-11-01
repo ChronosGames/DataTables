@@ -3,8 +3,8 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using DataTables;
-
 
 
 namespace ConsoleApp
@@ -20,6 +20,7 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
 
     public DTDataTableSplitSample(string name) : base(name) { }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public DRDataTableSplitSample GetDataRowById(int Id)
     {
         if (m_Dict1.TryGetValue(Id, out var result))
@@ -35,6 +36,7 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public DRDataTableSplitSample GetDataRowByColor(ConsoleApp.ColorT Color)
     {
         if (m_Dict2.TryGetValue(Color, out var result))
@@ -50,6 +52,7 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public DRDataTableSplitSample GetDataRowByIdAndInt16Value(int Id, short Int16Value)
     {
         if (m_Dict3.TryGetValue(Id, Int16Value, out var result))
@@ -65,11 +68,13 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public List<DRDataTableSplitSample> GetDataRowsGroupByNameAndBoolValue(string Name, bool BoolValue)
     {
         return m_Dict4.TryGetValue(Name, BoolValue, out var result) ? result : null;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public List<DRDataTableSplitSample> GetDataRowsGroupByName(string Name)
     {
         return m_Dict5.TryGetValue(Name, out var result) ? result : null;

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
@@ -12,6 +13,13 @@ namespace DataTables.GeneratorCore;
 
 public sealed class DataTableGenerator
 {
+    private readonly ConcurrentDictionary<string, object> m_Locks;
+
+    public DataTableGenerator()
+    {
+        m_Locks = new();
+    }
+
     public void GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string prefixClassName, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger)
     {
         // By default, ExcelDataReader throws a NotSupportedException "No data is available for encoding 1252." on .NET Core.
@@ -99,7 +107,7 @@ public sealed class DataTableGenerator
         logger($"数据表导出完成: {list.Count(x => !x.Failed && !x.Skiped)} 成功，{list.Count(x => x.Failed)} 失败，{list.Count(x => x.Skiped)} 已跳过");
     }
 
-    private static void GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string dataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log)
+    private void GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string dataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log)
     {
         using (var logger = new ILogger(log))
         {
@@ -165,7 +173,7 @@ public sealed class DataTableGenerator
         return true;
     }
 
-    static void GenerateCodeFile(GenerationContext context, string outputDir, bool forceOverwrite, ILogger logger)
+    void GenerateCodeFile(GenerationContext context, string outputDir, bool forceOverwrite, ILogger logger)
     {
         // 生成代码文件
         if (context.DataSetType == "matrix")
@@ -187,7 +195,7 @@ public sealed class DataTableGenerator
         return content.Replace("\r\n", "\n");
     }
 
-    static string WriteToFile(string directory, string fileName, string content, bool forceOverwrite)
+    string WriteToFile(string directory, string fileName, string content, bool forceOverwrite)
     {
         var path = Path.Combine(directory, fileName);
         var contentBytes = Encoding.UTF8.GetBytes(NormalizeNewLines(content));
@@ -201,7 +209,13 @@ public sealed class DataTableGenerator
             }
         }
 
-        File.WriteAllBytes(path, contentBytes);
+        object lockObj = m_Locks.GetOrAdd(fileName, new object());
+        lock (lockObj)
+        {
+            File.WriteAllBytes(path, contentBytes);
+        }
+        m_Locks.TryRemove(fileName, out _);
+
         return $"  > Generate {fileName} to: {path}";
     }
 }

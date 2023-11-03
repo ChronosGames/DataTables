@@ -46,6 +46,42 @@ namespace DataTables
         }
 
         /// <summary>
+        /// 查询指定Key2与Value对应的Key1列表
+        /// </summary>
+        /// <param name="key2"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public IEnumerable<TKey1> FindKey1(TKey2 key2, TValue value)
+        {
+            for (var i = 0; i < m_DataSet.Length; i++)
+            {
+                var pair = m_DataSet[i];
+                if (EqualityComparer<TKey2>.Default.Equals(pair.Item2, key2) && EqualityComparer<TValue>.Default.Equals(pair.Item3, value))
+                {
+                    yield return pair.Item1;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 查询指定Key1与Value对应的Key2列表
+        /// </summary>
+        /// <param name="key1"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public IEnumerable<TKey2> FindKey2(TKey1 key1, TValue value)
+        {
+            for (var i = 0; i < m_DataSet.Length; i++)
+            {
+                var pair = m_DataSet[i];
+                if (EqualityComparer<TKey1>.Default.Equals(pair.Item1, key1) && EqualityComparer<TValue>.Default.Equals(pair.Item3, value))
+                {
+                    yield return pair.Item2;
+                }
+            }
+        }
+
+        /// <summary>
         /// 查询指定条件的结果
         /// </summary>
         /// <param name="predicate"></param>

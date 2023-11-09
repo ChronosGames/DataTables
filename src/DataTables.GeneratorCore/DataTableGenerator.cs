@@ -133,7 +133,8 @@ public sealed class DataTableGenerator
 
                     logger.Debug("Generate Excel File: [{0}]({1})", filePath.Trim('\\'), context.SheetName);
 
-                    using (var processor = new DataTableProcessor(context, filterColumnTags))
+                    var processor = new DataTableProcessor(context, filterColumnTags);
+                    try
                     {
                         // 初始化GenerateContext
                         processor.CreateGenerationContext(sheet);
@@ -151,6 +152,14 @@ public sealed class DataTableGenerator
 
                         // 注册至队列中
                         list.Add(context);
+                    }
+                    catch (Exception e)
+                    {
+                        logger.Error("  > {0}.", e);
+                    }
+                    finally
+                    {
+                        processor.Dispose();
                     }
                 }
             }

@@ -32,7 +32,7 @@ jobs:
       - uses: ChronosGames/Actions/.github/actions/setup-dotnet@main
         with:
           dotnet-version: |
-            7.0.x
+            8.0.x
       # pack nuget
       - run: dotnet build -c Release -p:Version=${{ inputs.tag }}
       - run: dotnet test -c Release --no-build

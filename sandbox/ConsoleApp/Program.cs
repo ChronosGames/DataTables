@@ -75,7 +75,7 @@ namespace ConsoleApp
             Debug.Assert(manager.HasDataTable<DTDataTableSample>(), "加载配置表失败");
 
             var dtSample = manager.GetDataTable<DTDataTableSample>();
-            Debug.Assert(dtSample.GetAllDataRows()[dtSample.Count - 1].CustomFieldType.Raw == "aaa");
+            Debug.Assert(dtSample!.GetAllDataRows()[dtSample.Count - 1].CustomFieldType.Raw == "aaa");
             Debug.Assert(dtSample.GetDataRowById(1) != null, "加载配置表失败1");
             manager.DestroyDataTable(dtSample);
 

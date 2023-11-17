@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NPOI" Version="2.6.0" />
-    <PackageReference Include="System.CodeDom" Version="7.0.0" />
+    <PackageReference Include="NPOI" Version="2.6.2" />
+    <PackageReference Include="System.CodeDom" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>

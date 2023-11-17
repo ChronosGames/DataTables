@@ -46,9 +46,16 @@ namespace DataTables.GeneratorCore
             this.Write(this.ToStringHelper.ToStringWithCulture(Environment.NewLine));
  
 } 
-            this.Write("    };\r\n\r\n    /// <summary>\r\n    /// 预加载所有数据表。\r\n    /// </summary>\r\n    /// <para" +
-                    "m name=\"onCompleted\">全部数据表预加载完成时回调。</param>\r\n    public static void Preload(this" +
-                    " DataTableManager manager, Action onCompleted)\r\n    {\r\n        int done = ");
+            this.Write(@"    };
+
+    /// <summary>
+    /// 预加载所有数据表。
+    /// </summary>
+    /// <param name=""manager""></param>
+    /// <param name=""onCompleted"">全部数据表预加载完成时回调。</param>
+    public static void Preload(this DataTableManager manager, Action onCompleted)
+    {
+        int done = ");
             this.Write(this.ToStringHelper.ToStringWithCulture(DataTables.Sum(pair => pair.Value.Count() > 0 ? pair.Value.Count() : 1)));
             this.Write(";\r\n\r\n        void next()\r\n        { \r\n            if (--done == 0)\r\n             " +
                     "   onCompleted?.Invoke(); \r\n        };\r\n\r\n");

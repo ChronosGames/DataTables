@@ -6,7 +6,7 @@ namespace ConsoleApp;
 [JsonDerivedType(typeof(SampleChildren2), typeDiscriminator: "Children2")]
 public class SampleParent
 {
-    public string Id;
+    public string Id = string.Empty;
 }
 
 public class SampleChildren1 : SampleParent

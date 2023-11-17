@@ -25,6 +25,7 @@ public static class DataTableManagerExtension
     /// <summary>
     /// 预加载所有数据表。
     /// </summary>
+    /// <param name="manager"></param>
     /// <param name="onCompleted">全部数据表预加载完成时回调。</param>
     public static void Preload(this DataTableManager manager, Action onCompleted)
     {

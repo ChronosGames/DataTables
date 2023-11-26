@@ -130,11 +130,27 @@ public sealed partial class DataTableProcessor : IDisposable
         return true;
     }
 
-    private bool VaildDataRow(IRow? row)
+    // 是否有效行
+    private bool IgnoreDataRow(IRow? row)
     {
         if (row == null || row.FirstCellNum < 0)
         {
             return false;
+        }
+
+        // 此行是否被注释
+        foreach (var field in m_Context.Fields)
+        {
+            if (!field.IsComment)
+            {
+                continue;
+            }
+
+            var cellString = GetCellString(row.GetCell(field.Index));
+            if (!string.IsNullOrEmpty(cellString) && cellString == "#")
+            {
+                return false;
+            }
         }
 
         // 是否空行
@@ -306,12 +322,12 @@ public sealed partial class DataTableProcessor : IDisposable
                     case "matrix":
                     {
                         var fields = args[1].Trim().Split('&');
-                        m_Context.Fields = new XField[]
-                        {
+                        m_Context.Fields =
+                        [
                             new XField(0) { Name = DataMatrixTemplate.kKey1, TypeName = fields[0] },
                             new XField(1) { Name = DataMatrixTemplate.kKey2, TypeName = fields[1] },
                             new XField(2) { Name = DataMatrixTemplate.kValue, TypeName = fields[2] },
-                        };
+                        ];
                         break;
                     }
                     case "matrixdefaultvalue":
@@ -364,6 +380,7 @@ public sealed partial class DataTableProcessor : IDisposable
             if (string.IsNullOrEmpty(text) || text.TrimStart().StartsWith("#", StringComparison.Ordinal))
             {
                 field.IsIgnore = true;
+                field.IsComment = !string.IsNullOrEmpty(text) && text.Trim() == "#行注释标志";
                 continue;
             }
 
@@ -427,7 +444,7 @@ public sealed partial class DataTableProcessor : IDisposable
         string outputFileName = Path.Combine(outputDir, m_Context.GetDataOutputFilePath());
 
         // 判断是否存在配置表变更（以修改时间为准），若不存在则直接跳过
-        if (!forceOverwrite)
+        if (forceOverwrite)
         {
             var processPath = Process.GetCurrentProcess().MainModule!.FileName;
             var processLastWriteTime = File.GetLastWriteTime(processPath);
@@ -493,7 +510,7 @@ public sealed partial class DataTableProcessor : IDisposable
         for (int i = m_FirstDataRowIndex; i <= sheet.LastRowNum; i++)
         {
             var row = sheet.GetRow(i);
-            if (!VaildDataRow(row))
+            if (!IgnoreDataRow(row))
             {
                 continue;
             }

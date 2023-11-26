@@ -27,6 +27,9 @@ public class GenerationContext
 
     public bool DisableTagsFilter { get; set; }
 
+    /// <summary>
+    /// 实际列
+    /// </summary>
     public XField[] Fields { get; set; } = Array.Empty<XField>();
 
     /// <summary>按特定字段进行单体索引列表</summary>
@@ -195,6 +198,8 @@ public class XField
     /// 是否忽略
     /// </summary>
     public bool IsIgnore { get; set; } = false;
+
+    public bool IsComment { get; set; } = false;
 
     public XField(int index)
     {

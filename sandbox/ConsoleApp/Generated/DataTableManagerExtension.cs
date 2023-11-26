@@ -14,14 +14,13 @@ public static class DataTableManagerExtension
         { "DRMatrixSample", Array.Empty<string>() },
     };
 
-        /// <summary>
-        /// 预加载所有数据表。
-        /// </summary>
-        /// <param name="onCompleted">全部数据表预加载完成时回调。</param>
-#pragma warning disable CS1573 // 参数在 XML 注释中没有匹配的 param 标记(但其他参数有)
-        public static void Preload(this DataTableManager manager, Action onCompleted)
-#pragma warning restore CS1573 // 参数在 XML 注释中没有匹配的 param 标记(但其他参数有)
-        {
+    /// <summary>
+    /// 预加载所有数据表。
+    /// </summary>
+    /// <param name="manager"></param>
+    /// <param name="onCompleted">全部数据表预加载完成时回调。</param>
+    public static void Preload(this DataTableManager manager, Action onCompleted)
+    {
         int done = 4;
 
         void next()

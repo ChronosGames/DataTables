@@ -444,7 +444,7 @@ public sealed partial class DataTableProcessor : IDisposable
         string outputFileName = Path.Combine(outputDir, m_Context.GetDataOutputFilePath());
 
         // 判断是否存在配置表变更（以修改时间为准），若不存在则直接跳过
-        if (forceOverwrite)
+        if (!forceOverwrite)
         {
             var processPath = Process.GetCurrentProcess().MainModule!.FileName;
             var processLastWriteTime = File.GetLastWriteTime(processPath);

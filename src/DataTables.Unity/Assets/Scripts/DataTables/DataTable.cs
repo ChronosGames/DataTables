@@ -283,11 +283,6 @@ namespace DataTables
             }
             catch (Exception exception)
             {
-                if (exception is Exception)
-                {
-                    throw;
-                }
-
                 throw new Exception(string.Format("Can not parse data row bytes for data table '{0}' with exception '{1}'.", typeof(T), exception), exception);
             }
         }

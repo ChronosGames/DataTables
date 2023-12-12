@@ -8,13 +8,15 @@ using System;
 using System.Collections.Generic;
 using DataTables;
 
+#nullable enable
+
 <# if (!string.IsNullOrEmpty(Namespace)) { #>
 namespace <#= Namespace #>
 {
 <# } #>
 public static class DataTableManagerExtension
 {
-    public static Dictionary<string, string[]> Tables = new Dictionary<string, string[]>
+    public static readonly Dictionary<string, string[]> Tables = new Dictionary<string, string[]>
     {
 <# foreach (var pair in DataTables)
 {
@@ -27,14 +29,20 @@ public static class DataTableManagerExtension
     /// </summary>
     /// <param name="manager"></param>
     /// <param name="onCompleted">全部数据表预加载完成时回调。</param>
-    public static void Preload(this DataTableManager manager, Action onCompleted)
+    /// <param name="onProgress">单步加载完成时回调。</param>
+    public static void Preload(this DataTableManager manager, Action? onCompleted = default, Action<float>? onProgress = default)
     {
-        int done = <#=DataTables.Sum(pair => pair.Value.Count() > 0 ? pair.Value.Count() : 1)#>;
+        int total = <#=DataTables.Sum(pair => pair.Value.Count() > 0 ? pair.Value.Count() : 1)#>;
+        int done = 0;
 
         void next()
-        { 
-            if (--done == 0)
+        {
+            done++;
+            onProgress?.Invoke((float)done / total);
+            if (done == total)
+            {
                 onCompleted?.Invoke(); 
+            }
         };
 
 <# 

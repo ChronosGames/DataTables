@@ -58,7 +58,14 @@ public sealed partial class DataTableProcessor
             binaryWriter.Write7BitEncodedInt32(arr.Count);
             foreach (var item in arr)
             {
-                DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).WriteToStream(binaryWriter, JsonUtility.Serialize(item));
+                if (string.Compare(m_KeyTypeStr, "string", StringComparison.OrdinalIgnoreCase) == 0)
+                {
+                    DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).WriteToStream(binaryWriter, item.ToString()!);
+                }
+                else
+                {
+                    DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).WriteToStream(binaryWriter, JsonUtility.Serialize(item));
+                }
             }
         }
 

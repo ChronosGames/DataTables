@@ -149,6 +149,9 @@ public sealed partial class DRDataTableSample : DataRowBase
     /// </summary>
     public int[][] Array2DValue { get; private set; }
 
+    /// <summary>一维字符串数组</summary>
+    public string[] ArrayStringValue { get; private set; }
+
     /// <summary>三维数组</summary>
     public int[][][] Array3DValue { get; private set; }
 
@@ -213,6 +216,16 @@ public sealed partial class DRDataTableSample : DataRowBase
                     }
                 }
                 Array2DValue[x1] = key1;
+            }
+        }
+        {
+            var __ArrayStringValue_Count1 = reader.Read7BitEncodedInt32();
+            ArrayStringValue = new string[__ArrayStringValue_Count1];
+            for (int x1 = 0; x1 < __ArrayStringValue_Count1; x1++)
+            {
+                string key1;
+                key1 = reader.ReadString();
+                ArrayStringValue[x1] = key1;
             }
         }
         {

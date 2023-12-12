@@ -77,6 +77,7 @@ namespace ConsoleApp
             var dtSample = manager.GetDataTable<DTDataTableSample>();
             Debug.Assert(dtSample!.GetAllDataRows()[dtSample.Count - 1].CustomFieldType.Raw == "aaa");
             Debug.Assert(dtSample.GetDataRowById(1) != null, "加载配置表失败1");
+            Debug.Assert(dtSample!.GetDataRowById(3).ArrayStringValue.Length == 2 && dtSample!.GetDataRowById(3).ArrayStringValue[0] == "a", "加载配置表失败2");
             manager.DestroyDataTable(dtSample);
 
             Debug.Assert(manager.GetDataTable<DTMatrixSample>() != null, "加载MatrixSample失败");

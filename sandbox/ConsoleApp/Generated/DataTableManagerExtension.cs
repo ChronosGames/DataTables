@@ -3,11 +3,13 @@ using System;
 using System.Collections.Generic;
 using DataTables;
 
+#nullable enable
+
 namespace ConsoleApp
 {
 public static class DataTableManagerExtension
 {
-    public static Dictionary<string, string[]> Tables = new Dictionary<string, string[]>
+    public static readonly Dictionary<string, string[]> Tables = new Dictionary<string, string[]>
     {
         { "DRDataTableSample", Array.Empty<string>() },
         { "DRDataTableSplitSample", new string[] {"x001", "x002"} },
@@ -19,14 +21,20 @@ public static class DataTableManagerExtension
     /// </summary>
     /// <param name="manager"></param>
     /// <param name="onCompleted">全部数据表预加载完成时回调。</param>
-    public static void Preload(this DataTableManager manager, Action onCompleted)
+    /// <param name="onProgress">单步加载完成时回调。</param>
+    public static void Preload(this DataTableManager manager, Action? onCompleted = default, Action<float>? onProgress = default)
     {
-        int done = 4;
+        int total = 4;
+        int done = 0;
 
         void next()
-        { 
-            if (--done == 0)
+        {
+            done++;
+            onProgress?.Invoke((float)done / total);
+            if (done == total)
+            {
                 onCompleted?.Invoke(); 
+            }
         };
 
         manager.CreateDataTable<DTDataTableSample>(next);

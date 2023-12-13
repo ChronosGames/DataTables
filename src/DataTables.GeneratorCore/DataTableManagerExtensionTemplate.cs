@@ -56,7 +56,7 @@ namespace DataTables.GeneratorCore
     /// <param name=""onProgress"">单步加载完成时回调。</param>
     public static void Preload(this DataTableManager manager, Action? onCompleted = default, Action<float>? onProgress = default)
     {
-        int total = ");
+        const int total = ");
             this.Write(this.ToStringHelper.ToStringWithCulture(DataTables.Sum(pair => pair.Value.Count() > 0 ? pair.Value.Count() : 1)));
             this.Write(";\r\n        int done = 0;\r\n\r\n        void next()\r\n        {\r\n            done++;\r\n" +
                     "            onProgress?.Invoke((float)done / total);\r\n            if (done == to" +

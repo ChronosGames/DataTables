@@ -113,7 +113,17 @@ public sealed class DataTableGenerator
         {
             using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
-                var xssWorkbook = new XSSFWorkbook(stream);
+                XSSFWorkbook xssWorkbook;
+                try
+                {
+                    xssWorkbook = new XSSFWorkbook(stream);
+                }
+                catch (Exception e)
+                {
+                    logger.Error("Generate {0} exception:\n{1}", filePath.Trim('\\'), e);
+                    return;
+                }
+
                 for (int i = 0; i < xssWorkbook.NumberOfSheets; i++)
                 {
                     var sheet = xssWorkbook.GetSheetAt(i);

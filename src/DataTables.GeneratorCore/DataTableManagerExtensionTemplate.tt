@@ -32,7 +32,7 @@ public static class DataTableManagerExtension
     /// <param name="onProgress">单步加载完成时回调。</param>
     public static void Preload(this DataTableManager manager, Action? onCompleted = default, Action<float>? onProgress = default)
     {
-        int total = <#=DataTables.Sum(pair => pair.Value.Count() > 0 ? pair.Value.Count() : 1)#>;
+        const int total = <#=DataTables.Sum(pair => pair.Value.Count() > 0 ? pair.Value.Count() : 1)#>;
         int done = 0;
 
         void next()

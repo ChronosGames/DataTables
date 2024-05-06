@@ -7,7 +7,7 @@ using DataTables;
 
 public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
 {
-    protected override bool? DefaultValue => true;
+    protected override bool DefaultValue => true;
 
     public DTMatrixSample(string name) : base(name)
     { }

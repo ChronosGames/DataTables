@@ -24,7 +24,7 @@ public static class DataTableManagerExtension
     /// <param name="onProgress">单步加载完成时回调。</param>
     public static void Preload(this DataTableManager manager, Action? onCompleted = default, Action<float>? onProgress = default)
     {
-        int total = 4;
+        const int total = 4;
         int done = 0;
 
         void next()

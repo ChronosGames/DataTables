@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace DataTables
 {
-    public abstract class DataMatrixBase<TKey1, TKey2, TValue> : DataTableBase
+    public abstract class DataMatrixBase1<TKey1, TKey2, TValue> : DataTableBase
     {
         private Tuple<TKey1, TKey2, TValue>[] m_DataSet = Array.Empty<Tuple<TKey1, TKey2, TValue>>();
         private readonly Dictionary<ValueTuple<TKey1, TKey2>, TValue> m_Dict1 = new Dictionary<(TKey1, TKey2), TValue>();
@@ -16,7 +16,7 @@ namespace DataTables
 
         public override int Count => m_DataSet.Length;
 
-        public DataMatrixBase(string name) : base(name)
+        public DataMatrixBase1(string name) : base(name)
         { }
 
         internal override void InitDataSet(int capacity)

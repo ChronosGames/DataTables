@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using BenchmarkDotNet.Attributes;
@@ -45,6 +45,9 @@ namespace Benchmark
     [Config(typeof(BenchmarkConfig))]
     public class SimpleRun
     {
+        DataMatrix1 m_Matrix1;
+        DataMatrix2 m_Matrix2;
+
         //MemoryDatabase db;
         //SQLite_Test sqliteMemory;
         //SQLite_Test sqliteFile;
@@ -61,51 +64,54 @@ namespace Benchmark
 
         //const int QueryId = 741;
 
-        //public SimpleRun()
-        //{
-        //    var bin = new DatabaseBuilder().Append(MakeDoc(5000)).Build();
-        //    db = new MemoryDatabase(bin);
+        public SimpleRun()
+        {
+            //    var bin = new DatabaseBuilder().Append(MakeDoc(5000)).Build();
+            //    db = new MemoryDatabase(bin);
 
-        //    sqliteMemory = new SQLite_Test(5000, null, false, true);
-        //    sqliteMemory.Prepare(); sqliteMemory.Insert(); sqliteMemory.CreateIndex();
-        //    sqliteFile = new SQLite_Test(5000, null, false, false);
-        //    sqliteFile.Prepare(); sqliteFile.Insert(); sqliteFile.CreateIndex();
-
-
-        //    defaultLiteDb = new LiteDB_Test(5000, null, new LiteDB.FileOptions { Journal = true, FileMode = LiteDB.FileMode.Shared });
-        //    defaultLiteDb.Prepare(); defaultLiteDb.Insert(); defaultLiteDb.CreateIndex();
-        //    inmemoryLiteDb = new LiteDB_Test(5000);
-        //    inmemoryLiteDb.Prepare(); inmemoryLiteDb.Insert(); inmemoryLiteDb.CreateIndex();
-
-        //    liteDb2 = new LiteDB_Test2(5000);
-        //    liteDb2.Prepare(); liteDb2.Insert(); liteDb2.CreateIndex();
-
-        //    dictionary = new Dictionary<int, TestDoc>();
-        //    foreach (var item in MakeDoc(5000))
-        //    {
-        //        dictionary.Add(item.id, item);
-
-        //    }
-
-        //    {
-        //        var options = new DbOptions().SetCreateIfMissing(true);
-        //        var tempPath = Guid.NewGuid() + ".bin";
-        //        rocksDb = RocksDb.Open(options, tempPath);
-        //        foreach (var item in MakeDoc(5000))
-        //        {
-        //            rocksDb.Put(Encoding.UTF8.GetBytes("testdata." + item.id), MessagePackSerializer.Serialize(item));
-        //        }
-        //    }
+            //    sqliteMemory = new SQLite_Test(5000, null, false, true);
+            //    sqliteMemory.Prepare(); sqliteMemory.Insert(); sqliteMemory.CreateIndex();
+            //    sqliteFile = new SQLite_Test(5000, null, false, false);
+            //    sqliteFile.Prepare(); sqliteFile.Insert(); sqliteFile.CreateIndex();
 
 
-        //    var config = new MemcachedClientConfiguration(new LoggerDummy(), new Dummy());
-        //    localMemcached = new MemcachedClient(new LoggerDummy(), config);
-        //    foreach (var item in MakeDoc(5000))
-        //    {
-        //        localMemcached.Add("testdoc2." + item.id, item, 9999);
-        //    }
+            //    defaultLiteDb = new LiteDB_Test(5000, null, new LiteDB.FileOptions { Journal = true, FileMode = LiteDB.FileMode.Shared });
+            //    defaultLiteDb.Prepare(); defaultLiteDb.Insert(); defaultLiteDb.CreateIndex();
+            //    inmemoryLiteDb = new LiteDB_Test(5000);
+            //    inmemoryLiteDb.Prepare(); inmemoryLiteDb.Insert(); inmemoryLiteDb.CreateIndex();
 
-        //}
+            //    liteDb2 = new LiteDB_Test2(5000);
+            //    liteDb2.Prepare(); liteDb2.Insert(); liteDb2.CreateIndex();
+
+            //    dictionary = new Dictionary<int, TestDoc>();
+            //    foreach (var item in MakeDoc(5000))
+            //    {
+            //        dictionary.Add(item.id, item);
+
+            //    }
+
+            //    {
+            //        var options = new DbOptions().SetCreateIfMissing(true);
+            //        var tempPath = Guid.NewGuid() + ".bin";
+            //        rocksDb = RocksDb.Open(options, tempPath);
+            //        foreach (var item in MakeDoc(5000))
+            //        {
+            //            rocksDb.Put(Encoding.UTF8.GetBytes("testdata." + item.id), MessagePackSerializer.Serialize(item));
+            //        }
+            //    }
+
+
+            //    var config = new MemcachedClientConfiguration(new LoggerDummy(), new Dummy());
+            //    localMemcached = new MemcachedClient(new LoggerDummy(), config);
+            //    foreach (var item in MakeDoc(5000))
+            //    {
+            //        localMemcached.Add("testdoc2." + item.id, item, 9999);
+            //    }
+
+
+            m_Matrix1 = new DataMatrix1("Matrix1");
+            m_Matrix2 = new DataMatrix2("Matrix2");
+        }
 
         //public IEnumerable<TestDoc> MakeDoc(int count)
         //{
@@ -122,11 +128,17 @@ namespace Benchmark
         //    }
         //}
 
-        //[Benchmark(Baseline = true)]
-        //public TestDoc MasterMemoryQuery()
-        //{
-        //    return db.TestDocTable.FindByid(QueryId);
-        //}
+        [Benchmark(Baseline = true)]
+        public void DataMatrixV1_FindKey1()
+        {
+            m_Matrix1.FindKey1(Key2Enum.Key21, ValueEnum.Value3);
+        }
+
+        [Benchmark]
+        public void DataMatrixV2_FindKey1()
+        {
+            m_Matrix2.FindKey1(Key2Enum.Key21, ValueEnum.Value3);
+        }
 
         //[Benchmark]
         //public TestDoc SQLiteInMemoryQuery()

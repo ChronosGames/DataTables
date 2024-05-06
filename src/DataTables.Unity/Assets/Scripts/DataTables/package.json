@@ -1,7 +1,7 @@
 {
   "name": "game.phonix.datatables",
   "displayName": "DataTables",
-  "version": "0.10.8",
+  "version": "0.10.9",
   "unity": "2020.3",
   "description": "Embedded Typed Readonly In-Memory Document Database for .NET Core and Unity.",
   "keywords": [

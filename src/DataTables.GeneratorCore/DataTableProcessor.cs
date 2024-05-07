@@ -458,7 +458,7 @@ public sealed partial class DataTableProcessor : IDisposable
                     // 标记为跳过
                     m_Context.Skiped = true;
 
-                    logger.Debug("  > Generate {0}.bytes to: {1} (skiped)", m_Context.RealClassName, outputFileName);
+                    logger.Debug("  > Generate {0}.bytes to: {1} (skiped)", m_Context.DataRowClassName, outputFileName);
                     return;
                 }
             }
@@ -484,12 +484,12 @@ public sealed partial class DataTableProcessor : IDisposable
                 }
             }
 
-            logger.Debug("  > Generate {0}.bytes to: {1}.", m_Context.RealClassName, outputFileName);
+            logger.Debug("  > Generate {0}.bytes to: {1}.", m_Context.DataRowClassName, outputFileName);
         }
         catch (Exception exception)
         {
             // 记录出错日志
-            logger.Error("  > Generate {0}.bytes failure, exception is '{1}'.", m_Context.RealClassName, exception);
+            logger.Error("  > Generate {0}.bytes failure, exception is '{1}'.", m_Context.DataRowClassName, exception);
             Console.ResetColor();
 
             // 记录出错的情况

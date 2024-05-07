@@ -38,7 +38,7 @@ namespace DataTables.GeneratorCore
             this.Write("public sealed partial class DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write(" : DataTable<");
-            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataRowClassName));
             this.Write(">\r\n{\r\n");
 
     if (GenerationContext.Indexs.Count > 0)
@@ -88,13 +88,13 @@ namespace DataTables.GeneratorCore
 
             this.Write("    public DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
-            this.Write("(string name) : base(name) { }\r\n");
+            this.Write("(string name, int capicity) : base(name, capicity) { }\r\n");
   for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {
         var item = GenerationContext.Indexs[i];
 
             this.Write("\r\n    [MethodImpl(MethodImplOptions.AggressiveInlining)]\r\n    public ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataRowClassName));
             this.Write(" GetDataRowBy");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join("And", item)));
             this.Write("(");
@@ -118,7 +118,7 @@ namespace DataTables.GeneratorCore
         var item = GenerationContext.Groups[j];
 
             this.Write("\r\n    [MethodImpl(MethodImplOptions.AggressiveInlining)]\r\n    public List<");
-            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataRowClassName));
             this.Write("> GetDataRowsGroupBy");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join("And", item)));
             this.Write("(");
@@ -130,7 +130,7 @@ namespace DataTables.GeneratorCore
             this.Write(", out var result) ? result : null;\r\n    }\r\n");
   } 
             this.Write("\r\n    protected override void InternalAddDataRow(int index, ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataRowClassName));
             this.Write(" dataRow)\r\n    {\r\n        base.InternalAddDataRow(index, dataRow);\r\n\r\n");
   for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {
@@ -152,7 +152,7 @@ namespace DataTables.GeneratorCore
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", dataRow.", item)));
             this.Write(", out var arr))\r\n            {\r\n                arr.Add(dataRow);\r\n            }\r" +
                     "\n            else\r\n            {\r\n                arr = new List<");
-            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataRowClassName));
             this.Write(">();\r\n                arr.Add(dataRow);\r\n                m_Dict");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.Indexs.Count + i + 1));
             this.Write(".Add(dataRow.");
@@ -162,7 +162,7 @@ namespace DataTables.GeneratorCore
             this.Write("    }\r\n}\r\n\r\n/// <summary>");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildSummary(GenerationContext.Title)));
             this.Write("</summary>\r\npublic sealed partial class ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.RealClassName));
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataRowClassName));
             this.Write(" : DataRowBase\r\n{\r\n");
  foreach(var item in GenerationContext.Fields)
 {

@@ -4,17 +4,17 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using DataTables;
+namespace ConsoleApp
+{
 
 public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
 {
     protected override bool DefaultValue => true;
 
-    public DTMatrixSample(string name) : base(name)
+    public DTMatrixSample(string name, int capacity) : base(name, capacity)
     { }
 
-    public override string GetFileName() => "DRMatrixSample" + (string.IsNullOrEmpty(this.Name) ? string.Empty : '.' + this.Name);
-
-    protected override bool Deserialize(int index, BinaryReader reader)
+    public override bool ParseDataRow(int index, BinaryReader reader)
     {
         short _key1;
         _key1 = reader.ReadInt16();
@@ -25,7 +25,9 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
         bool _value;
         _value = reader.ReadBoolean();
 
-        AddDataSet(index, _key1, _key2, _value);
+        SetDataRow(index, _key1, _key2, _value);
         return true;
     }
+}
+    
 }

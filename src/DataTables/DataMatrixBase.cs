@@ -5,13 +5,14 @@ using System.IO;
 namespace DataTables
 {
     public abstract class DataMatrixBase<TKey1, TKey2, TValue> : DataTableBase
-        where TKey1 : struct
-        where TKey2 : struct
-        where TValue : struct
     {
-        private TKey1[] m_Keies1;
-        private TKey2[] m_Keies2;
-        private TValue[] m_Values;
+        private readonly TKey1[] m_Keies1;
+        private readonly TKey2[] m_Keies2;
+        private readonly TValue[] m_Values;
+
+        protected IEqualityComparer<TKey1> m_Key1Comparer = EqualityComparer<TKey1>.Default;
+        protected IEqualityComparer<TKey2> m_Key2Comparer = EqualityComparer<TKey2>.Default;
+        protected IEqualityComparer<TValue> m_ValueComparer = EqualityComparer<TValue>.Default;
 
         protected virtual TValue DefaultValue => default;
 
@@ -19,25 +20,16 @@ namespace DataTables
 
         public override int Count => m_Keies1.Length;
 
-        public DataMatrixBase(string name) : base(name)
-        {
-            m_Keies1 = Array.Empty<TKey1>();
-            m_Keies2 = Array.Empty<TKey2>();
-            m_Values = Array.Empty<TValue>();
-        }
-
-        internal override void InitDataSet(int capacity)
+        public DataMatrixBase(string name, int capacity) : base(name)
         {
             m_Keies1 = new TKey1[capacity];
             m_Keies2 = new TKey2[capacity];
             m_Values = new TValue[capacity];
         }
 
-        internal override bool SetDataRow(int index, BinaryReader reader) => Deserialize(index, reader);
+        public override bool ParseDataRow(int index, BinaryReader reader) => throw new NotImplementedException();
 
-        protected abstract bool Deserialize(int index, BinaryReader reader);
-
-        protected void AddDataSet(int index, TKey1 key1, TKey2 key2, TValue value)
+        protected void SetDataRow(int index, TKey1 key1, TKey2 key2, TValue value)
         {
             m_Keies1[index] = key1;
             m_Keies2[index] = key2;
@@ -54,7 +46,7 @@ namespace DataTables
         {
             for (int i = 0; i < m_Keies1.Length; i++)
             {
-                if (m_Keies1[i].Equals(key1) && m_Keies2[i].Equals(key2))
+                if (m_Key1Comparer.Equals(m_Keies1[i], key1) && m_Key2Comparer.Equals(m_Keies2[i], key2))
                 {
                     return m_Values[i];
                 }
@@ -73,7 +65,7 @@ namespace DataTables
         {
             for (int i = 0; i < m_Keies1.Length; i++)
             {
-                if (m_Keies2[i].Equals(key2) && m_Values[i].Equals(value))
+                if (m_Key2Comparer.Equals(m_Keies2[i], key2) && m_ValueComparer.Equals(m_Values[i], value))
                 {
                     yield return m_Keies1[i];
                 }
@@ -90,7 +82,7 @@ namespace DataTables
         {
             for (int i = 0; i < m_Keies1.Length; i++)
             {
-                if (m_Keies1[i].Equals(key1) && m_Values[i].Equals(value))
+                if (m_Key1Comparer.Equals(m_Keies1[i], key1) && m_ValueComparer.Equals(m_Values[i], value))
                 {
                     yield return m_Keies2[i];
                 }
@@ -111,20 +103,6 @@ namespace DataTables
                     yield return Tuple.Create(m_Keies1[i], m_Keies2[i], m_Values[i]);
                 }
             }
-        }
-
-        public override void RemoveAllDataRows()
-        {
-            m_Keies1 = Array.Empty<TKey1>();
-            m_Keies2 = Array.Empty<TKey2>();
-            m_Values = Array.Empty<TValue>();
-        }
-
-        internal override void Shutdown()
-        {
-            m_Keies1 = Array.Empty<TKey1>();
-            m_Keies2 = Array.Empty<TKey2>();
-            m_Values = Array.Empty<TValue>();
         }
     }
 }

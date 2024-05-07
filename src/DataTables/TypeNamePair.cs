@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace DataTables
@@ -77,9 +78,10 @@ namespace DataTables
         /// 获取对象的哈希值。
         /// </summary>
         /// <returns>对象的哈希值。</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override int GetHashCode()
         {
-            return m_Type.GetHashCode() ^ m_Name.GetHashCode();
+            return HashCode.Combine(m_Type, m_Name);
         }
 
         /// <summary>
@@ -87,6 +89,7 @@ namespace DataTables
         /// </summary>
         /// <param name="obj">要比较的对象。</param>
         /// <returns>被比较的对象是否与自身相等。</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object? obj)
         {
             return obj is TypeNamePair && Equals((TypeNamePair)obj);
@@ -97,9 +100,10 @@ namespace DataTables
         /// </summary>
         /// <param name="value">要比较的对象。</param>
         /// <returns>被比较的对象是否与自身相等。</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(TypeNamePair value)
         {
-            return m_Type == value.m_Type && m_Name == value.m_Name;
+            return m_Type == value.m_Type && string.CompareOrdinal(m_Name, value.m_Name) == 0;
         }
 
         /// <summary>
@@ -108,6 +112,7 @@ namespace DataTables
         /// <param name="a">值 a。</param>
         /// <param name="b">值 b。</param>
         /// <returns>两个对象是否相等。</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(TypeNamePair a, TypeNamePair b)
         {
             return a.Equals(b);
@@ -119,9 +124,10 @@ namespace DataTables
         /// <param name="a">值 a。</param>
         /// <param name="b">值 b。</param>
         /// <returns>两个对象是否不相等。</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(TypeNamePair a, TypeNamePair b)
         {
-            return !(a == b);
+            return !a.Equals(b);
         }
     }
 }

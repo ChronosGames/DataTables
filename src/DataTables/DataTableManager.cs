@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace DataTables
@@ -61,39 +62,9 @@ namespace DataTables
         /// 是否存在数据表。
         /// </summary>
         /// <typeparam name="T">数据表行的类型。</typeparam>
-        /// <returns>是否存在数据表。</returns>
-        public bool HasDataTable<T>() where T : DataTableBase
-        {
-            return InternalHasDataTable(new TypeNamePair(typeof(T)));
-        }
-
-        /// <summary>
-        /// 是否存在数据表。
-        /// </summary>
-        /// <param name="dataTableType">数据表的类型。</param>
-        /// <returns>是否存在数据表。</returns>
-        public bool HasDataTable(Type dataTableType)
-        {
-            if (dataTableType == null)
-            {
-                throw new Exception("Data table type is invalid.");
-            }
-
-            if (!dataTableType.IsSubclassOf(typeof(DataTableBase)))
-            {
-                throw new Exception(string.Format("Data row type '{0}' is invalid.", dataTableType.FullName));
-            }
-
-            return InternalHasDataTable(new TypeNamePair(dataTableType));
-        }
-
-        /// <summary>
-        /// 是否存在数据表。
-        /// </summary>
-        /// <typeparam name="T">数据表行的类型。</typeparam>
         /// <param name="name">数据表名称。</param>
         /// <returns>是否存在数据表。</returns>
-        public bool HasDataTable<T>(string name) where T : DataTableBase
+        public bool HasDataTable<T>(string name = "") where T : DataTableBase
         {
             return InternalHasDataTable(new TypeNamePair(typeof(T), name));
         }
@@ -104,7 +75,7 @@ namespace DataTables
         /// <param name="dataTableType">数据表的类型。</param>
         /// <param name="name">数据表名称。</param>
         /// <returns>是否存在数据表。</returns>
-        public bool HasDataTable(Type dataTableType, string name)
+        public bool HasDataTable(Type dataTableType, string name = "")
         {
             if (dataTableType == null)
             {
@@ -123,40 +94,9 @@ namespace DataTables
         /// 获取数据表。
         /// </summary>
         /// <typeparam name="T">数据表的类型。</typeparam>
-        /// <returns>要获取的数据表。</returns>
-        public T? GetDataTable<T>() where T : DataTableBase
-        {
-            var dataTable = InternalGetDataTable(new TypeNamePair(typeof(T)));
-            return dataTable != null ? (T)dataTable : null;
-        }
-
-        /// <summary>
-        /// 获取数据表。
-        /// </summary>
-        /// <param name="dataTableType">数据表的类型。</param>
-        /// <returns>要获取的数据表。</returns>
-        public DataTableBase? GetDataTable(Type dataTableType)
-        {
-            if (dataTableType == null)
-            {
-                throw new Exception("Data table type is invalid.");
-            }
-
-            if (!dataTableType.IsSubclassOf(typeof(DataTableBase)))
-            {
-                throw new Exception(string.Format("Data table type '{0}' is invalid.", dataTableType.FullName));
-            }
-
-            return InternalGetDataTable(new TypeNamePair(dataTableType));
-        }
-
-        /// <summary>
-        /// 获取数据表。
-        /// </summary>
-        /// <typeparam name="T">数据表的类型。</typeparam>
         /// <param name="name">数据表名称。</param>
         /// <returns>要获取的数据表。</returns>
-        public T? GetDataTable<T>(string name) where T : DataTableBase
+        public T? GetDataTable<T>(string name = "") where T : DataTableBase
         {
             var dataTable = InternalGetDataTable(new TypeNamePair(typeof(T), name));
             return dataTable != null ? (T)dataTable : null;
@@ -168,7 +108,7 @@ namespace DataTables
         /// <param name="dataTableType">数据表的类型。</param>
         /// <param name="name">数据表名称。</param>
         /// <returns>要获取的数据表。</returns>
-        public DataTableBase? GetDataTable(Type dataTableType, string name)
+        public DataTableBase? GetDataTable(Type dataTableType, string name = "")
         {
             if (dataTableType == null)
             {
@@ -222,6 +162,7 @@ namespace DataTables
         /// </summary>
         /// <typeparam name="T">数据表的类型。</typeparam>
         /// <param name="onCompleted">数据表加载完成时回调。</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CreateDataTable<T>(Action onCompleted) where T : DataTableBase
         {
             CreateDataTable<T>(string.Empty, onCompleted);
@@ -232,6 +173,7 @@ namespace DataTables
         /// </summary>
         /// <param name="dataTableType">数据表的类型。</param>
         /// <param name="onCompleted">数据表加载完成时回调。</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CreateDataTable(Type dataTableType, Action onCompleted)
         {
             CreateDataTable(dataTableType, string.Empty, onCompleted);
@@ -256,8 +198,7 @@ namespace DataTables
                 throw new Exception(string.Format("Already exist data table '{0}'.", typeNamePair));
             }
 
-            var dataTable = (T)Activator.CreateInstance(typeof(T), name)!;
-            m_DataTableHelper.Read(dataTable.GetFileName(), (raw) => LoadDataTable(dataTable, raw, onCompleted));
+            m_DataTableHelper.Read(typeNamePair.ToString(), (raw) => LoadDataTable(typeNamePair, raw, onCompleted));
         }
 
         /// <summary>
@@ -275,7 +216,7 @@ namespace DataTables
 
             if (m_DataTableHelper == null)
             {
-                throw new Exception("YOU MUST SetDataTableHelper FIRST.");
+                throw new Exception("MUST SetDataTableHelper FIRST.");
             }
 
             var typeNamePair = new TypeNamePair(dataTableType, name);
@@ -284,28 +225,26 @@ namespace DataTables
                 throw new Exception(string.Format("Already exist data table '{0}'.", typeNamePair));
             }
 
-            var dataTable = (DataTableBase)Activator.CreateInstance(dataTableType, name)!;
-            m_DataTableHelper.Read(dataTable.GetFileName(), (raw) => LoadDataTable(dataTable, raw, onCompleted));
+            m_DataTableHelper.Read(typeNamePair.ToString(), (raw) => LoadDataTable(typeNamePair, raw, onCompleted));
         }
 
-        private void LoadDataTable(DataTableBase dataTable, byte[] raw, Action onCompleted)
+        private void LoadDataTable(TypeNamePair typeNamePair, byte[] raw, Action onCompleted)
         {
-            var typeNamePair = new TypeNamePair(dataTable.GetType(), dataTable.Name);
             if (InternalHasDataTable(typeNamePair))
             {
                 throw new Exception(string.Format("Already exist data table '{0}'.", typeNamePair));
             }
 
+            DataTableBase dataTable;
             using (var ms = new MemoryStream(raw, false))
             {
                 using (var reader = new BinaryReader(ms, Encoding.UTF8))
                 {
                     var rowCount = reader.ReadInt32();
-                    dataTable.InitDataSet(rowCount);
-
+                    dataTable = (DataTableBase)Activator.CreateInstance(typeNamePair.Type, typeNamePair.Name, rowCount)!;
                     for (int i = 0; i < rowCount; i++)
                     {
-                        if (!dataTable.SetDataRow(i, reader))
+                        if (!dataTable.ParseDataRow(i, reader))
                         {
                             return;
                         }
@@ -327,37 +266,8 @@ namespace DataTables
         /// 销毁数据表。
         /// </summary>
         /// <typeparam name="T">数据表行的类型。</typeparam>
-        public bool DestroyDataTable<T>() where T : DataTableBase
-        {
-            return InternalDestroyDataTable(new TypeNamePair(typeof(T)));
-        }
-
-        /// <summary>
-        /// 销毁数据表。
-        /// </summary>
-        /// <param name="dataTableType">数据表行的类型。</param>
-        /// <returns>是否销毁数据表成功。</returns>
-        public bool DestroyDataTable(Type dataTableType)
-        {
-            if (dataTableType == null)
-            {
-                throw new Exception("Data table type is invalid.");
-            }
-
-            if (!dataTableType.IsSubclassOf(typeof(DataTableBase)))
-            {
-                throw new Exception(string.Format("Data table type '{0}' is invalid.", dataTableType.FullName));
-            }
-
-            return InternalDestroyDataTable(new TypeNamePair(dataTableType));
-        }
-
-        /// <summary>
-        /// 销毁数据表。
-        /// </summary>
-        /// <typeparam name="T">数据表行的类型。</typeparam>
         /// <param name="name">数据表名称。</param>
-        public bool DestroyDataTable<T>(string name) where T : DataTableBase
+        public bool DestroyDataTable<T>(string name = "") where T : DataTableBase
         {
             return InternalDestroyDataTable(new TypeNamePair(typeof(T), name));
         }
@@ -368,7 +278,7 @@ namespace DataTables
         /// <param name="dataTableType">数据表行的类型。</param>
         /// <param name="name">数据表名称。</param>
         /// <returns>是否销毁数据表成功。</returns>
-        public bool DestroyDataTable(Type dataTableType, string name)
+        public bool DestroyDataTable(Type dataTableType, string name = "")
         {
             if (dataTableType == null)
             {
@@ -395,7 +305,16 @@ namespace DataTables
                 throw new Exception("Data table is invalid.");
             }
 
-            return InternalDestroyDataTable(new TypeNamePair(dataTable.GetType(), dataTable.Name));
+            foreach (var pair in m_DataTables)
+            {
+                if (pair.Value == dataTable)
+                {
+                    dataTable.Shutdown();
+                    return m_DataTables.Remove(pair.Key);
+                }
+            }
+
+            return false;
         }
 
         private bool InternalHasDataTable(TypeNamePair pair)

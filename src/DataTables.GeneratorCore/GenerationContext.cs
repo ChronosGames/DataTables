@@ -15,7 +15,9 @@ public class GenerationContext
 
     public string Namespace { get; set; } = string.Empty;
 
-    public string PrefixClassName { get; set; } = string.Empty;
+    public string DataTableClassPrefix { get; set; } = "DT";
+
+    public string DataRowClassPrefix { get; set; } = string.Empty;
 
     public string DataSetType { get; set; } = "table";
 
@@ -23,7 +25,11 @@ public class GenerationContext
 
     public string ClassName { get; set; } = string.Empty;
 
-    public string RealClassName => PrefixClassName + ClassName;
+    public string DataTableClassFullName => string.IsNullOrEmpty(Namespace) ? DataTableClassPrefix + ClassName : Namespace + '.' + DataTableClassPrefix + ClassName;
+
+    public string DataTableClassName => DataTableClassPrefix + ClassName;
+
+    public string DataRowClassName => DataRowClassPrefix + ClassName;
 
     public bool DisableTagsFilter { get; set; }
 
@@ -74,7 +80,7 @@ public class GenerationContext
     /// <returns></returns>
     public string GetDataOutputFilePath()
     {
-        return this.RealClassName + (string.IsNullOrEmpty(this.Child) ? string.Empty : '.' + this.Child) + ".bytes";
+        return this.DataTableClassFullName + (string.IsNullOrEmpty(this.Child) ? string.Empty : '.' + this.Child) + ".bytes";
     }
 
     /// <summary>
@@ -134,7 +140,7 @@ public class GenerationContext
             sb.Append(", ");
         }
 
-        sb.Append(RealClassName);
+        sb.Append(DataRowClassName);
         sb.Append('>');
 
         return sb.ToString();
@@ -160,7 +166,7 @@ public class GenerationContext
         }
 
         sb.Append("List<");
-        sb.Append(RealClassName);
+        sb.Append(DataRowClassName);
         sb.Append(">>");
 
         return sb.ToString();

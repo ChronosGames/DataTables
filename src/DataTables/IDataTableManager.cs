@@ -25,16 +25,10 @@ namespace DataTables
         /// <summary>
         /// 是否存在数据表。
         /// </summary>
-        /// <typeparam name="T">数据表的类型。</typeparam>
-        /// <returns>是否存在数据表。</returns>
-        bool HasDataTable<T>() where T : DataTableBase;
-
-        /// <summary>
-        /// 是否存在数据表。
-        /// </summary>
         /// <param name="dataTableType">数据表的类型。</param>
+        /// <param name="name">数据表名称。</param>
         /// <returns>是否存在数据表。</returns>
-        bool HasDataTable(Type dataTableType);
+        bool HasDataTable(Type dataTableType, string name = "");
 
         /// <summary>
         /// 是否存在数据表。
@@ -42,29 +36,7 @@ namespace DataTables
         /// <typeparam name="T">数据表的类型。</typeparam>
         /// <param name="name">数据表名称。</param>
         /// <returns>是否存在数据表。</returns>
-        bool HasDataTable<T>(string name) where T : DataTableBase;
-
-        /// <summary>
-        /// 是否存在数据表。
-        /// </summary>
-        /// <param name="dataTableType">数据表的类型。</param>
-        /// <param name="name">数据表名称。</param>
-        /// <returns>是否存在数据表。</returns>
-        bool HasDataTable(Type dataTableType, string name);
-
-        /// <summary>
-        /// 获取数据表。
-        /// </summary>
-        /// <typeparam name="T">数据表的类型。</typeparam>
-        /// <returns>要获取的数据表。</returns>
-        T? GetDataTable<T>() where T : DataTableBase;
-
-        /// <summary>
-        /// 获取数据表。
-        /// </summary>
-        /// <param name="dataTableType">数据表的类型。</param>
-        /// <returns>要获取的数据表。</returns>
-        DataTableBase? GetDataTable(Type dataTableType);
+        bool HasDataTable<T>(string name = "") where T : DataTableBase;
 
         /// <summary>
         /// 获取数据表。
@@ -72,7 +44,7 @@ namespace DataTables
         /// <typeparam name="T">数据表的类型。</typeparam>
         /// <param name="name">数据表名称。</param>
         /// <returns>要获取的数据表。</returns>
-        T? GetDataTable<T>(string name) where T : DataTableBase;
+        T? GetDataTable<T>(string name = "") where T : DataTableBase;
 
         /// <summary>
         /// 获取数据表。
@@ -80,7 +52,7 @@ namespace DataTables
         /// <param name="dataTableType">数据表的类型。</param>
         /// <param name="name">数据表名称。</param>
         /// <returns>要获取的数据表。</returns>
-        DataTableBase? GetDataTable(Type dataTableType, string name);
+        DataTableBase? GetDataTable(Type dataTableType, string name = "");
 
         /// <summary>
         /// 获取所有数据表。
@@ -127,20 +99,6 @@ namespace DataTables
         /// <summary>
         /// 销毁数据表。
         /// </summary>
-        /// <typeparam name="T">数据表的类型。</typeparam>
-        /// <returns>是否销毁数据表成功。</returns>
-        bool DestroyDataTable<T>() where T : DataTableBase;
-
-        /// <summary>
-        /// 销毁数据表。
-        /// </summary>
-        /// <param name="dataTableType">数据表的类型。</param>
-        /// <returns>是否销毁数据表成功。</returns>
-        bool DestroyDataTable(Type dataTableType);
-
-        /// <summary>
-        /// 销毁数据表。
-        /// </summary>
         /// <param name="dataTable">要销毁的数据表。</param>
         /// <returns>是否销毁数据表成功。</returns>
         bool DestroyDataTable(DataTableBase dataTable);
@@ -151,7 +109,7 @@ namespace DataTables
         /// <typeparam name="T">数据表的类型。</typeparam>
         /// <param name="name">数据表名称。</param>
         /// <returns>是否销毁数据表成功。</returns>
-        bool DestroyDataTable<T>(string name) where T : DataTableBase;
+        bool DestroyDataTable<T>(string name = "") where T : DataTableBase;
 
         /// <summary>
         /// 销毁数据表。
@@ -159,6 +117,6 @@ namespace DataTables
         /// <param name="dataTableType">数据表的类型。</param>
         /// <param name="name">数据表名称。</param>
         /// <returns>是否销毁数据表成功。</returns>
-        bool DestroyDataTable(Type dataTableType, string name);
+        bool DestroyDataTable(Type dataTableType, string name = "");
     }
 }

@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace DataTables
 {
     public abstract class DataMatrixBase1<TKey1, TKey2, TValue> : DataTableBase
-        where TValue : struct
+        where TValue : notnull
     {
         private Tuple<TKey1, TKey2, TValue>[] m_DataSet = Array.Empty<Tuple<TKey1, TKey2, TValue>>();
         private readonly Dictionary<ValueTuple<TKey1, TKey2>, TValue> m_Dict1 = new Dictionary<(TKey1, TKey2), TValue>();
@@ -17,19 +16,12 @@ namespace DataTables
 
         public override int Count => m_DataSet.Length;
 
-        public DataMatrixBase1(string name) : base(name)
-        { }
-
-        internal override void InitDataSet(int capacity)
+        public DataMatrixBase1(string name, int capacity) : base(name)
         {
             m_DataSet = new Tuple<TKey1, TKey2, TValue>[capacity];
         }
 
-        internal override bool SetDataRow(int index, BinaryReader reader) => Deserialize(index, reader);
-
-        protected abstract bool Deserialize(int index, BinaryReader reader);
-
-        protected void AddDataSet(int index, TKey1 key1, TKey2 key2, TValue value)
+        protected void SetDataRow(int index, TKey1 key1, TKey2 key2, TValue value)
         {
             m_DataSet[index] = Tuple.Create(key1, key2, value);
             m_Dict1.Add(ValueTuple.Create(key1, key2), value);

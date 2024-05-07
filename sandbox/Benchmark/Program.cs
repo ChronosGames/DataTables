@@ -1,22 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Data;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
-using BenchmarkDotNet.Environments;
-using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Exporters.Csv;
-using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
-using Enyim.Caching.Configuration;
-using Enyim.Caching.Memcached;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Benchmark
 {
-
     class Program
     {
         static void Main(string[] args)
@@ -30,13 +19,13 @@ namespace Benchmark
         public BenchmarkConfig()
         {
             // run quickly:)
-            var baseConfig = Job.ShortRun.WithIterationCount(1).WithWarmupCount(1);
+            //var baseConfig = Job.ShortRun.WithIterationCount(1).WithWarmupCount(1);
 
             // Add(baseConfig.With(Runtime.Clr).With(Jit.RyuJit).With(Platform.X64));
             // Add(baseConfig.With(Runtime.).With(Jit.RyuJit).With(Platform.X64));
             // Add(baseConfig.With(InProcessEmitToolchain.Instance));
 
-            AddExporter(MarkdownExporter.GitHub);
+            //AddExporter(MarkdownExporter.GitHub);
             AddExporter(CsvExporter.Default);
             AddDiagnoser(MemoryDiagnoser.Default);
         }
@@ -48,85 +37,11 @@ namespace Benchmark
         DataMatrix1 m_Matrix1;
         DataMatrix2 m_Matrix2;
 
-        //MemoryDatabase db;
-        //SQLite_Test sqliteMemory;
-        //SQLite_Test sqliteFile;
-
-        //LiteDB_Test defaultLiteDb;
-        //LiteDB_Test inmemoryLiteDb;
-
-        //LiteDB_Test2 liteDb2;
-
-        //MemcachedClient localMemcached;
-        //Dictionary<int, TestDoc> dictionary;
-
-        //RocksDb rocksDb;
-
-        //const int QueryId = 741;
-
         public SimpleRun()
         {
-            //    var bin = new DatabaseBuilder().Append(MakeDoc(5000)).Build();
-            //    db = new MemoryDatabase(bin);
-
-            //    sqliteMemory = new SQLite_Test(5000, null, false, true);
-            //    sqliteMemory.Prepare(); sqliteMemory.Insert(); sqliteMemory.CreateIndex();
-            //    sqliteFile = new SQLite_Test(5000, null, false, false);
-            //    sqliteFile.Prepare(); sqliteFile.Insert(); sqliteFile.CreateIndex();
-
-
-            //    defaultLiteDb = new LiteDB_Test(5000, null, new LiteDB.FileOptions { Journal = true, FileMode = LiteDB.FileMode.Shared });
-            //    defaultLiteDb.Prepare(); defaultLiteDb.Insert(); defaultLiteDb.CreateIndex();
-            //    inmemoryLiteDb = new LiteDB_Test(5000);
-            //    inmemoryLiteDb.Prepare(); inmemoryLiteDb.Insert(); inmemoryLiteDb.CreateIndex();
-
-            //    liteDb2 = new LiteDB_Test2(5000);
-            //    liteDb2.Prepare(); liteDb2.Insert(); liteDb2.CreateIndex();
-
-            //    dictionary = new Dictionary<int, TestDoc>();
-            //    foreach (var item in MakeDoc(5000))
-            //    {
-            //        dictionary.Add(item.id, item);
-
-            //    }
-
-            //    {
-            //        var options = new DbOptions().SetCreateIfMissing(true);
-            //        var tempPath = Guid.NewGuid() + ".bin";
-            //        rocksDb = RocksDb.Open(options, tempPath);
-            //        foreach (var item in MakeDoc(5000))
-            //        {
-            //            rocksDb.Put(Encoding.UTF8.GetBytes("testdata." + item.id), MessagePackSerializer.Serialize(item));
-            //        }
-            //    }
-
-
-            //    var config = new MemcachedClientConfiguration(new LoggerDummy(), new Dummy());
-            //    localMemcached = new MemcachedClient(new LoggerDummy(), config);
-            //    foreach (var item in MakeDoc(5000))
-            //    {
-            //        localMemcached.Add("testdoc2." + item.id, item, 9999);
-            //    }
-
-
             m_Matrix1 = new DataMatrix1("Matrix1");
             m_Matrix2 = new DataMatrix2("Matrix2");
         }
-
-        //public IEnumerable<TestDoc> MakeDoc(int count)
-        //{
-        //    foreach (var doc in Helper.GetDocs(count))
-        //    {
-        //        var v = new TestDoc
-        //        {
-        //            id = (int)doc["_id"],
-        //            name = (string)doc["name"],
-        //            lorem = (string)doc["lorem"]
-        //        };
-
-        //        yield return v;
-        //    }
-        //}
 
         [Benchmark(Baseline = true)]
         public void DataMatrixV1_FindKey1()
@@ -140,75 +55,17 @@ namespace Benchmark
             m_Matrix2.FindKey1(Key2Enum.Key21, ValueEnum.Value3);
         }
 
-        //[Benchmark]
-        //public TestDoc SQLiteInMemoryQuery()
-        //{
-        //    using (var cmd = new SQLiteCommand("SELECT * FROM col WHERE id = @id", sqliteMemory._db))
-        //    {
-        //        cmd.Parameters.Add(new SQLiteParameter("id", DbType.Int32));
-        //        cmd.Parameters["id"].Value = QueryId;
+        [Benchmark]
+        public void DataMatrixV1_FindKey2()
+        {
+            m_Matrix1.FindKey2(Key1Enum.Key09, ValueEnum.Value3);
+        }
 
-        //        using (var r = cmd.ExecuteReader())
-        //        {
-        //            r.Read();
-        //            var id = r.GetInt32(0);
-        //            var name = r.GetString(1);
-        //            var lorem = r.GetString(2);
-        //            return new TestDoc { id = 1, name = name, lorem = lorem };
-        //        }
-        //    }
-        //}
-
-        //[Benchmark]
-        //public TestDoc SQLiteFileQuery()
-        //{
-        //    using (var cmd = new SQLiteCommand("SELECT * FROM col WHERE id = @id", sqliteFile._db))
-        //    {
-        //        cmd.Parameters.Add(new SQLiteParameter("id", DbType.Int32));
-        //        cmd.Parameters["id"].Value = QueryId;
-
-        //        using (var r = cmd.ExecuteReader())
-        //        {
-        //            r.Read();
-        //            var id = r.GetInt32(0);
-        //            var name = r.GetString(1);
-        //            var lorem = r.GetString(2);
-        //            return new TestDoc { id = 1, name = name, lorem = lorem };
-        //        }
-        //    }
-        //}
-
-
-
-        //[Benchmark]
-        //public BsonDocument LiteDbDefaultQuery()
-        //{
-        //    return defaultLiteDb._db.FindOne("col", LiteDB.Query.EQ("_id", QueryId));
-        //}
-
-        //[Benchmark]
-        //public BsonDocument LiteDbInMemoryQuery()
-        //{
-        //    return inmemoryLiteDb._db.FindOne("col", LiteDB.Query.EQ("_id", QueryId));
-        //}
-
-        //[Benchmark]
-        //public object LocalMemcachedQuery()
-        //{
-        //    return localMemcached.Get("testdoc2." + QueryId);
-        //}
-
-        ////[Benchmark]
-        ////public TestDoc DictionaryQuery()
-        ////{
-        ////    return dictionary.TryGetValue(QueryId, out var r) ? r : null;
-        ////}
-
-        //[Benchmark]
-        //public TestDoc RocksDbQuery()
-        //{
-        //    return MessagePackSerializer.Deserialize<TestDoc>(rocksDb.Get(Encoding.UTF8.GetBytes("testdata." + QueryId)));
-        //}
+        [Benchmark]
+        public void DataMatrixV2_FindKey2()
+        {
+            m_Matrix2.FindKey2(Key1Enum.Key09, ValueEnum.Value3);
+        }
     }
 
 
@@ -285,53 +142,53 @@ namespace Benchmark
     //    }
     //}
 
-    class Dummy : IOptions<MemcachedClientOptions>
-    {
-        public MemcachedClientOptions Value => new MemcachedClientOptions
-        {
-            Servers = new List<Server> { new Server { Address = "127.0.0.1", Port = 11211 } },
-            Protocol = MemcachedProtocol.Binary,
-            // Transcoder = new BinaryFormatterTranscoder()
-        };
-    }
+    //class Dummy : IOptions<MemcachedClientOptions>
+    //{
+    //    public MemcachedClientOptions Value => new MemcachedClientOptions
+    //    {
+    //        Servers = new List<Server> { new Server { Address = "127.0.0.1", Port = 11211 } },
+    //        Protocol = MemcachedProtocol.Binary,
+    //        // Transcoder = new BinaryFormatterTranscoder()
+    //    };
+    //}
 
-    class LoggerDummy : ILoggerFactory
-    {
-        public void AddProvider(ILoggerProvider provider)
-        {
-        }
+    //class LoggerDummy : ILoggerFactory
+    //{
+    //    public void AddProvider(ILoggerProvider provider)
+    //    {
+    //    }
 
-        public ILogger CreateLogger(string categoryName)
-        {
-            return new NullLogger();
-        }
+    //    public ILogger CreateLogger(string categoryName)
+    //    {
+    //        return new NullLogger();
+    //    }
 
-        public void Dispose()
-        {
+    //    public void Dispose()
+    //    {
 
-        }
-        class NullLogger : ILogger
-        {
-            public IDisposable BeginScope<TState>(TState state)
-            {
-                return new EmptyDisposable();
-            }
+    //    }
+    //    class NullLogger : ILogger
+    //    {
+    //        public IDisposable BeginScope<TState>(TState state)
+    //        {
+    //            return new EmptyDisposable();
+    //        }
 
-            public bool IsEnabled(LogLevel logLevel)
-            {
-                return false;
-            }
+    //        public bool IsEnabled(LogLevel logLevel)
+    //        {
+    //            return false;
+    //        }
 
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
-            {
-            }
+    //        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+    //        {
+    //        }
 
-            class EmptyDisposable : IDisposable
-            {
-                public void Dispose()
-                {
-                }
-            }
-        }
-    }
+    //        class EmptyDisposable : IDisposable
+    //        {
+    //            public void Dispose()
+    //            {
+    //            }
+    //        }
+    //    }
+    //}
 }

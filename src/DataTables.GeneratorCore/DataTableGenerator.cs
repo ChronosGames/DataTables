@@ -20,12 +20,12 @@ public sealed class DataTableGenerator
         m_Locks = new();
     }
 
-    public void GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string prefixClassName, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger)
+    public void GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string dataRowClassPrefix, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger)
     {
         // By default, ExcelDataReader throws a NotSupportedException "No data is available for encoding 1252." on .NET Core.
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-        prefixClassName ??= string.Empty;
+        dataRowClassPrefix ??= string.Empty;
         var list = new ConcurrentBag<GenerationContext>();
 
         // 拼接Import的命名空间
@@ -83,21 +83,20 @@ public sealed class DataTableGenerator
             dataOutputDir: dataOutputDir,
             codeOutputDir: codeOutputDir,
             list: list,
-            prefixClassName: prefixClassName,
+            prefixClassName: dataRowClassPrefix,
             usingStrings: usingStrings,
             filterColumnTags: filterColumnTags,
             log: logger));
 
         logger("Generate Manager Files:");
 
-        var dict = list.GroupBy(k => k.ClassName, v => v.Child).ToDictionary(k => k.Key, v => v.Where(x => !string.IsNullOrEmpty(x)).OrderBy(x => x));
+        var dict = list.GroupBy(k => k.DataTableClassFullName, v => v.Child).ToDictionary(k => k.Key, v => v.Where(x => !string.IsNullOrEmpty(x)).OrderBy(x => x));
         var sortedDict = from entry in dict orderby entry.Key ascending select entry;
 
         // 生成DataTableManagerExtension代码文件(放在未尾确保类名前缀会正确附加)
         var dataTableManagerExtensionTemplate = new DataTableManagerExtensionTemplate()
         {
             Namespace = usingNamespace,
-            DataRowPrefix = prefixClassName,
             DataTables = sortedDict,
         };
         logger(WriteToFile(codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
@@ -136,7 +135,7 @@ public sealed class DataTableGenerator
                     {
                         FileName = Path.GetFileNameWithoutExtension(filePath),
                         Namespace = usingNamespace,
-                        PrefixClassName = prefixClassName,
+                        DataRowClassPrefix = prefixClassName,
                         UsingStrings = usingStrings,
                         SheetName = sheet.SheetName.Trim(),
                     };
@@ -198,12 +197,12 @@ public sealed class DataTableGenerator
         if (context.DataSetType == "matrix")
         {
             var dataRowTemplate = new DataMatrixTemplate(context);
-            logger.Debug(WriteToFile(outputDir, context.RealClassName + ".cs", dataRowTemplate.TransformText(), forceOverwrite));
+            logger.Debug(WriteToFile(outputDir, context.DataRowClassName + ".cs", dataRowTemplate.TransformText(), forceOverwrite));
         }
         else
         {
             var dataRowTemplate = new DataTableTemplate(context);
-            logger.Debug(WriteToFile(outputDir, context.RealClassName + ".cs", dataRowTemplate.TransformText(), forceOverwrite));
+            logger.Debug(WriteToFile(outputDir, context.DataRowClassName + ".cs", dataRowTemplate.TransformText(), forceOverwrite));
         }
     }
 

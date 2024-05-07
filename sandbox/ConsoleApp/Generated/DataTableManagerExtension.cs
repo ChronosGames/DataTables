@@ -11,9 +11,9 @@ public static class DataTableManagerExtension
 {
     public static readonly Dictionary<string, string[]> Tables = new Dictionary<string, string[]>
     {
-        { "DRDataTableSample", Array.Empty<string>() },
-        { "DRDataTableSplitSample", new string[] {"x001", "x002"} },
-        { "DRMatrixSample", Array.Empty<string>() },
+        { "ConsoleApp.DTDataTableSample", Array.Empty<string>() },
+        { "ConsoleApp.DTDataTableSplitSample", new string[] {"x001", "x002"} },
+        { "ConsoleApp.DTMatrixSample", Array.Empty<string>() },
     };
 
     /// <summary>
@@ -37,10 +37,10 @@ public static class DataTableManagerExtension
             }
         };
 
-        manager.CreateDataTable<DTDataTableSample>(next);
-        manager.CreateDataTable<DTDataTableSplitSample>("x001", next);
-        manager.CreateDataTable<DTDataTableSplitSample>("x002", next);
-        manager.CreateDataTable<DTMatrixSample>(next);
+        manager.CreateDataTable<ConsoleApp.DTDataTableSample>(next);
+        manager.CreateDataTable<ConsoleApp.DTDataTableSplitSample>("x001", next);
+        manager.CreateDataTable<ConsoleApp.DTDataTableSplitSample>("x002", next);
+        manager.CreateDataTable<ConsoleApp.DTMatrixSample>(next);
     }
 }
 }

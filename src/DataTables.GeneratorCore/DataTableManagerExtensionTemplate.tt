@@ -20,7 +20,7 @@ public static class DataTableManagerExtension
     {
 <# foreach (var pair in DataTables)
 {
-    #>        { "<#= DataRowPrefix #><#= pair.Key #>", <#=(pair.Value.Count() == 0 ? "Array.Empty<string>()" : "new string[] {\"" + string.Join("\", \"", pair.Value) + "\"}")#> },<#=Environment.NewLine#><# 
+    #>        { "<#= pair.Key #>", <#=(pair.Value.Count() == 0 ? "Array.Empty<string>()" : "new string[] {\"" + string.Join("\", \"", pair.Value) + "\"}")#> },<#=Environment.NewLine#><# 
 } #>
     };
 
@@ -50,13 +50,13 @@ foreach (var pair in DataTables)
 {
     if (pair.Value.Count() == 0)
     {
-        #>        manager.CreateDataTable<DT<#=pair.Key#>>(next);<#=Environment.NewLine#><#
+        #>        manager.CreateDataTable<<#=pair.Key#>>(next);<#=Environment.NewLine#><#
     }
     else
     {
         foreach (var name in pair.Value)
         {
-            #>        manager.CreateDataTable<DT<#=pair.Key#>>("<#=name#>", next);<#=Environment.NewLine#><#
+            #>        manager.CreateDataTable<<#=pair.Key#>>("<#=name#>", next);<#=Environment.NewLine#><#
         }
     }   
 }

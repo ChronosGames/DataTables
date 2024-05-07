@@ -38,7 +38,6 @@ namespace DataTables.GeneratorCore
 {
     
             this.Write("        { \"");
-            this.Write(this.ToStringHelper.ToStringWithCulture(DataRowPrefix));
             this.Write(this.ToStringHelper.ToStringWithCulture(pair.Key));
             this.Write("\", ");
             this.Write(this.ToStringHelper.ToStringWithCulture((pair.Value.Count() == 0 ? "Array.Empty<string>()" : "new string[] {\"" + string.Join("\", \"", pair.Value) + "\"}")));
@@ -68,7 +67,7 @@ foreach (var pair in DataTables)
     if (pair.Value.Count() == 0)
     {
         
-            this.Write("        manager.CreateDataTable<DT");
+            this.Write("        manager.CreateDataTable<");
             this.Write(this.ToStringHelper.ToStringWithCulture(pair.Key));
             this.Write(">(next);");
             this.Write(this.ToStringHelper.ToStringWithCulture(Environment.NewLine));
@@ -79,7 +78,7 @@ foreach (var pair in DataTables)
         foreach (var name in pair.Value)
         {
             
-            this.Write("        manager.CreateDataTable<DT");
+            this.Write("        manager.CreateDataTable<");
             this.Write(this.ToStringHelper.ToStringWithCulture(pair.Key));
             this.Write(">(\"");
             this.Write(this.ToStringHelper.ToStringWithCulture(name));

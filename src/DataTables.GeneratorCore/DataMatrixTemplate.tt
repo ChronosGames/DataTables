@@ -9,16 +9,18 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using DataTables;
+<# if (!string.IsNullOrEmpty(GenerationContext.Namespace)) { #>
+namespace <#= GenerationContext.Namespace #>
+{
+<# } #>
 
 public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBase<<#= BuildTypeString(kKey1) #>, <#= BuildTypeString(kKey2) #>, <#= BuildTypeString(kValue) #>>
 {
     <#= string.IsNullOrEmpty(GenerationContext.MatrixDefaultValue) ? string.Empty : "protected override " + BuildTypeString(kValue) + " DefaultValue => " + BuildTypeValueString(kValue, GenerationContext.MatrixDefaultValue) + ";" + Environment.NewLine #>
-    public DT<#= GenerationContext.ClassName #>(string name) : base(name)
+    public DT<#= GenerationContext.ClassName #>(string name, int capacity) : base(name, capacity)
     { }
 
-    public override string GetFileName() => "<#= GenerationContext.RealClassName #>" + (string.IsNullOrEmpty(this.Name) ? string.Empty : '.' + this.Name);
-
-    protected override bool Deserialize(int index, BinaryReader reader)
+    public override bool ParseDataRow(int index, BinaryReader reader)
     {
         <#= BuildTypeString(kKey1) #> <#= kKey1 #>;
         <#= BuildDeserializeMethodString(kKey1) #>
@@ -29,7 +31,11 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
         <#= BuildTypeString(kValue) #> <#= kValue #>;
         <#= BuildDeserializeMethodString(kValue) #>
 
-        AddDataSet(index, <#= kKey1 #>, <#= kKey2 #>, <#= kValue #>);
+        SetDataRow(index, <#= kKey1 #>, <#= kKey2 #>, <#= kValue #>);
         return true;
     }
 }
+    
+<# if (!string.IsNullOrEmpty(GenerationContext.Namespace)) { #>
+}
+<# } #>

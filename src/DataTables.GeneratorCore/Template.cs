@@ -22,7 +22,7 @@ public partial class DataTableTemplate
 
     public string Namespace => GenerationContext.Namespace;
 
-    public string ClassName => GenerationContext.RealClassName;
+    public string ClassName => GenerationContext.DataRowClassName;
 
     public DataTableTemplate(GenerationContext context)
     {

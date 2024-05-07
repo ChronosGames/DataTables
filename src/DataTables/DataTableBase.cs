@@ -54,21 +54,13 @@ namespace DataTables
             get;
         }
 
-        public virtual string GetFileName() => Type.Name + (string.IsNullOrEmpty(m_Name) ? string.Empty : '.' + m_Name);
-
-        /// <summary>
-        /// 初始化数据集。
-        /// </summary>
-        /// <param name="capacity">将要初始化的数据值容量大小</param>
-        internal abstract void InitDataSet(int capacity);
-
         /// <summary>
         /// 增加数据表行。
         /// </summary>
         /// <param name="index">将要增加的数据表行的索引值。</param>
         /// <param name="reader">要解析的数据表行二进制流。</param>
         /// <returns>是否增加数据表行成功。</returns>
-        internal abstract bool SetDataRow(int index, BinaryReader reader);
+        public abstract bool ParseDataRow(int index, BinaryReader reader);
 
         /// <summary>
         /// 配置表加载完成
@@ -79,11 +71,13 @@ namespace DataTables
         /// <summary>
         /// 清空所有数据表行。
         /// </summary>
-        public abstract void RemoveAllDataRows();
+        public virtual void RemoveAllDataRows()
+        { }
 
         /// <summary>
         /// 关闭并清理数据表。
         /// </summary>
-        internal abstract void Shutdown();
+        internal virtual void Shutdown()
+        { }
     }
 }

@@ -18,7 +18,7 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     private MultiDictionary<string, bool, List<DRDataTableSplitSample>> m_Dict4 = new MultiDictionary<string, bool, List<DRDataTableSplitSample>>();
     private Dictionary<string, List<DRDataTableSplitSample>> m_Dict5 = new Dictionary<string, List<DRDataTableSplitSample>>();
 
-    public DTDataTableSplitSample(string name) : base(name) { }
+    public DTDataTableSplitSample(string name, int capicity) : base(name, capicity) { }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public DRDataTableSplitSample GetDataRowById(int Id)

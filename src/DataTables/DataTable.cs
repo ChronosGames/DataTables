@@ -8,16 +8,17 @@ namespace DataTables
 {
     public abstract class DataTable<T> : DataTableBase, IDataTable<T> where T : class, IDataRow, new()
     {
-        private T[] m_DataSet;
+        private readonly T[] m_DataSet;
 
         /// <summary>
         /// 初始化数据表的新实例。
         /// </summary>
         /// <param name="name">数据表名称。</param>
-        public DataTable(string name)
+        /// <param name="capacity">数据表容量。</param>
+        public DataTable(string name, int capacity)
             : base(name)
         {
-            m_DataSet = Array.Empty<T>();
+            m_DataSet = new T[capacity];
         }
 
         /// <summary>
@@ -257,18 +258,13 @@ namespace DataTables
             results.AddRange(m_DataSet);
         }
 
-        internal override void InitDataSet(int capacity)
-        {
-            m_DataSet = new T[capacity];
-        }
-
         /// <summary>
         /// 增加数据表行。
         /// </summary>
         /// <param name="index">将要设置的数据表所在行索引。</param>
         /// <param name="binaryReader">要解析的数据表行二进制流。</param>
         /// <returns>是否增加数据表行成功。</returns>
-        internal override bool SetDataRow(int index, BinaryReader binaryReader)
+        public override bool ParseDataRow(int index, BinaryReader binaryReader)
         {
             try
             {
@@ -291,9 +287,7 @@ namespace DataTables
         /// 清空所有数据表行。
         /// </summary>
         public override void RemoveAllDataRows()
-        {
-            m_DataSet = Array.Empty<T>();
-        }
+        { }
 
         /// <summary>
         /// 返回循环访问集合的枚举数。
@@ -317,9 +311,7 @@ namespace DataTables
         /// 关闭并清理数据表。
         /// </summary>
         internal override void Shutdown()
-        {
-            m_DataSet = Array.Empty<T>();
-        }
+        { }
 
         protected virtual void InternalAddDataRow(int index, T dataRow)
         {

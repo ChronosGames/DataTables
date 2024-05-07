@@ -1,27 +1,36 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace DataTables
 {
     public abstract class DataMatrixBase<TKey1, TKey2, TValue> : DataTableBase
+        where TKey1 : struct
+        where TKey2 : struct
+        where TValue : struct
     {
-        private Tuple<TKey1, TKey2, TValue>[] m_DataSet = Array.Empty<Tuple<TKey1, TKey2, TValue>>();
-        private readonly Dictionary<ValueTuple<TKey1, TKey2>, TValue> m_Dict1 = new Dictionary<(TKey1, TKey2), TValue>();
+        private TKey1[] m_Keies1;
+        private TKey2[] m_Keies2;
+        private TValue[] m_Values;
 
-        protected virtual TValue? DefaultValue => default;
+        protected virtual TValue DefaultValue => default;
 
         public override Type Type => typeof(TValue);
 
-        public override int Count => m_DataSet.Length;
+        public override int Count => m_Keies1.Length;
 
         public DataMatrixBase(string name) : base(name)
-        { }
+        {
+            m_Keies1 = Array.Empty<TKey1>();
+            m_Keies2 = Array.Empty<TKey2>();
+            m_Values = Array.Empty<TValue>();
+        }
 
         internal override void InitDataSet(int capacity)
         {
-            m_DataSet = new Tuple<TKey1, TKey2, TValue>[capacity];
+            m_Keies1 = new TKey1[capacity];
+            m_Keies2 = new TKey2[capacity];
+            m_Values = new TValue[capacity];
         }
 
         internal override bool SetDataRow(int index, BinaryReader reader) => Deserialize(index, reader);
@@ -30,8 +39,9 @@ namespace DataTables
 
         protected void AddDataSet(int index, TKey1 key1, TKey2 key2, TValue value)
         {
-            m_DataSet[index] = Tuple.Create(key1, key2, value);
-            m_Dict1.Add(ValueTuple.Create(key1, key2), value);
+            m_Keies1[index] = key1;
+            m_Keies2[index] = key2;
+            m_Values[index] = value;
         }
 
         /// <summary>
@@ -42,7 +52,15 @@ namespace DataTables
         /// <returns></returns>
         public TValue? Get(TKey1 key1, TKey2 key2)
         {
-            return m_Dict1.TryGetValue(ValueTuple.Create(key1, key2), out var value) ? value : DefaultValue;
+            for (int i = 0; i < m_Keies1.Length; i++)
+            {
+                if (m_Keies1[i].Equals(key1) && m_Keies2[i].Equals(key2))
+                {
+                    return m_Values[i];
+                }
+            }
+
+            return DefaultValue;
         }
 
         /// <summary>
@@ -53,12 +71,11 @@ namespace DataTables
         /// <returns></returns>
         public IEnumerable<TKey1> FindKey1(TKey2 key2, TValue value)
         {
-            for (var i = 0; i < m_DataSet.Length; i++)
+            for (int i = 0; i < m_Keies1.Length; i++)
             {
-                var pair = m_DataSet[i];
-                if (EqualityComparer<TKey2>.Default.Equals(pair.Item2, key2) && EqualityComparer<TValue>.Default.Equals(pair.Item3, value))
+                if (m_Keies2[i].Equals(key2) && m_Values[i].Equals(value))
                 {
-                    yield return pair.Item1;
+                    yield return m_Keies1[i];
                 }
             }
         }
@@ -71,12 +88,11 @@ namespace DataTables
         /// <returns></returns>
         public IEnumerable<TKey2> FindKey2(TKey1 key1, TValue value)
         {
-            for (var i = 0; i < m_DataSet.Length; i++)
+            for (int i = 0; i < m_Keies1.Length; i++)
             {
-                var pair = m_DataSet[i];
-                if (EqualityComparer<TKey1>.Default.Equals(pair.Item1, key1) && EqualityComparer<TValue>.Default.Equals(pair.Item3, value))
+                if (m_Keies1[i].Equals(key1) && m_Values[i].Equals(value))
                 {
-                    yield return pair.Item2;
+                    yield return m_Keies2[i];
                 }
             }
         }
@@ -88,19 +104,27 @@ namespace DataTables
         /// <returns></returns>
         public IEnumerable<Tuple<TKey1, TKey2, TValue>> Where(Func<TKey1, TKey2, TValue, bool> predicate)
         {
-            return m_DataSet.Where(x => predicate(x.Item1, x.Item2, x.Item3));
+            for (int i = 0; i < m_Keies1.Length; i++)
+            {
+                if (predicate(m_Keies1[i], m_Keies2[i], m_Values[i]))
+                {
+                    yield return Tuple.Create(m_Keies1[i], m_Keies2[i], m_Values[i]);
+                }
+            }
         }
 
         public override void RemoveAllDataRows()
         {
-            m_DataSet = Array.Empty<Tuple<TKey1, TKey2, TValue>>();
-            m_Dict1.Clear();
+            m_Keies1 = Array.Empty<TKey1>();
+            m_Keies2 = Array.Empty<TKey2>();
+            m_Values = Array.Empty<TValue>();
         }
 
         internal override void Shutdown()
         {
-            m_DataSet = Array.Empty<Tuple<TKey1, TKey2, TValue>>();
-            m_Dict1.Clear();
+            m_Keies1 = Array.Empty<TKey1>();
+            m_Keies2 = Array.Empty<TKey2>();
+            m_Values = Array.Empty<TValue>();
         }
     }
 }

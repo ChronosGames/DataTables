@@ -73,6 +73,25 @@ namespace DataTables
         }
 
         /// <summary>
+        /// 查询指定Key2与Value对应的Key1列表（无GC版本）
+        /// </summary>
+        /// <param name="result">通过调用方提供的结果列表避免内部产生GC</param>
+        /// <param name="key2"></param>
+        /// <param name="value"></param>
+        public void FindKey1(IList<TKey1> result, TKey2 key2, TValue value)
+        {
+            result.Clear();
+
+            for (int i = 0; i < m_Keies1.Length; i++)
+            {
+                if (m_Key2Comparer.Equals(m_Keies2[i], key2) && m_ValueComparer.Equals(m_Values[i], value))
+                {
+                    result.Add(m_Keies1[i]);
+                }
+            }
+        }
+
+        /// <summary>
         /// 查询指定Key1与Value对应的Key2列表
         /// </summary>
         /// <param name="key1"></param>
@@ -90,6 +109,26 @@ namespace DataTables
         }
 
         /// <summary>
+        /// 查询指定Key1与Value对应的Key2列表（无GC版本）
+        /// </summary>
+        /// <param name="result">通过调用方提供的结果列表避免内部产生GC</param>
+        /// <param name="key1"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public void FindKey2(IList<TKey2> result, TKey1 key1, TValue value)
+        {
+            result.Clear();
+
+            for (int i = 0; i < m_Keies1.Length; i++)
+            {
+                if (m_Key1Comparer.Equals(m_Keies1[i], key1) && m_ValueComparer.Equals(m_Values[i], value))
+                {
+                    result.Add(m_Keies2[i]);
+                }
+            }
+        }
+
+        /// <summary>
         /// 查询指定条件的结果
         /// </summary>
         /// <param name="predicate"></param>
@@ -101,6 +140,25 @@ namespace DataTables
                 if (predicate(m_Keies1[i], m_Keies2[i], m_Values[i]))
                 {
                     yield return Tuple.Create(m_Keies1[i], m_Keies2[i], m_Values[i]);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 查询指定条件的结果（无GC版本）
+        /// </summary>
+        /// <param name="result">通过调用方提供的结果列表避免内部产生GC</param>
+        /// <param name="predicate"></param>
+        /// <returns></returns>
+        public void Where(IList<Tuple<TKey1, TKey2, TValue>> result, Func<TKey1, TKey2, TValue, bool> predicate)
+        {
+            result.Clear();
+
+            for (int i = 0; i < m_Keies1.Length; i++)
+            {
+                if (predicate(m_Keies1[i], m_Keies2[i], m_Values[i]))
+                {
+                    result.Add(Tuple.Create(m_Keies1[i], m_Keies2[i], m_Values[i]));
                 }
             }
         }

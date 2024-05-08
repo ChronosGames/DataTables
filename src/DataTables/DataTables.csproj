@@ -37,10 +37,6 @@
       <_Parameter1>Benchmark, PublicKey=0024000004800000940000000602000000240000525341310004000001000100158c9a06ce071a553739a9933ef692c40407e7bfdeedfc0657ed5316e2cc9608d8a362bc9a444aa39d1497bad2f9940a06ed7da3f011ea52ec8bcb3ed7999880f8a3afcf8005eef891a285c160f1b17c7ddf818fcb743320f49ae69cbcddd1d3a964d86aa9727c06da5d2bbf328cc1388fd3b60d68bedb2c4915b283b7afaaca</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
-  <ItemGroup>
-    <TargetFiles1 Remove="DataMatrixBase1.cs" />
-    <TargetFiles1 Remove="DataMatrixBase2.cs" />
-  </ItemGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Copy SourceFiles="@(TargetFiles1)" DestinationFiles="$(DestinationRoot)\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" />
     <Copy SourceFiles="@(TargetFiles2)" DestinationFiles="$(DestinationRoot)\Annotations\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" />

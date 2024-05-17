@@ -110,7 +110,7 @@ public sealed class DataTableGenerator
     {
         using (var logger = new ILogger(log))
         {
-            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 XSSFWorkbook xssWorkbook;
                 try

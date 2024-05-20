@@ -14,7 +14,7 @@
     <!-- NuGet -->
     <PackageId>DataTables.API</PackageId>
     <PackageVersion>$(Version)</PackageVersion>
-    <Description>Embedded Typed Readonly In-Memory Document Database for .NET Core and Unity.</Description>
+    <Description>Numeric configuration table export tool for .NET Core and Unity.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>database, embedded, inmemory, unity</PackageTags>
     <IsPackable>true</IsPackable>

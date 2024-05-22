@@ -48,8 +48,19 @@ public sealed class DataTableGenerator
         {
             foreach (var searchPattern in searchPatterns)
             {
-                foreach (var filePath in Directory.EnumerateFiles(dir, searchPattern, SearchOption.AllDirectories).Where(s => s.EndsWith(".xlsx") || s.EndsWith(".xlsb") || s.EndsWith(".xls") || s.EndsWith(".csv")))
+                foreach (var filePath in Directory.EnumerateFiles(dir, searchPattern, SearchOption.AllDirectories))
                 {
+                    var fileName = Path.GetFileName(filePath);
+                    if (fileName.StartsWith('~'))
+                    {
+                        continue;
+                    }
+
+                    if (!(fileName.EndsWith(".xlsx", StringComparison.Ordinal) || fileName.EndsWith(".xlsb", StringComparison.Ordinal) || fileName.EndsWith(".xls", StringComparison.Ordinal) || fileName.EndsWith(".csv", StringComparison.Ordinal)))
+                    {
+                        continue;
+                    }
+
                     var id = filePath.Replace(dir, "");
                     if (filePaths.ContainsKey(id))
                     {
@@ -183,7 +194,7 @@ public sealed class DataTableGenerator
             return false;
         }
 
-        if (sheet.SheetName.TrimStart().StartsWith("#"))
+        if (sheet.SheetName.TrimStart().StartsWith('#'))
         {
             return false;
         }

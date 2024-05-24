@@ -78,7 +78,7 @@ public sealed class DataTableGenerator
             throw new InvalidOperationException("Not found Excel files, inputDir: " + inputDirectories.Length);
         }
 
-        if (!Directory.Exists(codeOutputDir))
+        if (!string.IsNullOrEmpty(codeOutputDir) && !Directory.Exists(codeOutputDir))
         {
             Directory.CreateDirectory(codeOutputDir);
         }
@@ -105,13 +105,16 @@ public sealed class DataTableGenerator
         var sortedDict = from entry in dict orderby entry.Key ascending select entry;
 
         // 生成DataTableManagerExtension代码文件(放在未尾确保类名前缀会正确附加)
-        var dataTableManagerExtensionTemplate = new DataTableManagerExtensionTemplate()
+        if (!string.IsNullOrEmpty(codeOutputDir))
         {
-            Namespace = usingNamespace,
-            DataTables = sortedDict,
-        };
-        logger(WriteToFile(codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
-
+            var dataTableManagerExtensionTemplate = new DataTableManagerExtensionTemplate()
+            {
+                Namespace = usingNamespace,
+                DataTables = sortedDict,
+            };
+            logger(WriteToFile(codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
+        }
+        
         logger(string.Empty);
         logger("===========================================================");
         logger($"数据表导出完成: {list.Count(x => !x.Failed && !x.Skiped)} 成功，{list.Count(x => x.Failed)} 失败，{list.Count(x => x.Skiped)} 已跳过");
@@ -165,7 +168,10 @@ public sealed class DataTableGenerator
                         }
 
                         // 生成代码文件
-                        GenerateCodeFile(context, codeOutputDir, forceOverwrite, logger);
+                        if (!string.IsNullOrEmpty(codeOutputDir))
+                        {
+                            GenerateCodeFile(context, codeOutputDir, forceOverwrite, logger);
+                        }
 
                         // 生成数据文件
                         processor.GenerateDataFile(filePath, dataOutputDir, forceOverwrite, sheet, logger);

@@ -16,6 +16,7 @@ DataTables
     - [列名称定义行](#%E5%88%97%E5%90%8D%E7%A7%B0%E5%AE%9A%E4%B9%89%E8%A1%8C)
     - [字段名称定义行](#%E5%AD%97%E6%AE%B5%E5%90%8D%E7%A7%B0%E5%AE%9A%E4%B9%89%E8%A1%8C)
     - [字段类型定义行](#%E5%AD%97%E6%AE%B5%E7%B1%BB%E5%9E%8B%E5%AE%9A%E4%B9%89%E8%A1%8C)
+    - [其它定义](#%E5%85%B6%E5%AE%83%E5%AE%9A%E4%B9%89)
   - [矩阵型(Matrix)定义格式：](#%E7%9F%A9%E9%98%B5%E5%9E%8Bmatrix%E5%AE%9A%E4%B9%89%E6%A0%BC%E5%BC%8F)
     - [表头格式定义行](#%E8%A1%A8%E5%A4%B4%E6%A0%BC%E5%BC%8F%E5%AE%9A%E4%B9%89%E8%A1%8C-1)
 - [Getting Started(.NET Core)](#getting-startednet-core)

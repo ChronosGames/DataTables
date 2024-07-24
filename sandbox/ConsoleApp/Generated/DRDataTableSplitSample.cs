@@ -279,5 +279,5 @@ public sealed partial class DRDataTableSplitSample : DataRowBase
         return true;
     }
 }
-    
+
 }

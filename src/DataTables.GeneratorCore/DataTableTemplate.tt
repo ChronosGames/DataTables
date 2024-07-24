@@ -16,7 +16,7 @@ using DataTables;
 namespace <#= Namespace #>
 {
 <# } #>
-public sealed partial class DT<#= GenerationContext.ClassName #> : DataTable<<#= GenerationContext.RealClassName #>>
+public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTable<<#= GenerationContext.DataRowClassName #>>
 {
 <#
     if (GenerationContext.Indexs.Count > 0)
@@ -42,14 +42,14 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataTable<<#=
         #><#=Environment.NewLine#><#
     }
 #>
-    public DT<#= GenerationContext.ClassName #>(string name, int capicity) : base(name, capicity) { }
+    public <#= GenerationContext.DataTableClassName #>(string name, int capicity) : base(name, capicity) { }
 <#  for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {
         var item = GenerationContext.Indexs[i];
 #>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public <#= GenerationContext.RealClassName #> GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    public <#= GenerationContext.DataRowClassName #> GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
     {
         if (m_Dict<#= i + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result))
         {
@@ -70,13 +70,13 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataTable<<#=
 #>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public List<<#= GenerationContext.RealClassName #>> GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    public List<<#= GenerationContext.DataRowClassName #>> GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
     {
         return m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result) ? result : null;
     }
 <#  } #>
 
-    protected override void InternalAddDataRow(int index, <#= GenerationContext.RealClassName #> dataRow)
+    protected override void InternalAddDataRow(int index, <#= GenerationContext.DataRowClassName #> dataRow)
     {
         base.InternalAddDataRow(index, dataRow);
 
@@ -97,7 +97,7 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataTable<<#=
             }
             else
             {
-                arr = new List<<#= GenerationContext.RealClassName #>>();
+                arr = new List<<#= GenerationContext.DataRowClassName #>>();
                 arr.Add(dataRow);
                 m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.Add(dataRow.<#= string.Join(", dataRow.", item) #>, arr);
             }
@@ -107,7 +107,7 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataTable<<#=
 }
 
 /// <summary><#= BuildSummary(GenerationContext.Title) #></summary>
-public sealed partial class <#= GenerationContext.RealClassName #> : DataRowBase
+public sealed partial class <#= GenerationContext.DataRowClassName #> : DataRowBase
 {
 <# foreach(var item in GenerationContext.Fields)
 {
@@ -129,7 +129,7 @@ public sealed partial class <#= GenerationContext.RealClassName #> : DataRowBase
         return true;
     }
 }
-    
+
 <# if (!string.IsNullOrEmpty(Namespace)) { #>
 }
 <# } #>

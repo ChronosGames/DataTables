@@ -301,5 +301,5 @@ public sealed partial class DRDataTableSample : DataRowBase
         return true;
     }
 }
-    
+
 }

@@ -239,15 +239,15 @@ You can invoke all indexed query by IntelliSense.
 ---
 ### Install via git URL
 
-Requires a version of unity that supports path query parameter for git packages (Unity >= 2019.3.4f1, Unity >= 2020.1a21). You can add `https://github.com/PhonixGame/DataTables.git?path=src/DataTables.Unity/Assets/Scripts/DataTables` to Package Manager
+Requires a version of unity that supports path query parameter for git packages (Unity >= 2019.3.4f1, Unity >= 2020.1a21). You can add `https://github.com/ChronosGames/DataTables.git?path=src/DataTables.Unity/Assets/Scripts/DataTables` to Package Manager
 
 ![image](https://user-images.githubusercontent.com/46207/79450714-3aadd100-8020-11ea-8aae-b8d87fc4d7be.png)
 
 ![image](https://user-images.githubusercontent.com/46207/83702872-e0f17c80-a648-11ea-8183-7469dcd4f810.png)
 
-or add `"game.phonix.datatables": "https://github.com/PhonixGame/DataTables.git?path=src/DataTables.Unity/Assets/Scripts/DataTables"` to `Packages/manifest.json`.
+or add `"game.phonix.datatables": "https://github.com/ChronosGames/DataTables.git?path=src/DataTables.Unity/Assets/Scripts/DataTables"` to `Packages/manifest.json`.
 
-If you want to set a target version, UniTask uses the `*.*.*` release tag so you can specify a version like `#0.9.5`. For example `https://github.com/PhonixGame/DataTables.git?path=src/DataTables.Unity/Assets/Scripts/DataTables#0.9.5`.
+If you want to set a target version, `DataTables` uses the `*.*.*` release tag so you can specify a version like `#0.11.3`. For example `https://github.com/ChronosGames/DataTables.git?path=src/DataTables.Unity/Assets/Scripts/DataTables#0.9.5`.
 
 ### Install via OpenUPM
 
@@ -256,6 +256,10 @@ The package is available on the [openupm registry](https://openupm.com). It's re
 ```
 openupm add game.phonix.datatables
 ```
+
+### 使用Unity Package安装
+
+从[release](https://github.com/ChronosGames/DataTables/releases)页面下载Unity Package进行手动安装
 
 # Optimization
 ---

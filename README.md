@@ -24,6 +24,7 @@ DataTables
   - [UPM Package](#upm-package)
     - [Install via git URL](#install-via-git-url)
     - [Install via OpenUPM](#install-via-openupm)
+    - [使用Unity Package安装](#%E4%BD%BF%E7%94%A8unity-package%E5%AE%89%E8%A3%85)
 - [Optimization](#optimization)
 - [Code Generator](#code-generator)
   - [License](#license)

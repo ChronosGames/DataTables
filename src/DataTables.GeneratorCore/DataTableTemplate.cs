@@ -240,7 +240,7 @@ namespace DataTables.GeneratorCore
             this.Write(".TryGetValue(");
             
             #line 54 "D:\Projects\GitHub\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", ", item)));
+            this.Write(this.ToStringHelper.ToStringWithCulture(item.Length > 1 ? '(' + string.Join(", ", item) + ')' : item[0]));
             
             #line default
             #line hidden
@@ -307,7 +307,7 @@ namespace DataTables.GeneratorCore
             this.Write(".TryGetValue(");
             
             #line 75 "D:\Projects\GitHub\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", ", item)));
+            this.Write(this.ToStringHelper.ToStringWithCulture(item.Length > 1 ? '(' + string.Join(", ", item) + ')' : item[0]));
             
             #line default
             #line hidden
@@ -342,10 +342,10 @@ namespace DataTables.GeneratorCore
             
             #line default
             #line hidden
-            this.Write(".Add(dataRow.");
+            this.Write(".Add(");
             
             #line 87 "D:\Projects\GitHub\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", dataRow.", item)));
+            this.Write(this.ToStringHelper.ToStringWithCulture(item.Length > 1 ? ('(' + (string.Join(", ", item.Select(x => $"dataRow.{x}"))) + ')') : $"dataRow.{item[0]}"));
             
             #line default
             #line hidden
@@ -367,10 +367,10 @@ namespace DataTables.GeneratorCore
             
             #line default
             #line hidden
-            this.Write(".TryGetValue(dataRow.");
+            this.Write(".TryGetValue(");
             
             #line 94 "D:\Projects\GitHub\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", dataRow.", item)));
+            this.Write(this.ToStringHelper.ToStringWithCulture(item.Length > 1 ? '(' + (string.Join(", ", item.Select(x => $"dataRow.{x}"))) + ')' : $"dataRow.{item[0]}"));
             
             #line default
             #line hidden
@@ -388,10 +388,10 @@ namespace DataTables.GeneratorCore
             
             #line default
             #line hidden
-            this.Write(".Add(dataRow.");
+            this.Write(".Add(");
             
             #line 102 "D:\Projects\GitHub\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", dataRow.", item)));
+            this.Write(this.ToStringHelper.ToStringWithCulture(item.Length > 1 ? '(' + (string.Join(", ", item.Select(x => $"dataRow.{x}"))) + ')' : $"dataRow.{item[0]}"));
             
             #line default
             #line hidden

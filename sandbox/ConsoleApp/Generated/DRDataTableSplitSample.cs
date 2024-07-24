@@ -13,9 +13,9 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
 {
     private Dictionary<int, DRDataTableSplitSample> m_Dict1 = new Dictionary<int, DRDataTableSplitSample>();
     private Dictionary<ConsoleApp.ColorT, DRDataTableSplitSample> m_Dict2 = new Dictionary<ConsoleApp.ColorT, DRDataTableSplitSample>();
-    private MultiDictionary<int, short, DRDataTableSplitSample> m_Dict3 = new MultiDictionary<int, short, DRDataTableSplitSample>();
+    private Dictionary<ValueTuple<int, short>, DRDataTableSplitSample> m_Dict3 = new Dictionary<ValueTuple<int, short>, DRDataTableSplitSample>();
 
-    private MultiDictionary<string, bool, List<DRDataTableSplitSample>> m_Dict4 = new MultiDictionary<string, bool, List<DRDataTableSplitSample>>();
+    private Dictionary<ValueTuple<string, bool>, List<DRDataTableSplitSample>> m_Dict4 = new Dictionary<ValueTuple<string, bool>, List<DRDataTableSplitSample>>();
     private Dictionary<string, List<DRDataTableSplitSample>> m_Dict5 = new Dictionary<string, List<DRDataTableSplitSample>>();
 
     public DTDataTableSplitSample(string name, int capicity) : base(name, capicity) { }
@@ -55,7 +55,7 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public DRDataTableSplitSample GetDataRowByIdAndInt16Value(int Id, short Int16Value)
     {
-        if (m_Dict3.TryGetValue(Id, Int16Value, out var result))
+        if (m_Dict3.TryGetValue((Id, Int16Value), out var result))
         {
             return result;
         }
@@ -71,7 +71,7 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public List<DRDataTableSplitSample> GetDataRowsGroupByNameAndBoolValue(string Name, bool BoolValue)
     {
-        return m_Dict4.TryGetValue(Name, BoolValue, out var result) ? result : null;
+        return m_Dict4.TryGetValue((Name, BoolValue), out var result) ? result : null;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -86,9 +86,9 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
 
         m_Dict1.Add(dataRow.Id, dataRow);
         m_Dict2.Add(dataRow.Color, dataRow);
-        m_Dict3.Add(dataRow.Id, dataRow.Int16Value, dataRow);
+        m_Dict3.Add((dataRow.Id, dataRow.Int16Value), dataRow);
         {
-            if (m_Dict4.TryGetValue(dataRow.Name, dataRow.BoolValue, out var arr))
+            if (m_Dict4.TryGetValue((dataRow.Name, dataRow.BoolValue), out var arr))
             {
                 arr.Add(dataRow);
             }
@@ -96,7 +96,7 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
             {
                 arr = new List<DRDataTableSplitSample>();
                 arr.Add(dataRow);
-                m_Dict4.Add(dataRow.Name, dataRow.BoolValue, arr);
+                m_Dict4.Add((dataRow.Name, dataRow.BoolValue), arr);
             }
         }
         {

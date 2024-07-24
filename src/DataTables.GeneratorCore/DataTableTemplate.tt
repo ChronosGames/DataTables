@@ -51,7 +51,7 @@ public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTa
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public <#= GenerationContext.DataRowClassName #> GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
     {
-        if (m_Dict<#= i + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result))
+        if (m_Dict<#= i + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + string.Join(", ", item) + ')' : item[0] #>, out var result))
         {
             return result;
         }
@@ -72,7 +72,7 @@ public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTa
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public List<<#= GenerationContext.DataRowClassName #>> GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
     {
-        return m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= string.Join(", ", item) #>, out var result) ? result : null;
+        return m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + string.Join(", ", item) + ')' : item[0] #>, out var result) ? result : null;
     }
 <#  } #>
 
@@ -84,14 +84,14 @@ public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTa
     {
         var item = GenerationContext.Indexs[i];
 #>
-        m_Dict<#= i+1 #>.Add(dataRow.<#= string.Join(", dataRow.", item) #>, dataRow);
+        m_Dict<#= i+1 #>.Add(<#= item.Length > 1 ? ('(' + (string.Join(", ", item.Select(x => $"dataRow.{x}"))) + ')') : $"dataRow.{item[0]}" #>, dataRow);
 <#  }
     for (var i = 0; i < GenerationContext.Groups.Count; i++)
     {
         var item = GenerationContext.Groups[i];
 #>
         {
-            if (m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.TryGetValue(dataRow.<#= string.Join(", dataRow.", item) #>, out var arr))
+            if (m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + (string.Join(", ", item.Select(x => $"dataRow.{x}"))) + ')' : $"dataRow.{item[0]}" #>, out var arr))
             {
                 arr.Add(dataRow);
             }
@@ -99,7 +99,7 @@ public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTa
             {
                 arr = new List<<#= GenerationContext.DataRowClassName #>>();
                 arr.Add(dataRow);
-                m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.Add(dataRow.<#= string.Join(", dataRow.", item) #>, arr);
+                m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.Add(<#= item.Length > 1 ? '(' + (string.Join(", ", item.Select(x => $"dataRow.{x}"))) + ')' : $"dataRow.{item[0]}" #>, arr);
             }
         }
 <#  } #>

@@ -13,9 +13,9 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
 {
     private Dictionary<int, DRDataTableSample> m_Dict1 = new Dictionary<int, DRDataTableSample>();
     private Dictionary<ConsoleApp.ColorT, DRDataTableSample> m_Dict2 = new Dictionary<ConsoleApp.ColorT, DRDataTableSample>();
-    private MultiDictionary<int, short, DRDataTableSample> m_Dict3 = new MultiDictionary<int, short, DRDataTableSample>();
+    private Dictionary<ValueTuple<int, short>, DRDataTableSample> m_Dict3 = new Dictionary<ValueTuple<int, short>, DRDataTableSample>();
 
-    private MultiDictionary<string, bool, List<DRDataTableSample>> m_Dict4 = new MultiDictionary<string, bool, List<DRDataTableSample>>();
+    private Dictionary<ValueTuple<string, bool>, List<DRDataTableSample>> m_Dict4 = new Dictionary<ValueTuple<string, bool>, List<DRDataTableSample>>();
     private Dictionary<string, List<DRDataTableSample>> m_Dict5 = new Dictionary<string, List<DRDataTableSample>>();
 
     public DTDataTableSample(string name, int capicity) : base(name, capicity) { }
@@ -55,7 +55,7 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public DRDataTableSample GetDataRowByIdAndInt16Value(int Id, short Int16Value)
     {
-        if (m_Dict3.TryGetValue(Id, Int16Value, out var result))
+        if (m_Dict3.TryGetValue((Id, Int16Value), out var result))
         {
             return result;
         }
@@ -71,7 +71,7 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public List<DRDataTableSample> GetDataRowsGroupByNameAndBoolValue(string Name, bool BoolValue)
     {
-        return m_Dict4.TryGetValue(Name, BoolValue, out var result) ? result : null;
+        return m_Dict4.TryGetValue((Name, BoolValue), out var result) ? result : null;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -86,9 +86,9 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
 
         m_Dict1.Add(dataRow.Id, dataRow);
         m_Dict2.Add(dataRow.Color, dataRow);
-        m_Dict3.Add(dataRow.Id, dataRow.Int16Value, dataRow);
+        m_Dict3.Add((dataRow.Id, dataRow.Int16Value), dataRow);
         {
-            if (m_Dict4.TryGetValue(dataRow.Name, dataRow.BoolValue, out var arr))
+            if (m_Dict4.TryGetValue((dataRow.Name, dataRow.BoolValue), out var arr))
             {
                 arr.Add(dataRow);
             }
@@ -96,7 +96,7 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
             {
                 arr = new List<DRDataTableSample>();
                 arr.Add(dataRow);
-                m_Dict4.Add(dataRow.Name, dataRow.BoolValue, arr);
+                m_Dict4.Add((dataRow.Name, dataRow.BoolValue), arr);
             }
         }
         {

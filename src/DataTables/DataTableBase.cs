@@ -19,24 +19,12 @@ namespace DataTables
         /// <summary>
         /// 获取数据表名称。
         /// </summary>
-        public string Name
-        {
-            get
-            {
-                return m_Name;
-            }
-        }
+        public string Name => m_Name;
 
         /// <summary>
         /// 获取数据表完整名称。
         /// </summary>
-        public string FullName
-        {
-            get
-            {
-                return Type.ToString();
-            }
-        }
+        public string FullName => Type.ToString();
 
         /// <summary>
         /// 获取数据表行的类型。

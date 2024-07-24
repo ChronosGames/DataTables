@@ -20,7 +20,7 @@ public static class DataTableManagerExtension
     {
 <# foreach (var pair in DataTables)
 {
-    #>        { "<#= pair.Key #>", <#=(pair.Value.Count() == 0 ? "Array.Empty<string>()" : "new string[] {\"" + string.Join("\", \"", pair.Value) + "\"}")#> },<#=Environment.NewLine#><# 
+    #>        { "<#= pair.Key #>", <#=(!pair.Value.Any() ? "Array.Empty<string>()" : "new string[] {\"" + string.Join("\", \"", pair.Value) + "\"}")#> },<#=Environment.NewLine#><#
 } #>
     };
 
@@ -32,7 +32,7 @@ public static class DataTableManagerExtension
     /// <param name="onProgress">单步加载完成时回调。</param>
     public static void Preload(this DataTableManager manager, Action? onCompleted = default, Action<float>? onProgress = default)
     {
-        const int total = <#=DataTables.Sum(pair => pair.Value.Count() > 0 ? pair.Value.Count() : 1)#>;
+        const int total = <#=DataTables.Sum(pair => pair.Value.Any() ? pair.Value.Count() : 1)#>;
         int done = 0;
 
         void next()
@@ -41,14 +41,14 @@ public static class DataTableManagerExtension
             onProgress?.Invoke((float)done / total);
             if (done == total)
             {
-                onCompleted?.Invoke(); 
+                onCompleted?.Invoke();
             }
         };
 
-<# 
+<#
 foreach (var pair in DataTables)
 {
-    if (pair.Value.Count() == 0)
+    if (!pair.Value.Any())
     {
         #>        manager.CreateDataTable<<#=pair.Key#>>(next);<#=Environment.NewLine#><#
     }
@@ -58,7 +58,7 @@ foreach (var pair in DataTables)
         {
             #>        manager.CreateDataTable<<#=pair.Key#>>("<#=name#>", next);<#=Environment.NewLine#><#
         }
-    }   
+    }
 }
 #>
     }

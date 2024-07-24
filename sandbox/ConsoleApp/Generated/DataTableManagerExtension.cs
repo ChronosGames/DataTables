@@ -33,7 +33,7 @@ public static class DataTableManagerExtension
             onProgress?.Invoke((float)done / total);
             if (done == total)
             {
-                onCompleted?.Invoke(); 
+                onCompleted?.Invoke();
             }
         };
 

@@ -124,22 +124,20 @@ public class GenerationContext
     public string BuildIndexDictDefine(string[] fields)
     {
         StringBuilder sb = new StringBuilder();
+        sb.Append("Dictionary<");
+        if (fields.Length > 1)
+        {
+            sb.Append("ValueTuple<");
+        }
+
+        sb.AppendJoin(", ", fields.Select(x => DataTableProcessor.GetLanguageKeyword(GetField(x)!)));
 
         if (fields.Length > 1)
         {
-            sb.Append("MultiDictionary<");
-        }
-        else
-        {
-            sb.Append("Dictionary<");
+            sb.Append('>');
         }
 
-        foreach (var fieldName in fields)
-        {
-            sb.Append(DataTableProcessor.GetLanguageKeyword(GetField(fieldName)!));
-            sb.Append(", ");
-        }
-
+        sb.Append(", ");
         sb.Append(DataRowClassName);
         sb.Append('>');
 
@@ -150,22 +148,20 @@ public class GenerationContext
     {
         StringBuilder sb = new StringBuilder();
 
+        sb.Append("Dictionary<");
         if (fields.Length > 1)
         {
-            sb.Append("MultiDictionary<");
-        }
-        else
-        {
-            sb.Append("Dictionary<");
+            sb.Append("ValueTuple<");
         }
 
-        foreach (var fieldName in fields)
+        sb.AppendJoin(", ", fields.Select(x => DataTableProcessor.GetLanguageKeyword(GetField(x)!)));
+
+        if (fields.Length > 1)
         {
-            sb.Append(DataTableProcessor.GetLanguageKeyword(GetField(fieldName)!));
-            sb.Append(", ");
+            sb.Append('>');
         }
 
-        sb.Append("List<");
+        sb.Append(", List<");
         sb.Append(DataRowClassName);
         sb.Append(">>");
 

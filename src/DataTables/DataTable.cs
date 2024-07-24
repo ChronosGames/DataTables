@@ -35,13 +35,7 @@ namespace DataTables
         /// <summary>
         /// 获取数据表行数。
         /// </summary>
-        public override int Count
-        {
-            get
-            {
-                return m_DataSet.Length;
-            }
-        }
+        public override int Count => m_DataSet.Length;
 
         /// <summary>
         /// 获取第几行的数据表行。
@@ -202,7 +196,7 @@ namespace DataTables
                 throw new Exception("Comparison is invalid.");
             }
 
-            return m_DataSet.Where(x => condition(x)).OrderBy(x => comparison);
+            return m_DataSet.Where(x => condition(x)).OrderBy(_ => comparison);
         }
 
         /// <summary>

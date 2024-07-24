@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -8,7 +9,7 @@ namespace DataTables
 {
     public sealed partial class DataTableManager : IDataTableManager
     {
-        private readonly Dictionary<TypeNamePair, DataTableBase> m_DataTables;
+        private readonly ConcurrentDictionary<TypeNamePair, DataTableBase> m_DataTables;
         private IDataTableHelper? m_DataTableHelper;
 
         /// <summary>
@@ -16,20 +17,14 @@ namespace DataTables
         /// </summary>
         public DataTableManager()
         {
-            m_DataTables = new Dictionary<TypeNamePair, DataTableBase>();
+            m_DataTables = new ConcurrentDictionary<TypeNamePair, DataTableBase>();
             m_DataTableHelper = null;
         }
 
         /// <summary>
         /// 获取数据表数量。
         /// </summary>
-        public int Count
-        {
-            get
-            {
-                return m_DataTables.Count;
-            }
-        }
+        public int Count => m_DataTables.Count;
 
         /// <summary>
         /// 设置数据表辅助器。
@@ -37,12 +32,7 @@ namespace DataTables
         /// <param name="dataTableHelper">数据表辅助器。</param>
         public void SetDataTableHelper(IDataTableHelper dataTableHelper)
         {
-            if (dataTableHelper == null)
-            {
-                throw new Exception("Data table helper is invalid.");
-            }
-
-            m_DataTableHelper = dataTableHelper;
+            m_DataTableHelper = dataTableHelper ?? throw new Exception("Data table helper is invalid.");
         }
 
         /// <summary>
@@ -84,7 +74,7 @@ namespace DataTables
 
             if (!dataTableType.IsSubclassOf(typeof(DataTableBase)))
             {
-                throw new Exception(string.Format("Data row type '{0}' is invalid.", dataTableType.FullName));
+                throw new Exception($"Data row type '{dataTableType.FullName}' is invalid.");
             }
 
             return InternalHasDataTable(new TypeNamePair(dataTableType, name));
@@ -117,7 +107,7 @@ namespace DataTables
 
             if (!dataTableType.IsSubclassOf(typeof(DataTableBase)))
             {
-                throw new Exception(string.Format("Data table type '{0}' is invalid.", dataTableType.FullName));
+                throw new Exception($"Data table type '{dataTableType.FullName}' is invalid.");
             }
 
             return InternalGetDataTable(new TypeNamePair(dataTableType, name));
@@ -195,7 +185,7 @@ namespace DataTables
             var typeNamePair = new TypeNamePair(typeof(T), name);
             if (InternalHasDataTable(typeNamePair))
             {
-                throw new Exception(string.Format("Already exist data table '{0}'.", typeNamePair));
+                throw new Exception($"Already exist data table '{typeNamePair}'.");
             }
 
             m_DataTableHelper.Read(typeNamePair.ToString(), (raw) => LoadDataTable(typeNamePair, raw, onCompleted));
@@ -211,7 +201,7 @@ namespace DataTables
         {
             if (!dataTableType.IsSubclassOf(typeof(DataTableBase)))
             {
-                throw new Exception(string.Format("Data table type '{0}' is invalid.", dataTableType.FullName));
+                throw new Exception($"Data table type '{dataTableType.FullName}' is invalid.");
             }
 
             if (m_DataTableHelper == null)
@@ -222,17 +212,17 @@ namespace DataTables
             var typeNamePair = new TypeNamePair(dataTableType, name);
             if (InternalHasDataTable(typeNamePair))
             {
-                throw new Exception(string.Format("Already exist data table '{0}'.", typeNamePair));
+                throw new Exception($"Already exist data table '{typeNamePair}'.");
             }
 
             m_DataTableHelper.Read(typeNamePair.ToString(), (raw) => LoadDataTable(typeNamePair, raw, onCompleted));
         }
 
-        private void LoadDataTable(TypeNamePair typeNamePair, byte[] raw, Action onCompleted)
+        private void LoadDataTable(TypeNamePair typeNamePair, byte[] raw, Action? onCompleted)
         {
             if (InternalHasDataTable(typeNamePair))
             {
-                throw new Exception(string.Format("Already exist data table '{0}'.", typeNamePair));
+                throw new Exception($"Already exist data table '{typeNamePair}'.");
             }
 
             DataTableBase dataTable;
@@ -256,7 +246,7 @@ namespace DataTables
             dataTable.OnLoadCompleted();
 
             // 缓存当前配置表
-            m_DataTables.Add(typeNamePair, dataTable);
+            m_DataTables.TryAdd(typeNamePair, dataTable);
 
             // 回调加载完毕
             onCompleted?.Invoke();
@@ -287,7 +277,7 @@ namespace DataTables
 
             if (!dataTableType.IsSubclassOf(typeof(DataTableBase)))
             {
-                throw new Exception(string.Format("Data table type '{0}' is invalid.", dataTableType.FullName));
+                throw new Exception($"Data table type '{dataTableType.FullName}' is invalid.");
             }
 
             return InternalDestroyDataTable(new TypeNamePair(dataTableType, name));
@@ -307,11 +297,9 @@ namespace DataTables
 
             foreach (var pair in m_DataTables)
             {
-                if (pair.Value == dataTable)
-                {
-                    dataTable.Shutdown();
-                    return m_DataTables.Remove(pair.Key);
-                }
+                if (pair.Value != dataTable) continue;
+                dataTable.Shutdown();
+                return m_DataTables.TryRemove(pair.Key, out var _);
             }
 
             return false;
@@ -322,18 +310,19 @@ namespace DataTables
             return m_DataTables.ContainsKey(pair);
         }
 
-        private DataTableBase? InternalGetDataTable(TypeNamePair pair) => m_DataTables.TryGetValue(pair, out DataTableBase? dataTable) ? dataTable : null;
+        private DataTableBase? InternalGetDataTable(TypeNamePair pair) => m_DataTables.GetValueOrDefault(pair);
 
         private bool InternalDestroyDataTable(TypeNamePair pair)
         {
-            DataTableBase? dataTable;
-            if (m_DataTables.TryGetValue(pair, out dataTable))
+            if (m_DataTables.TryRemove(pair, out var dataTable))
             {
                 dataTable.Shutdown();
-                return m_DataTables.Remove(pair);
+                return true;
             }
-
-            return false;
+            else
+            {
+                return false;
+            }
         }
     }
 }

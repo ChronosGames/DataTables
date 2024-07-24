@@ -10,6 +10,19 @@ public class Runner : ConsoleAppBase
     [RootCommand]
     public void CopyToUnity([Option(0)] string directory)
     {
+        const string GlobalUsingString = """
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+
+#nullable enable
+
+""";
+
         var replaceSet = new Dictionary<string, string>
         {
             // to C# 9
@@ -48,25 +61,17 @@ public class Runner : ConsoleAppBase
             }
 
             // add namespace
-            if (Regex.Count(text, "namespace") == 1)
-            {
-                text = Regex.Replace(text, "(namespace.+);", "$1 {");
-                text += "\r\n}";
-            }
+            // if (Regex.Count(text, "namespace") == 1)
+            // {
+            //     text = Regex.Replace(text, "(namespace.+);", "$1 {");
+            //     text += "\r\n}";
+            // }
 
             // add implicit global using and nullable enable
-            text = """
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
-
-#nullable enable
-
-""" + text;
+            if (!text.StartsWith(GlobalUsingString))
+            {
+                text = GlobalUsingString + text;
+            }
 
             File.WriteAllText(path, text, noBomUtf8);
         }

@@ -237,7 +237,7 @@ public sealed partial class DataTableProcessor : IDisposable
         }
 
         // 是否存在有效列
-        if (!m_Context.Fields.Any(x => !x.IsIgnore))
+        if (m_Context.Fields.All(x => x.IsIgnore))
         {
             return false;
         }
@@ -417,8 +417,7 @@ public sealed partial class DataTableProcessor : IDisposable
             var text = GetCellString(row.GetCell(field.Index));
             if (!NameRegex.IsMatch(text))
             {
-                field.IsIgnore = true;
-                continue;
+                throw new FormatException($"数据列名称不合法: {text}");
             }
 
             field.Name = text;

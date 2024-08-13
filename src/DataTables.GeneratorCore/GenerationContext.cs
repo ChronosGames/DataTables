@@ -201,6 +201,9 @@ public class XField
     /// </summary>
     public bool IsIgnore { get; set; } = false;
 
+    /// <summary>
+    /// 是否注释
+    /// </summary>
     public bool IsComment { get; set; } = false;
 
     public XField(int index)

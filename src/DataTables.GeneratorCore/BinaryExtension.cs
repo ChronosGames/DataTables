@@ -3,10 +3,7 @@ using System.IO;
 
 namespace DataTables;
 
-/// <summary>
-/// 对 BinaryReader 和 BinaryWriter 的扩展方法。
-/// </summary>
-public static class BinaryExtension
+internal static class BinaryExtension
 {
     /// <summary>
     /// 从二进制流读取编码后的 32 位有符号整数。

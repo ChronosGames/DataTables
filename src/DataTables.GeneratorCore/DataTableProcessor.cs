@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -13,6 +14,7 @@ public sealed partial class DataTableProcessor : IDisposable
     private static readonly Regex NameRegex = new Regex(@"^[A-Za-z][A-Za-z0-9_]*$");
 
     private readonly GenerationContext m_Context;
+    private readonly IFormulaEvaluator m_FormulaEvaluator;
     private readonly string m_Tags;
 
     private FileStream? m_FileStream;
@@ -23,9 +25,10 @@ public sealed partial class DataTableProcessor : IDisposable
     /// </summary>
     private int m_FirstDataRowIndex;
 
-    public DataTableProcessor(GenerationContext context, string tags)
+    public DataTableProcessor(GenerationContext context, IFormulaEvaluator formulaEvaluator, string tags)
     {
         m_Context = context;
+        m_FormulaEvaluator = formulaEvaluator;
         m_Tags = tags;
 
         m_FirstDataRowIndex = -1;
@@ -167,7 +170,7 @@ public sealed partial class DataTableProcessor : IDisposable
         return false;
     }
 
-    private static string GetCellString(ICell? cell)
+    private string GetCellString(ICell? cell)
     {
         if (cell == null)
         {
@@ -177,7 +180,7 @@ public sealed partial class DataTableProcessor : IDisposable
         return GetCellString(cell, cell.CellType);
     }
 
-    private static string GetCellString(ICell cell, CellType cellType)
+    private string GetCellString(ICell cell, CellType cellType)
     {
         switch (cellType)
         {
@@ -188,11 +191,12 @@ public sealed partial class DataTableProcessor : IDisposable
                 // 如果单元格为数字类型，根据单元格的样式格式化成字符串
                 if (DateUtil.IsCellDateFormatted(cell))
                 {
-                    return cell.DateCellValue.ToString("yyyy-MM-dd HH:mm:ss");
+                    return ((DateTime)cell.DateCellValue).ToString("yyyy-MM-dd HH:mm:ss");
                 }
                 else
                 {
                     return cell.NumericCellValue.ToString();
+
                 }
             }
             case CellType.String:
@@ -200,11 +204,15 @@ public sealed partial class DataTableProcessor : IDisposable
             case CellType.Boolean:
                 return cell.BooleanCellValue ? "TRUE" : "FALSE";
             case CellType.Formula:
-                return GetCellString(cell, cell.CachedFormulaResultType);
+            {
+                var oldPlainText = GetCellString(cell, cell.CachedFormulaResultType);
+                ValidateFormulaCellString(cell, oldPlainText);
+                return oldPlainText;
+            }
             case CellType.Error:
-                return FormulaError.ForInt(cell.ErrorCellValue).String;
+                throw new Exception(FormulaError.ForInt(cell.ErrorCellValue).String);
             default:
-                return cell.ToString()!.Trim();
+                throw new ArgumentOutOfRangeException();
         }
     }
 
@@ -272,6 +280,49 @@ public sealed partial class DataTableProcessor : IDisposable
         }
 
         return true;
+    }
+
+    private void ValidateFormulaCellString(ICell cell, string value)
+    {
+        CellValue? result;
+        try
+        {
+            result = m_FormulaEvaluator.Evaluate(cell);
+        }
+        catch (Exception e)
+        {
+            return;
+        }
+
+        switch (result.CellType)
+        {
+            case CellType.Numeric:
+            {
+                // 如果单元格为数字类型，根据单元格的样式格式化成字符串
+                if (result.NumberValue.ToString() != value)
+                {
+                    throw new ValidationException($"出现公式列文本不一致: {value} != {result.NumberValue}");
+                }
+                return;
+            }
+            case CellType.String:
+            {
+                if (result.StringValue.Trim() != value)
+                {
+                    throw new ValidationException($"出现公式列文本不一致: {value} != {result.StringValue}");
+                }
+                return;
+            }
+            case CellType.Boolean:
+            {
+                if (result.BooleanValue ^ kBoolMap[value])
+                {
+                    throw new ValidationException($"出现公式列文本不一致: {value} != {result.BooleanValue}");
+                }
+
+                return;
+            }
+        }
     }
 
     private static bool ContainTags(string text, string tags)

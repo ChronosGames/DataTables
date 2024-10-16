@@ -1,12 +1,28 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace DataTables.GeneratorCore;
 
 public sealed partial class DataTableProcessor
 {
+    private static Dictionary<string, bool> kBoolMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "1", true },
+        { "0", false },
+        { "y", true },
+        { "n", false },
+        { "yes", true },
+        { "no", false },
+        { "true", true },
+        { "false", false },
+        { "true()", true },
+        { "false()", false },
+    };
+
     private sealed class BooleanProcessor : GenericDataProcessor<bool>
     {
+
         public override bool IsSystem
         {
             get
@@ -34,7 +50,7 @@ public sealed partial class DataTableProcessor
                 "system.boolean"
             };
         }
-        
+
         public override string GenerateTypeValue(string text)
         {
             return Parse(text) ? "true" : "false";
@@ -47,17 +63,12 @@ public sealed partial class DataTableProcessor
                 return false;
             }
 
-            if (value == "0" || string.Compare(value, "n", true) == 0 || string.Compare(value, "no", true) == 0 || string.Compare(value, "FALSE()", true) == 0)
+            if (kBoolMap.TryGetValue(value, out var result))
             {
-                return false;
+                return result;
             }
 
-            if (value == "1" || string.Compare(value, "y", true) == 0 || string.Compare(value, "yes", true) == 0 || string.Compare(value, "TRUE()", true) == 0)
-            {
-                return true;
-            }
-
-            return bool.Parse(value.ToLowerInvariant());
+            throw new InvalidCastException($"无法将{value}转换为bool类型");
         }
 
         public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)

@@ -114,7 +114,7 @@ public sealed class DataTableGenerator
             };
             logger(WriteToFile(codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
         }
-        
+
         logger(string.Empty);
         logger("===========================================================");
         logger($"数据表导出完成: {list.Count(x => !x.Failed && !x.Skiped)} 成功，{list.Count(x => x.Failed)} 失败，{list.Count(x => x.Skiped)} 已跳过");
@@ -137,6 +137,8 @@ public sealed class DataTableGenerator
                     return;
                 }
 
+                var formulaEvaluator = xssWorkbook.GetCreationHelper().CreateFormulaEvaluator();
+
                 for (int i = 0; i < xssWorkbook.NumberOfSheets; i++)
                 {
                     var sheet = xssWorkbook.GetSheetAt(i);
@@ -156,7 +158,7 @@ public sealed class DataTableGenerator
 
                     logger.Debug("Generate Excel File: [{0}]({1})", filePath.Trim('\\'), context.SheetName);
 
-                    var processor = new DataTableProcessor(context, filterColumnTags);
+                    var processor = new DataTableProcessor(context, formulaEvaluator, filterColumnTags);
                     try
                     {
                         // 初始化GenerateContext

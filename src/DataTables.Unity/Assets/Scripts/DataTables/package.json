@@ -1,7 +1,7 @@
 {
   "name": "game.phonix.datatables",
   "displayName": "DataTables",
-  "version": "0.12.6",
+  "version": "0.12.7",
   "unity": "2022.3",
   "description": "Configuration tables for .NET Core and Unity.",
   "keywords": [

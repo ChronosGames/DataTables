@@ -85,6 +85,7 @@ jobs:
       tag: ${{ inputs.tag }}
       nuget-push: true
       release-upload: true
+      release-asset-path: ./DataTables.${{ inputs.tag }}.unitypackage/DataTables.${{ inputs.tag }}.unitypackage
     secrets: inherit
 
   cleanup:

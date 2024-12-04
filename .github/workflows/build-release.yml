@@ -55,25 +55,32 @@ jobs:
         with:
           ref: ${{ needs.update-packagejson.outputs.sha }}
 
-      # Execute Unittest
-      # /opt/Unity/Editor/Unity -quit -batchmode -nographics -silent-crashes -logFile -projectPath . -executeMethod UnitTestBuilder.BuildUnitTest /headless /ScriptBackend IL2CPP /BuildTarget StandaloneLinux64
-      - name: Build UnitTest
+      # Execute scripts: Export Package
+      # /opt/Unity/Editor/Unity -quit -batchmode -nographics -silent-crashes -logFile -projectPath . -executeMethod PackageExporter.Export
+      - name: Build Unity (.unitypacakge)
         uses: ChronosGames/Actions/.github/actions/unity-builder@main
         env:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
           UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+          UNITY_PACKAGE_VERSION: ${{ inputs.tag }}
         with:
           projectPath: src/DataTables.Unity
           unityVersion: ${{ matrix.unity }}
           targetPlatform: StandaloneLinux64
-          buildMethod: UnitTestBuilder.BuildUnitTest
-          customParameters: "/headless /ScriptBackend IL2CPP"
+          buildMethod: PackageExporter.Export
 
       # check meta files
       - uses: ChronosGames/Actions/.github/actions/check-metas@main
         with:
           directory: src/DataTables.Unity
+
+      # Store artifacts.
+      - uses: ChronosGames/Actions/.github/actions/upload-artifact@main
+        with:
+          name: DataTables.Unity.${{ inputs.tag }}.unitypackage
+          path: ./src/DataTables.Unity/DataTables.Unity.${{ inputs.tag }}.unitypackage
+          retention-days: 1
 
   # release
   create-release:

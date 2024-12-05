@@ -9,6 +9,9 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using DataTables;
+
+#nullable enable
+
 <# if (!string.IsNullOrEmpty(GenerationContext.Namespace)) { #>
 namespace <#= GenerationContext.Namespace #>
 {
@@ -35,7 +38,7 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
         return true;
     }
 }
-    
+
 <# if (!string.IsNullOrEmpty(GenerationContext.Namespace)) { #>
 }
 <# } #>

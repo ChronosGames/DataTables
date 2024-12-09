@@ -51,7 +51,7 @@ public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTa
 #>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public <#= GenerationContext.DataRowClassName #> GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    public <#= GenerationContext.DataRowClassName #>? GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
     {
         if (m_Dict<#= i + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + string.Join(", ", item) + ')' : item[0] #>, out var result))
         {
@@ -72,7 +72,7 @@ public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTa
 #>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public List<<#= GenerationContext.DataRowClassName #>> GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    public List<<#= GenerationContext.DataRowClassName #>>? GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
     {
         return m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + string.Join(", ", item) + ')' : item[0] #>, out var result) ? result : null;
     }

@@ -157,7 +157,7 @@ namespace DataTables.GeneratorCore
             
             #line default
             #line hidden
-            this.Write(" GetDataRowBy");
+            this.Write("? GetDataRowBy");
             
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join("And", item)));
             
@@ -211,7 +211,7 @@ namespace DataTables.GeneratorCore
             
             #line default
             #line hidden
-            this.Write("> GetDataRowsGroupBy");
+            this.Write(">? GetDataRowsGroupBy");
             
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join("And", item)));
             

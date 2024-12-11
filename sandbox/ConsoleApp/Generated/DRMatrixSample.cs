@@ -4,6 +4,9 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using DataTables;
+
+#nullable enable
+
 namespace ConsoleApp
 {
 
@@ -29,5 +32,5 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
         return true;
     }
 }
-    
+
 }

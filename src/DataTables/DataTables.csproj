@@ -7,7 +7,7 @@
 
         <OutputType>Library</OutputType>
         <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-        <Company>PhonixGame</Company>
+        <Company>ChronosGames</Company>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>1701;1702;1705;1591</NoWarn>
 
@@ -41,10 +41,6 @@
         <Copy SourceFiles="@(TargetFiles1)" DestinationFiles="$(DestinationRoot)\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="false"/>
 <!--        <Copy SourceFiles="@(TargetFiles2)" DestinationFiles="$(DestinationRoot)\Annotations\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true"/>-->
 <!--        <Copy SourceFiles="@(TargetFiles3)" DestinationFiles="$(TestDestination)\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true"/>-->
-
-        <!-- 使用 Exec 任务执行自定义命令 -->
-        <Exec Command="echo 构建后执行的命令"/>
-        <Exec Command="dotnet --version"/>
     </Target>
 
 </Project>

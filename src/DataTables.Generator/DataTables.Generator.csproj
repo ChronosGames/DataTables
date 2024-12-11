@@ -13,13 +13,13 @@
         <PackageId>DataTables.Generator</PackageId>
         <PackageVersion>$(Version)</PackageVersion>
         <Description>Code Generator of DataTables.</Description>
-        <PackageProjectUrl>https://github.com/PhonixGame/DataTables</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/ChronosGames/DataTables</PackageProjectUrl>
         <PackageTags>unity, excel, generator, datatable</PackageTags>
         <IsPackable>true</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="ConsoleAppFramework" Version="4.2.4" />
+        <PackageReference Include="ConsoleAppFramework" Version="5.2.4" />
     </ItemGroup>
 
     <ItemGroup>
@@ -27,7 +27,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      
       <None Include="../../Icon.png" Pack="true" PackagePath="/" />
     </ItemGroup>
 

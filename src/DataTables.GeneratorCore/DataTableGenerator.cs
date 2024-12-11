@@ -118,6 +118,8 @@ public sealed class DataTableGenerator
         logger(string.Empty);
         logger("===========================================================");
         logger($"数据表导出完成: {list.Count(x => !x.Failed && !x.Skiped)} 成功，{list.Count(x => x.Failed)} 失败，{list.Count(x => x.Skiped)} 已跳过");
+
+        Environment.ExitCode = list.Any(x => x.Failed) ? 1 : 0;
     }
 
     private void GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string dataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log)

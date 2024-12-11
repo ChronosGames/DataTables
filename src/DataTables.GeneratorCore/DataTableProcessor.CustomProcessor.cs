@@ -19,20 +19,19 @@ public sealed partial class DataTableProcessor
 
         public override string[] GetTypeStrings()
         {
-            return new string[]
-            {
-                $"custom<{m_TypeString}>",
-            };
+            return
+            [
+                $"custom<{m_TypeString}>"
+            ];
         }
 
         public override Type Type => typeof(string);
 
         private readonly string m_TypeString;
 
-        public CustomizeProcessor()
-        {
-            m_TypeString = string.Empty;
-        }
+        // ReSharper disable once UnusedMember.Local
+        public CustomizeProcessor() : this(string.Empty)
+        { }
 
         public CustomizeProcessor(string typeString)
         {

@@ -1,31 +1,37 @@
 using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using DataTables.GeneratorCore;
-using Microsoft.Extensions.Hosting;
+using ConsoleAppFramework;
 
-namespace DataTables.Generator;
+var app = ConsoleApp.Create();
+app.Add<MyCommands>();
+app.Run(args);
 
-public class Program : ConsoleAppBase
+public class MyCommands
 {
-    static async Task Main(string[] args)
-    {
-        await Host.CreateDefaultBuilder()
-            .ConfigureLogging(x => x.ReplaceToSimpleConsole())
-            .RunConsoleAppFrameworkAsync<Program>(args);
-    }
-
-    [RootCommand, Command("all")]
+    /// <summary>
+    /// 导出全部代码文件与配置数据
+    /// </summary>
+    /// <param name="inputDirectories">-i, Input file directory(search recursive).</param>
+    /// <param name="searchPattern">-patterns, Input file wildcard.</param>
+    /// <param name="codeOutputDir">-co, Code output file directory.</param>
+    /// <param name="dataOutputDir">-do, Data output file directory.</param>
+    /// <param name="importNamespaces">-ins, Import namespaces of generated files, split with char '&' for multiple namespaces.</param>
+    /// <param name="usingNamespace">-n, Namespace of generated files.</param>
+    /// <param name="prefixClassName">-p, Prefix of class names.</param>
+    /// <param name="filterColumnTags">-t, Tags of filter columns.</param>
+    /// <param name="forceOverwrite">-f, Overwrite generated files if the content is unchanged.</param>
+    [Command("")]
     public void ExportAll(
-        [Option("i", "Input file directory(search recursive).")] string[] inputDirectories,
-        [Option("patterns", "Input file wildcard.")] string[] searchPattern,
-        [Option("co", "Code output file directory.")] string codeOutputDir,
-        [Option("do", "Data output file directory.")] string dataOutputDir,
-        [Option("ins", "Import namespaces of generated files, split with char '&' for multiple namespaces.")] string importNamespaces = "",
-        [Option("n", "Namespace of generated files.")] string usingNamespace = "",
-        [Option("p", "Prefix of class names.")] string prefixClassName = "",
-        [Option("t", "Tags of filter columns.")] string filterColumnTags = "",
-        [Option("f", "Overwrite generated files if the content is unchanged.")] bool forceOverwrite = false)
+        string[] inputDirectories,
+        string[] searchPattern,
+        string codeOutputDir,
+        string dataOutputDir,
+        string importNamespaces = "",
+        string usingNamespace = "",
+        string prefixClassName = "",
+        string filterColumnTags = "",
+        bool forceOverwrite = false)
     {
         var oldEncoding = Console.OutputEncoding;
         Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -53,15 +59,25 @@ public class Program : ConsoleAppBase
         Console.OutputEncoding = oldEncoding;
     }
 
+    /// <summary>
+    /// 导出单个数据文件
+    /// </summary>
+    /// <param name="inputDirectories">-i, Input file directory(search recursive).</param>
+    /// <param name="searchPattern">-patterns, Input file wildcard.</param>
+    /// <param name="dataOutputDir">-do, Data output file directory.</param>
+    /// <param name="importNamespaces">-ins, Import namespaces of generated files, split with char '&' for multiple namespaces.</param>
+    /// <param name="usingNamespace">-n, Namespace of generated files.</param>
+    /// <param name="prefixClassName">-p, Prefix of class names.</param>
+    /// <param name="filterColumnTags">-t, Tags of filter columns.</param>
     [Command("data")]
     public void ExportOne(
-        [Option("i", "Input file directory(search recursive).")] string[] inputDirectories,
-        [Option("patterns", "Input file wildcard.")] string[] searchPattern,
-        [Option("do", "Data output file directory.")] string dataOutputDir,
-        [Option("ins", "Import namespaces of generated files, split with char '&' for multiple namespaces.")] string importNamespaces = "",
-        [Option("n", "Namespace of generated files.")] string usingNamespace = "",
-        [Option("p", "Prefix of class names.")] string prefixClassName = "",
-        [Option("t", "Tags of filter columns.")] string filterColumnTags = "")
+        string[] inputDirectories,
+        string[] searchPattern,
+        string dataOutputDir,
+        string importNamespaces = "",
+        string usingNamespace = "",
+        string prefixClassName = "",
+        string filterColumnTags = "")
     {
         var oldEncoding = Console.OutputEncoding;
         Console.OutputEncoding = System.Text.Encoding.UTF8;

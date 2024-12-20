@@ -44,7 +44,7 @@ public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTa
         #><#=Environment.NewLine#><#
     }
 #>
-    public <#= GenerationContext.DataTableClassName #>(string name, int capicity) : base(name, capicity) { }
+    public <#= GenerationContext.DataTableClassName #>(string name, int capacity) : base(name, capacity) { }
 <#  for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {
         var item = GenerationContext.Indexs[i];

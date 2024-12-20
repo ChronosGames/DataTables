@@ -20,7 +20,7 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     private Dictionary<ValueTuple<string, bool>, List<DRDataTableSample>> m_Dict4 = new Dictionary<ValueTuple<string, bool>, List<DRDataTableSample>>();
     private Dictionary<string, List<DRDataTableSample>> m_Dict5 = new Dictionary<string, List<DRDataTableSample>>();
 
-    public DTDataTableSample(string name, int capicity) : base(name, capicity) { }
+    public DTDataTableSample(string name, int capacity) : base(name, capacity) { }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public DRDataTableSample? GetDataRowById(int Id)

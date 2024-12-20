@@ -146,7 +146,7 @@ namespace DataTables.GeneratorCore
             
             #line default
             #line hidden
-            this.Write("(string name, int capicity) : base(name, capicity) { }\r\n");
+            this.Write("(string name, int capacity) : base(name, capacity) { }\r\n");
   for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {
         var item = GenerationContext.Indexs[i];

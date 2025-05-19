@@ -20,7 +20,7 @@ public sealed class DataTableGenerator
         m_Locks = new();
     }
 
-    public void GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string dataRowClassPrefix, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger)
+    public async Task GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string dataRowClassPrefix, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger)
     {
         // By default, ExcelDataReader throws a NotSupportedException "No data is available for encoding 1252." on .NET Core.
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -88,7 +88,7 @@ public sealed class DataTableGenerator
             Directory.CreateDirectory(dataOutputDir);
         }
 
-        Parallel.ForEach(filePaths, pair => GenerateExcel(pair.Value,
+        await Parallel.ForEachAsync(filePaths, async (pair, cancellationToken) => GenerateExcel(pair.Value,
             usingNamespace: usingNamespace,
             forceOverwrite: forceOverwrite,
             dataOutputDir: dataOutputDir,
@@ -122,11 +122,11 @@ public sealed class DataTableGenerator
         Environment.ExitCode = list.Any(x => x.Failed) ? 1 : 0;
     }
 
-    private void GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string dataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log)
+    private async Task GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string dataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log)
     {
         using (var logger = new ILogger(log))
         {
-            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            await using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 XSSFWorkbook xssWorkbook;
                 try
@@ -236,6 +236,7 @@ public sealed class DataTableGenerator
 
     string WriteToFile(string directory, string fileName, string content, bool forceOverwrite)
     {
+        var startTickCount = Environment.TickCount;
         var path = Path.Combine(directory, fileName);
         var contentBytes = Encoding.UTF8.GetBytes(NormalizeNewLines(content));
 
@@ -244,7 +245,7 @@ public sealed class DataTableGenerator
         {
             if (new FileInfo(path).Length == contentBytes.Length && contentBytes.AsSpan().SequenceEqual(File.ReadAllBytes(path)))
             {
-                return $"  > Generate {fileName} to: {path} (Skipped)";
+                return $"  > Generate {fileName} to: {path} (Skipped) - {Environment.TickCount - startTickCount}ms";
             }
         }
 
@@ -255,6 +256,6 @@ public sealed class DataTableGenerator
         }
         m_Locks.TryRemove(fileName, out _);
 
-        return $"  > Generate {fileName} to: {path}";
+        return $"  > Generate {fileName} to: {path} - {Environment.TickCount - startTickCount}ms";
     }
 }

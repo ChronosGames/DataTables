@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using DataTables.GeneratorCore;
 using ConsoleAppFramework;
 
@@ -22,7 +23,7 @@ public class MyCommands
     /// <param name="filterColumnTags">-t, Tags of filter columns.</param>
     /// <param name="forceOverwrite">-f, Overwrite generated files if the content is unchanged.</param>
     [Command("")]
-    public void ExportAll(
+    public async Task ExportAll(
         string[] inputDirectories,
         string[] searchPattern,
         string codeOutputDir,
@@ -41,7 +42,7 @@ public class MyCommands
 
         try
         {
-            new DataTableGenerator().GenerateFile(inputDirectories, searchPattern, codeOutputDir, dataOutputDir, usingNamespace, prefixClassName,
+            await new DataTableGenerator().GenerateFile(inputDirectories, searchPattern, codeOutputDir, dataOutputDir, usingNamespace, prefixClassName,
                 importNamespaces: importNamespaces,
                 filterColumnTags: filterColumnTags,
                 forceOverwrite,
@@ -70,7 +71,7 @@ public class MyCommands
     /// <param name="prefixClassName">-p, Prefix of class names.</param>
     /// <param name="filterColumnTags">-t, Tags of filter columns.</param>
     [Command("data")]
-    public void ExportOne(
+    public async Task ExportOne(
         string[] inputDirectories,
         string[] searchPattern,
         string dataOutputDir,
@@ -87,7 +88,7 @@ public class MyCommands
 
         try
         {
-            new DataTableGenerator().GenerateFile(inputDirectories, searchPattern, string.Empty, dataOutputDir, usingNamespace, prefixClassName,
+            await new DataTableGenerator().GenerateFile(inputDirectories, searchPattern, string.Empty, dataOutputDir, usingNamespace, prefixClassName,
                 importNamespaces: importNamespaces,
                 filterColumnTags: filterColumnTags,
                 true,

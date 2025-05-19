@@ -491,6 +491,7 @@ public sealed partial class DataTableProcessor : IDisposable
 
     internal void GenerateDataFile(string filePath, string outputDir, bool forceOverwrite, ISheet sheet, ILogger logger)
     {
+        int startTickCount = Environment.TickCount;
         string outputFileName = Path.Combine(outputDir, m_Context.GetDataOutputFilePath());
 
         // 判断是否存在配置表变更（以修改时间为准），若不存在则直接跳过
@@ -508,7 +509,7 @@ public sealed partial class DataTableProcessor : IDisposable
                     // 标记为跳过
                     m_Context.Skiped = true;
 
-                    logger.Debug("  > Generate {0}.bytes to: {1} (skiped)", m_Context.DataRowClassName, outputFileName);
+                    logger.Debug("  > Generate {0}.bytes to: {1} (skiped) - {2}ms", m_Context.DataRowClassName, outputFileName, Environment.TickCount - startTickCount);
                     return;
                 }
             }
@@ -516,30 +517,25 @@ public sealed partial class DataTableProcessor : IDisposable
 
         try
         {
-            using (FileStream fileStream = new FileStream(outputFileName, FileMode.Create, FileAccess.Write))
-            {
-                using (BinaryWriter binaryWriter = new BinaryWriter(fileStream, Encoding.UTF8))
-                {
-                    // 写入行数占位
-                    binaryWriter.Write(0);
+            using var fileStream = new FileStream(outputFileName, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true);
+            using var binaryWriter = new BinaryWriter(fileStream, Encoding.UTF8, leaveOpen: true);
 
-                    // 写入数据集
-                    int dataRowCount = WriteDataRows(sheet, binaryWriter);
+            // 写入行数占位
+            binaryWriter.Write(0);
 
-                    // 重写行数
-                    var endPosition = fileStream.Position;
-                    fileStream.Position = 0;
-                    binaryWriter.Write(dataRowCount);
-                    fileStream.Position = endPosition;
-                }
-            }
+            // 写入数据集
+            int dataRowCount = WriteDataRows(sheet, binaryWriter);
 
-            logger.Debug("  > Generate {0}.bytes to: {1}.", m_Context.DataRowClassName, outputFileName);
+            // 重写行数
+            fileStream.Seek(0, SeekOrigin.Begin);
+            binaryWriter.Write(dataRowCount);
+
+            logger.Debug("  > Generate {0}.bytes to: {1}. - {2}ms", m_Context.DataRowClassName, outputFileName, Environment.TickCount - startTickCount);
         }
         catch (Exception exception)
         {
             // 记录出错日志
-            logger.Error("  > Generate {0}.bytes failure, exception is '{1}'.", m_Context.DataRowClassName, exception);
+            logger.Error("  > Generate {0}.bytes failure, exception is '{1}'. - {2}ms", m_Context.DataRowClassName, exception, Environment.TickCount - startTickCount);
             Console.ResetColor();
 
             // 记录出错的情况

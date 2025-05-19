@@ -1,4 +1,4 @@
-[![GitHub Actions](https://github.com/PhonixGame/DataTables/workflows/Build-Debug/badge.svg)](https://github.com/PhonixGame/DataTables/actions) [![Releases](https://img.shields.io/github/release/PhonixGame/DataTables.svg)](https://github.com/PhonixGame/DataTables/releases)
+[![GitHub Actions](https://github.com/ChronosGames/DataTables/workflows/Build-Debug/badge.svg)](https://github.com/ChronosGames/DataTables/actions) [![Releases](https://img.shields.io/github/release/ChronosGames/DataTables.svg)](https://github.com/ChronosGames/DataTables/releases)
 
 DataTables
 ===
@@ -27,12 +27,13 @@ DataTables
     - [使用Unity Package安装](#%E4%BD%BF%E7%94%A8unity-package%E5%AE%89%E8%A3%85)
 - [Optimization](#optimization)
 - [Code Generator](#code-generator)
-  - [License](#license)
+- [常见问题与解决方案](#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E4%B8%8E%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88)
+- [贡献指南](#%E8%B4%A1%E7%8C%AE%E6%8C%87%E5%8D%97)
+- [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Concept
----
+## Concept
 
 * **支持常见的数据表格式**, 如Excel 2007-365(*.xlsx), CSV等。
 * **支持数据表的并行导出**, 通过使用并行导出，大幅提高数据表的导出速度。
@@ -40,20 +41,19 @@ DataTables
 * **导出数据定义代码文件**, 通过数据表中定义的代码格式自动生成对应的数据格式代码文件，并提供方便的API接口，方便在终端环境内读取数据文件。
 * **导出数据内容二进制文件**, 通过紧凑组织的二进制文件，加快读取性能以及缩减配置文件体积大小。
 
-# 数据表格式定义
----
+## 数据表格式定义
 
 标签页(sheet)定义格式：
 * 标签页名称以`#`开头将不会导出；
 
-## 表格型(Table)定义格式：
+### 表格型(Table)定义格式：
 
 * 第一行：表头格式定义行，使用`DTGen`开头，主要定义表级别的一些配置
 * 第二行：列名称定义行，支持列注释、标签过滤等功能
 * 第三行：字段名称定义行
 * 第四行：字段类型定义行
 
-### 表头格式定义行
+#### 表头格式定义行
 
 以`,`分隔的参数定义，大小写不敏感，支持以下功能：
 * DTGen: 标识该Sheet支持导出（实际可有可无，不强制要求），默认是`DTGen=Table`；
@@ -64,17 +64,17 @@ DataTables
 * Index: 对指定列进行索引，导出后将提供快捷接口进行查询，查询结果为单个记录；支持同时配置多个Index；支持同时配置多个列，以`&`拼接；
 * Group: 对指定列进行分组，导出后将提供快捷接口进行查询，查询结果为多个记录；支持同时配置多个Group；支持同时配置多个列，以`&`拼接；
 
-### 列名称定义行
+#### 列名称定义行
 
 功能支持：
 * 支持在列字段文本以`#`字符开头，代表该列注释，不再参与后续的导出；
 * 支持在列字段文本以`@ + 大写英文字母`结尾，代表该列支持按标签导出，一个英文字母代表一个标签，具体导出哪些标签由命令行运行时指定；
 
-### 字段名称定义行
+#### 字段名称定义行
 
 由英文字母数字与下划线组成，同时不能以数字开头；大小写敏感；
 
-### 字段类型定义行
+#### 字段类型定义行
 
 支持以下字段定义：
 * `short`, `int`, `long`, `ushort`, `uint`, `ulong`
@@ -87,7 +87,7 @@ DataTables
 * `JSON`: 支持将单元格文本转化为JSON对象
 * `Custom`: 支持自定义类的导出, 自定义类必须拥有带一个字符串形参的构造函数
 
-### 其它定义
+#### 其它定义
 
 * 数据行注释：通过新增一个注释列来解决
   * 在列名称定义行填写`#行注释标志`
@@ -95,12 +95,12 @@ DataTables
   * 在字段类型定义行填写`string`
   * 在需要注释的数据行填写`#`
 
-## 矩阵型(Matrix)定义格式：
+### 矩阵型(Matrix)定义格式：
 * 第一行：表头格式定义行，使用`DTGen=Matrix`开头，主要定义表级别的一些配置
 * 第一列：X轴值内容，剔除头两个单元格；
 * 第二行：Y轴值内容，剔除头一个单元格；
 
-### 表头格式定义行
+#### 表头格式定义行
 
 以`,`分隔的参数定义，大小写不敏感，支持以下功能：
 * DTGen: 标识该Sheet支持导出, 以`DTGen=Matrix`识别；
@@ -109,8 +109,8 @@ DataTables
 * Matrix: 定义X轴、Y轴以及单元格的值类型，如`Matrix=<X轴值类型>&<Y轴值类型>&<单元格值类型>`；
 
 
-# Getting Started(.NET Core)
----
+## Getting Started(.NET Core)
+
 DataTables uses C# to C# code-generator. Runtime library API is the same but how to code-generate has different way between .NET Core and Unity. This sample is for .NET Core(for Unity is in below sections).
 
 Install the core library(Runtime and [Annotations](https://www.nuget.org/packages/DataTables.Annotations)).
@@ -174,9 +174,9 @@ var drScene2 = manager.GetDataTable<DRScene>().GetDataRowById(2000);
 
 You can invoke all indexed query by IntelliSense.
 
-# Getting Started(Unity)
----
-Check the [releases](https://github.com/PhonixGame/DataTables/releases) page, download `DataTables.Unity.unitypackage`(runtime) and `DataTables.Generator.zip`(cli code-generator).
+## Getting Started(Unity)
+
+Check the [releases](https://github.com/ChronosGames/DataTables/releases) page, download `DataTables.Unity.unitypackage`(runtime) and `DataTables.Generator.zip`(cli code-generator).
 
 Prepare the example table definition like following.
 
@@ -236,9 +236,9 @@ var drScene2 = manager.GetDataTable<DRScene>().GetDataRowById(2000);
 
 You can invoke all indexed query by IntelliSense.
 
-## UPM Package
----
-### Install via git URL
+### UPM Package
+
+#### Install via git URL
 
 Requires a version of unity that supports path query parameter for git packages (Unity >= 2019.3.4f1, Unity >= 2020.1a21). You can add `https://github.com/ChronosGames/DataTables.git?path=src/DataTables.Unity/Assets/Scripts/DataTables` to Package Manager
 
@@ -250,7 +250,7 @@ or add `"game.phonix.datatables": "https://github.com/ChronosGames/DataTables.gi
 
 If you want to set a target version, `DataTables` uses the `*.*.*` release tag so you can specify a version like `#0.11.3`. For example `https://github.com/ChronosGames/DataTables.git?path=src/DataTables.Unity/Assets/Scripts/DataTables#0.9.5`.
 
-### Install via OpenUPM
+#### Install via OpenUPM
 
 The package is available on the [openupm registry](https://openupm.com). It's recommended to install it via [openupm-cli](https://github.com/openupm/openupm-cli).
 
@@ -258,12 +258,11 @@ The package is available on the [openupm registry](https://openupm.com). It's re
 openupm add game.phonix.datatables
 ```
 
-### 使用Unity Package安装
+#### 使用Unity Package安装
 
 从[release](https://github.com/ChronosGames/DataTables/releases)页面下载Unity Package进行手动安装
 
-# Optimization
----
+## Optimization
 
 在提供的API中有一些宏定义，可用于调整API接口相关：
 * `DT_CHECK_NOT_FOUND`: 在Unity中定义该宏，可在调用查询相关接口时，检测到目标条目不存在时，会输出警告级别日志。
@@ -280,8 +279,8 @@ The use of Parallel can greatly improve the construct performance. Recommend to 
 If you want to reduce code size of generated code, Validator and MetaDatabase info can omit in runtime. Generated code has two symbols `DISABLE_MASTERMEMORY_VALIDATOR` and `DISABLE_MASTERMEMORY_METADATABASE`.  By defining them, can be erased from the build code.
 -->
 
-# Code Generator
----
+## Code Generator
+
 DataTables has one kinds of code-generator. `.NET Core Global/Local Tools`.
 
 `.NET Core Global/Local Tools` can install from NuGet(`DataTables.Generator`), you need to install .NET runtime. Here is the sample command of install global tool.
@@ -321,6 +320,92 @@ jobs:
       /* git push or store artifacts or etc...... */
 ```
 
-License
----
+## 常见问题与解决方案
+
+### 1. Excel文件格式问题
+
+**问题**：生成代码时出现"无法读取Excel文件"的错误。
+**解决方案**：
+- 确保Excel文件使用.xlsx格式（Excel 2007及以上版本）
+- 检查Excel文件是否被其他程序锁定
+- 确保Excel文件内容遵循正确的格式规范
+
+### 2. 生成的代码无法编译
+
+**问题**：生成的代码存在编译错误。
+**解决方案**：
+- 检查数据表中的字段名是否符合C#命名规范
+- 确保自定义类型在项目中已正确定义
+- 查看详细的编译错误信息，根据具体错误进行修复
+
+### 3. 数据查询返回null
+
+**问题**：使用GetDataRowById等方法查询时返回null。
+**解决方案**：
+- 确认数据表是否已正确加载
+- 验证查询的ID或条件是否与数据表中的数据匹配
+- 在Unity项目中添加`DT_CHECK_NOT_FOUND`宏定义，以便在查询失败时输出警告日志
+
+### 4. Unity与.NET Core版本兼容性
+
+**问题**：在较新版本的Unity或.NET环境中出现兼容性问题。
+**解决方案**：
+- 确保使用最新版本的DataTables库
+- 检查Unity项目的API兼容性级别设置
+- 对于旧版Unity，可能需要使用特定版本的DataTables
+
+### 5. 性能优化
+
+**问题**：大型数据表加载性能较差。
+**解决方案**：
+- 考虑使用Child表功能将大表拆分成多个小表
+- 优化索引设计，避免不必要的索引
+- 仅加载实际需要的数据表，而不是一次性加载所有数据表
+
+## 贡献指南
+
+我们非常欢迎社区成员为DataTables项目做出贡献！以下是参与贡献的简要指南：
+
+### 报告问题
+
+如果您发现任何bug或有功能建议，请在GitHub仓库的[Issues](https://github.com/ChronosGames/DataTables/issues)页面提交详细描述，包括：
+- 问题的详细描述
+- 重现步骤
+- 预期行为与实际行为
+- 相关的环境信息（.NET版本、Unity版本等）
+
+### 提交代码
+
+1. Fork该仓库并克隆到本地
+2. 创建新分支：`git checkout -b feature/your-feature-name`
+3. 编写代码并添加适当的测试
+4. 确保所有测试通过
+5. 提交更改：`git commit -m 'Add some feature'`
+6. 推送到fork的仓库：`git push origin feature/your-feature-name`
+7. 提交Pull Request
+
+### 代码规范
+
+- 遵循项目现有的代码风格和命名约定
+- 添加适当的注释，特别是对于公共API
+- 保持代码简洁清晰
+- 添加单元测试覆盖新功能
+
+### 文档贡献
+
+改进文档对于项目的可用性至关重要：
+- 修正文档中的错误或不清晰的部分
+- 添加使用示例和教程
+- 完善API文档
+
+### 行为准则
+
+- 尊重所有社区成员
+- 建设性地接受批评和反馈
+- 关注项目的整体目标和质量
+
+感谢您对DataTables项目的贡献！
+
+## License
+
 This library is under the MIT License.

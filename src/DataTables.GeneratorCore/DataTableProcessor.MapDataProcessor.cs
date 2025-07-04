@@ -34,11 +34,11 @@ public sealed partial class DataTableProcessor
 
         public override string[] GetTypeStrings()
         {
-            return new string[]
-            {
+            return
+            [
                 $"map<{m_KeyTypeStr},{m_ValueTypeStr}>",
-                $"M<{m_KeyTypeStr},{m_ValueTypeStr}>",
-            };
+                $"M<{m_KeyTypeStr},{m_ValueTypeStr}>"
+            ];
         }
 
         public override string GenerateTypeValue(string text) => throw new NotImplementedException();

@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.IO;
 
 namespace DataTables.GeneratorCore;
@@ -24,22 +25,17 @@ public sealed partial class DataTableProcessor
 
         public override string[] GetTypeStrings()
         {
-            return new string[]
-            {
+            return
+            [
                 "long",
                 "int64",
                 "system.int64"
-            };
+            ];
         }
 
         public override long Parse(string value)
         {
-            if (string.IsNullOrEmpty(value))
-            {
-                return 0;
-            }
-
-            return JsonUtility.Deserialize<long>(value);
+            return string.IsNullOrEmpty(value) ? 0 : JsonUtility.Deserialize<long>(value);
         }
 
         public override string GenerateTypeValue(string text) => Parse(text).ToString() + 'L';

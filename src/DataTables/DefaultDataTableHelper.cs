@@ -14,7 +14,7 @@ namespace DataTables
 
         public void Read(string fileName, Action<byte[]> callback)
         {
-            var raw = File.ReadAllBytes(Path.Combine(m_DataDir, fileName) + ".bytes");
+            byte[] raw = File.ReadAllBytes(Path.Combine(m_DataDir, fileName) + ".bytes");
             callback(raw);
         }
     }

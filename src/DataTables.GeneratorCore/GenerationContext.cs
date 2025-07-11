@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,7 +10,7 @@ public class GenerationContext
 
     public string SheetName { get; set; } = string.Empty;
 
-    public string[] UsingStrings { get; set; } = Array.Empty<string>();
+    public string[] UsingStrings { get; set; } = [];
 
     public string Namespace { get; set; } = string.Empty;
 
@@ -36,13 +35,13 @@ public class GenerationContext
     /// <summary>
     /// 实际列
     /// </summary>
-    public XField[] Fields { get; set; } = Array.Empty<XField>();
+    public XField[] Fields { get; set; } = [];
 
     /// <summary>按特定字段进行单体索引列表</summary>
-    public readonly List<string[]> Indexs = new List<string[]>();
+    public readonly List<string[]> Indexs = [];
 
     /// <summary>按特定字段进行分组索引列表</summary>
-    public readonly List<string[]> Groups = new List<string[]>();
+    public readonly List<string[]> Groups = [];
 
     /// <summary>子表的名称</summary>
     public string Child = string.Empty;
@@ -88,7 +87,7 @@ public class GenerationContext
     /// </summary>
     /// <param name="fields"></param>
     /// <returns></returns>
-    public string BuildIndexsLogFormat(string[] fields)
+    public static string BuildIndexsLogFormat(string[] fields)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -99,7 +98,7 @@ public class GenerationContext
                 sb.Append(", ");
             }
 
-            sb.AppendFormat("{0}={{{1}}}", fields[i], i);
+            sb.Append($"{fields[i]}={{{i}}}");
         }
 
         return sb.ToString();
@@ -169,12 +168,12 @@ public class GenerationContext
     }
 }
 
-public class XField
+public class XField(int index)
 {
     /// <summary>
     /// 列序号
     /// </summary>
-    public int Index { get; private set; }
+    public int Index { get; private set; } = index;
 
     /// <summary>
     /// 中文名称行上的单元格的文本内容
@@ -199,16 +198,11 @@ public class XField
     /// <summary>
     /// 是否忽略
     /// </summary>
-    public bool IsIgnore { get; set; } = false;
+    public bool IsIgnore { get; set; }
 
     /// <summary>
     /// 是否注释
     /// </summary>
-    public bool IsComment { get; set; } = false;
-
-    public XField(int index)
-    {
-        Index = index;
-    }
+    public bool IsComment { get; set; }
 }
 

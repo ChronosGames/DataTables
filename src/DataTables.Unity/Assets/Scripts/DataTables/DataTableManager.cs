@@ -2,12 +2,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace DataTables
 {
-    public sealed partial class DataTableManager : IDataTableManager
+    public sealed class DataTableManager : IDataTableManager
     {
         private readonly ConcurrentDictionary<TypeNamePair, DataTableBase> m_DataTables;
         private IDataTableHelper? m_DataTableHelper;
@@ -141,10 +142,7 @@ namespace DataTables
             }
 
             results.Clear();
-            foreach (var dataTable in m_DataTables)
-            {
-                results.Add(dataTable.Value);
-            }
+            results.AddRange(m_DataTables.Select(dataTable => dataTable.Value));
         }
 
         /// <summary>
@@ -230,7 +228,7 @@ namespace DataTables
             {
                 using (var reader = new BinaryReader(ms, Encoding.UTF8))
                 {
-                    var rowCount = reader.ReadInt32();
+                    int rowCount = reader.ReadInt32();
                     dataTable = (DataTableBase)Activator.CreateInstance(typeNamePair.Type, typeNamePair.Name, rowCount)!;
                     for (int i = 0; i < rowCount; i++)
                     {

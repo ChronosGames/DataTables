@@ -10,9 +10,6 @@ namespace DataTables
     [StructLayout(LayoutKind.Auto)]
     internal readonly struct TypeNamePair : IEquatable<TypeNamePair>
     {
-        private readonly Type m_Type;
-        private readonly string m_Name;
-
         /// <summary>
         /// 初始化类型和名称的组合值的新实例。
         /// </summary>
@@ -28,36 +25,19 @@ namespace DataTables
         /// <param name="name">名称。</param>
         public TypeNamePair(Type type, string name)
         {
-            if (type == null)
-            {
-                throw new Exception("Type is invalid.");
-            }
-
-            m_Type = type;
-            m_Name = name ?? string.Empty;
+            Type = type ?? throw new Exception("Type is invalid.");
+            Name = name;
         }
 
         /// <summary>
         /// 获取类型。
         /// </summary>
-        public Type Type
-        {
-            get
-            {
-                return m_Type;
-            }
-        }
+        public Type Type { get; }
 
         /// <summary>
         /// 获取名称。
         /// </summary>
-        public string Name
-        {
-            get
-            {
-                return m_Name;
-            }
-        }
+        public string Name { get; }
 
         /// <summary>
         /// 获取类型和名称的组合值字符串。
@@ -65,13 +45,13 @@ namespace DataTables
         /// <returns>类型和名称的组合值字符串。</returns>
         public override string ToString()
         {
-            if (m_Type == null)
+            if (Type == null)
             {
                 throw new Exception("Type is invalid.");
             }
 
-            string typeName = m_Type.FullName!;
-            return string.IsNullOrEmpty(m_Name) ? typeName : string.Format("{0}.{1}", typeName, m_Name);
+            string typeName = Type.FullName!;
+            return string.IsNullOrEmpty(Name) ? typeName : string.Format("{0}.{1}", typeName, Name);
         }
 
         /// <summary>
@@ -81,7 +61,7 @@ namespace DataTables
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override int GetHashCode()
         {
-            return HashCode.Combine(m_Type, m_Name);
+            return HashCode.Combine(Type, Name);
         }
 
         /// <summary>
@@ -103,7 +83,7 @@ namespace DataTables
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(TypeNamePair value)
         {
-            return m_Type == value.m_Type && string.CompareOrdinal(m_Name, value.m_Name) == 0;
+            return Type == value.Type && string.CompareOrdinal(Name, value.Name) == 0;
         }
 
         /// <summary>

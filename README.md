@@ -26,6 +26,7 @@ DataTables
     - [Install via OpenUPM](#install-via-openupm)
     - [使用Unity Package安装](#%E4%BD%BF%E7%94%A8unity-package%E5%AE%89%E8%A3%85)
 - [Optimization](#optimization)
+- [Hook机制](#hook%E6%9C%BA%E5%88%B6)
 - [Code Generator](#code-generator)
 - [常见问题与解决方案](#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E4%B8%8E%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88)
   - [1. Excel文件格式问题](#1-excel%E6%96%87%E4%BB%B6%E6%A0%BC%E5%BC%8F%E9%97%AE%E9%A2%98)

@@ -29,10 +29,9 @@ public static class DataTableManagerExtension
     /// <summary>
     /// 预加载所有数据表。
     /// </summary>
-    /// <param name="manager"></param>
     /// <param name="onCompleted">全部数据表预加载完成时回调。</param>
     /// <param name="onProgress">单步加载完成时回调。</param>
-    public static void Preload(this DataTableManager manager, Action? onCompleted = default, Action<float>? onProgress = default)
+    public static void Preload(Action? onCompleted = default, Action<float>? onProgress = default)
     {
         const int total = <#=DataTables.Sum(pair => pair.Value.Any() ? pair.Value.Count() : 1)#>;
         int done = 0;
@@ -52,13 +51,13 @@ foreach (var pair in DataTables)
 {
     if (!pair.Value.Any())
     {
-        #>        manager.CreateDataTable<<#=pair.Key#>>(next);<#=Environment.NewLine#><#
+        #>        DataTableManager.CreateDataTable<<#=pair.Key#>>(next);<#=Environment.NewLine#><#
     }
     else
     {
         foreach (var name in pair.Value)
         {
-            #>        manager.CreateDataTable<<#=pair.Key#>>("<#=name#>", next);<#=Environment.NewLine#><#
+            #>        DataTableManager.CreateDataTable<<#=pair.Key#>>("<#=name#>", next);<#=Environment.NewLine#><#
         }
     }
 }

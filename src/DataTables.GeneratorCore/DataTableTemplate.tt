@@ -48,38 +48,6 @@ public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTa
     }
 #>
     public <#= GenerationContext.DataTableClassName #>(string name, int capacity) : base(name, capacity) { }
-<#  for (var i = 0; i < GenerationContext.Indexs.Count; i++)
-    {
-        var item = GenerationContext.Indexs[i];
-#>
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public <#= GenerationContext.DataRowClassName #>? GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
-    {
-        if (m_Dict<#= i + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + string.Join(", ", item) + ')' : item[0] #>, out var result))
-        {
-            return result;
-        }
-        else
-        {
-#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-            UnityEngine.Debug.LogWarningFormat("DT<#= GenerationContext.ClassName #> not found index: <#= GenerationContext.BuildIndexsLogFormat(item) #>", <#= string.Join(", ", item) #>);
-#endif
-            return null;
-        }
-    }
-<#  }
-    for (var j = 0; j < GenerationContext.Groups.Count; j++)
-    {
-        var item = GenerationContext.Groups[j];
-#>
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public List<<#= GenerationContext.DataRowClassName #>>? GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
-    {
-        return m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + string.Join(", ", item) + ')' : item[0] #>, out var result) ? result : null;
-    }
-<#  } #>
 
     protected override void InternalAddDataRow(int index, <#= GenerationContext.DataRowClassName #> dataRow)
     {
@@ -109,6 +77,50 @@ public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTa
         }
 <#  } #>
     }
+
+    #region Static API
+<#  for (var i = 0; i < GenerationContext.Indexs.Count; i++)
+    {
+        var item = GenerationContext.Indexs[i];
+#>
+
+    /// <summary>
+    /// 根据索引获取数据行
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static <#= GenerationContext.DataRowClassName #>? GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    {
+        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
+        if (table?.m_Dict<#= i + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + string.Join(", ", item) + ')' : item[0] #>, out var result) == true)
+        {
+            return result;
+        }
+        else
+        {
+#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
+            UnityEngine.Debug.LogWarningFormat("<#= GenerationContext.DataTableClassName #> not found index: <#= GenerationContext.BuildIndexsLogFormat(item) #>", <#= string.Join(", ", item) #>);
+#endif
+            return null;
+        }
+    }
+<#  }
+    for (var j = 0; j < GenerationContext.Groups.Count; j++)
+    {
+        var item = GenerationContext.Groups[j];
+#>
+
+    /// <summary>
+    /// 根据分组获取数据行列表
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static List<<#= GenerationContext.DataRowClassName #>>? GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    {
+        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
+        return table?.m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + string.Join(", ", item) + ')' : item[0] #>, out var result) == true ? result : null;
+    }
+<#  } #>
+
+    #endregion
 }
 
 /// <summary><#= BuildSummary(GenerationContext.Title) #></summary>

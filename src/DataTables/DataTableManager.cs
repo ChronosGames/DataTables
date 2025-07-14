@@ -8,45 +8,104 @@ using System.Text;
 
 namespace DataTables
 {
-    public sealed class DataTableManager : IDataTableManager
-    {
-        private readonly ConcurrentDictionary<TypeNamePair, DataTableBase> m_DataTables;
-        private IDataTableHelper? m_DataTableHelper;
+    /// <summary>
+    /// 数据表加载完成后的Hook委托
+    /// </summary>
+    /// <typeparam name="T">数据表类型</typeparam>
+    /// <param name="dataTable">已加载的数据表</param>
+    public delegate void DataTableLoadedHook<T>(T dataTable) where T : DataTableBase;
 
-        /// <summary>
-        /// 初始化数据表管理器的新实例。
-        /// </summary>
-        public DataTableManager()
-        {
-            m_DataTables = new ConcurrentDictionary<TypeNamePair, DataTableBase>();
-            m_DataTableHelper = null;
-        }
+    /// <summary>
+    /// 通用的数据表加载完成Hook委托
+    /// </summary>
+    /// <param name="dataTable">已加载的数据表</param>
+    public delegate void DataTableLoadedHook(DataTableBase dataTable);
+
+
+    public static class DataTableManager
+    {
+        private static readonly ConcurrentDictionary<TypeNamePair, DataTableBase> s_DataTables = new();
+        private static IDataTableHelper? s_DataTableHelper;
+        private static readonly object s_Lock = new object();
+
+        // Hook机制
+        private static readonly ConcurrentDictionary<Type, List<DataTableLoadedHook>> s_TypedHooks = new();
+        private static readonly List<DataTableLoadedHook> s_GlobalHooks = new();
 
         /// <summary>
         /// 获取数据表数量。
         /// </summary>
-        public int Count => m_DataTables.Count;
+        public static int Count => s_DataTables.Count;
 
         /// <summary>
         /// 设置数据表辅助器。
         /// </summary>
         /// <param name="dataTableHelper">数据表辅助器。</param>
-        public void SetDataTableHelper(IDataTableHelper dataTableHelper)
+        public static void SetDataTableHelper(IDataTableHelper dataTableHelper)
         {
-            m_DataTableHelper = dataTableHelper ?? throw new Exception("Data table helper is invalid.");
+            s_DataTableHelper = dataTableHelper ?? throw new Exception("Data table helper is invalid.");
+        }
+
+        /// <summary>
+        /// 注册特定类型的数据表加载完成Hook
+        /// </summary>
+        /// <typeparam name="T">数据表类型</typeparam>
+        /// <param name="hook">Hook回调</param>
+        public static void HookDataTableLoaded<T>(DataTableLoadedHook<T> hook) where T : DataTableBase
+        {
+            var type = typeof(T);
+            var wrappedHook = new DataTableLoadedHook(table => hook((T)table));
+
+            lock (s_Lock)
+            {
+                if (!s_TypedHooks.TryGetValue(type, out var hooks))
+                {
+                    hooks = new List<DataTableLoadedHook>();
+                    s_TypedHooks[type] = hooks;
+                }
+                hooks.Add(wrappedHook);
+            }
+        }
+
+        /// <summary>
+        /// 注册全局数据表加载完成Hook
+        /// </summary>
+        /// <param name="hook">Hook回调</param>
+        public static void HookGlobalDataTableLoaded(DataTableLoadedHook hook)
+        {
+            lock (s_Lock)
+            {
+                s_GlobalHooks.Add(hook);
+            }
+        }
+
+
+        /// <summary>
+        /// 清除所有Hook
+        /// </summary>
+        public static void ClearHooks()
+        {
+            lock (s_Lock)
+            {
+                s_TypedHooks.Clear();
+                s_GlobalHooks.Clear();
+            }
         }
 
         /// <summary>
         /// 关闭并清理数据表管理器。
         /// </summary>
-        public void Shutdown()
+        public static void Shutdown()
         {
-            foreach (var dataTable in m_DataTables)
+            lock (s_Lock)
             {
-                dataTable.Value.Shutdown();
-            }
+                foreach (var dataTable in s_DataTables)
+                {
+                    dataTable.Value.Shutdown();
+                }
 
-            m_DataTables.Clear();
+                s_DataTables.Clear();
+            }
         }
 
         /// <summary>
@@ -55,7 +114,7 @@ namespace DataTables
         /// <typeparam name="T">数据表行的类型。</typeparam>
         /// <param name="name">数据表名称。</param>
         /// <returns>是否存在数据表。</returns>
-        public bool HasDataTable<T>(string name = "") where T : DataTableBase
+        public static bool HasDataTable<T>(string name = "") where T : DataTableBase
         {
             return InternalHasDataTable(new TypeNamePair(typeof(T), name));
         }
@@ -66,7 +125,7 @@ namespace DataTables
         /// <param name="dataTableType">数据表的类型。</param>
         /// <param name="name">数据表名称。</param>
         /// <returns>是否存在数据表。</returns>
-        public bool HasDataTable(Type dataTableType, string name = "")
+        public static bool HasDataTable(Type dataTableType, string name = "")
         {
             if (dataTableType == null)
             {
@@ -87,7 +146,7 @@ namespace DataTables
         /// <typeparam name="T">数据表的类型。</typeparam>
         /// <param name="name">数据表名称。</param>
         /// <returns>要获取的数据表。</returns>
-        public T? GetDataTable<T>(string name = "") where T : DataTableBase
+        public static T? GetDataTable<T>(string name = "") where T : DataTableBase
         {
             var dataTable = InternalGetDataTable(new TypeNamePair(typeof(T), name));
             return dataTable != null ? (T)dataTable : null;
@@ -99,7 +158,7 @@ namespace DataTables
         /// <param name="dataTableType">数据表的类型。</param>
         /// <param name="name">数据表名称。</param>
         /// <returns>要获取的数据表。</returns>
-        public DataTableBase? GetDataTable(Type dataTableType, string name = "")
+        public static DataTableBase? GetDataTable(Type dataTableType, string name = "")
         {
             if (dataTableType == null)
             {
@@ -118,31 +177,37 @@ namespace DataTables
         /// 获取所有数据表。
         /// </summary>
         /// <returns>所有数据表。</returns>
-        public DataTableBase[] GetAllDataTables()
+        public static DataTableBase[] GetAllDataTables()
         {
-            int index = 0;
-            DataTableBase[] results = new DataTableBase[m_DataTables.Count];
-            foreach (var dataTable in m_DataTables)
+            lock (s_Lock)
             {
-                results[index++] = dataTable.Value;
-            }
+                int index = 0;
+                DataTableBase[] results = new DataTableBase[s_DataTables.Count];
+                foreach (var dataTable in s_DataTables)
+                {
+                    results[index++] = dataTable.Value;
+                }
 
-            return results;
+                return results;
+            }
         }
 
         /// <summary>
         /// 获取所有数据表。
         /// </summary>
         /// <param name="results">所有数据表。</param>
-        public void GetAllDataTables(List<DataTableBase> results)
+        public static void GetAllDataTables(List<DataTableBase> results)
         {
             if (results == null)
             {
                 throw new Exception("Results is invalid.");
             }
 
-            results.Clear();
-            results.AddRange(m_DataTables.Select(dataTable => dataTable.Value));
+            lock (s_Lock)
+            {
+                results.Clear();
+                results.AddRange(s_DataTables.Select(dataTable => dataTable.Value));
+            }
         }
 
         /// <summary>
@@ -151,7 +216,7 @@ namespace DataTables
         /// <typeparam name="T">数据表的类型。</typeparam>
         /// <param name="onCompleted">数据表加载完成时回调。</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CreateDataTable<T>(Action onCompleted) where T : DataTableBase
+        public static void CreateDataTable<T>(Action onCompleted) where T : DataTableBase
         {
             CreateDataTable<T>(string.Empty, onCompleted);
         }
@@ -162,7 +227,7 @@ namespace DataTables
         /// <param name="dataTableType">数据表的类型。</param>
         /// <param name="onCompleted">数据表加载完成时回调。</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CreateDataTable(Type dataTableType, Action onCompleted)
+        public static void CreateDataTable(Type dataTableType, Action onCompleted)
         {
             CreateDataTable(dataTableType, string.Empty, onCompleted);
         }
@@ -173,9 +238,9 @@ namespace DataTables
         /// <typeparam name="T">数据表的类型。</typeparam>
         /// <param name="name">数据表名称。</param>
         /// <param name="onCompleted">数据表加载完成时回调。</param>
-        public void CreateDataTable<T>(string name, Action onCompleted) where T : DataTableBase
+        public static void CreateDataTable<T>(string name, Action onCompleted) where T : DataTableBase
         {
-            if (m_DataTableHelper == null)
+            if (s_DataTableHelper == null)
             {
                 throw new Exception("YOU MUST SetDataTableHelper FIRST.");
             }
@@ -186,7 +251,7 @@ namespace DataTables
                 throw new Exception($"Already exist data table '{typeNamePair}'.");
             }
 
-            m_DataTableHelper.Read(typeNamePair.ToString(), (raw) => LoadDataTable(typeNamePair, raw, onCompleted));
+            s_DataTableHelper.Read(typeNamePair.ToString(), (raw) => LoadDataTable(typeNamePair, raw, onCompleted));
         }
 
         /// <summary>
@@ -195,14 +260,14 @@ namespace DataTables
         /// <param name="dataTableType">数据表的类型。</param>
         /// <param name="name">数据表名称。</param>
         /// <param name="onCompleted">数据表加载完成时回调。</param>
-        public void CreateDataTable(Type dataTableType, string name, Action onCompleted)
+        public static void CreateDataTable(Type dataTableType, string name, Action onCompleted)
         {
             if (!dataTableType.IsSubclassOf(typeof(DataTableBase)))
             {
                 throw new Exception($"Data table type '{dataTableType.FullName}' is invalid.");
             }
 
-            if (m_DataTableHelper == null)
+            if (s_DataTableHelper == null)
             {
                 throw new Exception("MUST SetDataTableHelper FIRST.");
             }
@@ -213,41 +278,89 @@ namespace DataTables
                 throw new Exception($"Already exist data table '{typeNamePair}'.");
             }
 
-            m_DataTableHelper.Read(typeNamePair.ToString(), (raw) => LoadDataTable(typeNamePair, raw, onCompleted));
+            s_DataTableHelper.Read(typeNamePair.ToString(), (raw) => LoadDataTable(typeNamePair, raw, onCompleted));
         }
 
-        private void LoadDataTable(TypeNamePair typeNamePair, byte[] raw, Action? onCompleted)
+        private static void LoadDataTable(TypeNamePair typeNamePair, byte[] raw, Action? onCompleted)
         {
-            if (InternalHasDataTable(typeNamePair))
+            DataTableBase dataTable;
+
+            lock (s_Lock)
             {
-                throw new Exception($"Already exist data table '{typeNamePair}'.");
+                if (InternalHasDataTable(typeNamePair))
+                {
+                    throw new Exception($"Already exist data table '{typeNamePair}'.");
+                }
+
+                using (var ms = new MemoryStream(raw, false))
+                {
+                    using (var reader = new BinaryReader(ms, Encoding.UTF8))
+                    {
+                        int rowCount = reader.ReadInt32();
+                        dataTable = (DataTableBase)Activator.CreateInstance(typeNamePair.Type, typeNamePair.Name, rowCount)!;
+                        for (int i = 0; i < rowCount; i++)
+                        {
+                            if (!dataTable.ParseDataRow(i, reader))
+                            {
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                // 触发加载完成事件
+                dataTable.OnLoadCompleted();
+
+                // 缓存当前配置表
+                s_DataTables.TryAdd(typeNamePair, dataTable);
+
+                // 执行Hook回调
+                ExecuteLoadedHooks(dataTable);
             }
 
-            DataTableBase dataTable;
-            using (var ms = new MemoryStream(raw, false))
+            // 回调加载完毕
+            onCompleted?.Invoke();
+        }
+
+
+        /// <summary>
+        /// 执行Hook回调
+        /// </summary>
+        /// <param name="dataTable">数据表实例</param>
+        private static void ExecuteLoadedHooks(DataTableBase dataTable)
+        {
+            var type = dataTable.GetType();
+
+            // 执行特定类型的Hook
+            if (s_TypedHooks.TryGetValue(type, out var typedHooks))
             {
-                using (var reader = new BinaryReader(ms, Encoding.UTF8))
+                foreach (var hook in typedHooks)
                 {
-                    int rowCount = reader.ReadInt32();
-                    dataTable = (DataTableBase)Activator.CreateInstance(typeNamePair.Type, typeNamePair.Name, rowCount)!;
-                    for (int i = 0; i < rowCount; i++)
+                    try
                     {
-                        if (!dataTable.ParseDataRow(i, reader))
-                        {
-                            return;
-                        }
+                        hook(dataTable);
+                    }
+                    catch (Exception ex)
+                    {
+                        // 记录但不中断加载过程
+                        Console.WriteLine($"Typed hook failed for {type.Name}: {ex.Message}");
                     }
                 }
             }
 
-            // 触发加载完成事件
-            dataTable.OnLoadCompleted();
-
-            // 缓存当前配置表
-            m_DataTables.TryAdd(typeNamePair, dataTable);
-
-            // 回调加载完毕
-            onCompleted?.Invoke();
+            // 执行全局Hook
+            foreach (var hook in s_GlobalHooks)
+            {
+                try
+                {
+                    hook(dataTable);
+                }
+                catch (Exception ex)
+                {
+                    // 记录但不中断加载过程
+                    Console.WriteLine($"Global hook failed for {type.Name}: {ex.Message}");
+                }
+            }
         }
 
         /// <summary>
@@ -255,7 +368,7 @@ namespace DataTables
         /// </summary>
         /// <typeparam name="T">数据表行的类型。</typeparam>
         /// <param name="name">数据表名称。</param>
-        public bool DestroyDataTable<T>(string name = "") where T : DataTableBase
+        public static bool DestroyDataTable<T>(string name = "") where T : DataTableBase
         {
             return InternalDestroyDataTable(new TypeNamePair(typeof(T), name));
         }
@@ -266,7 +379,7 @@ namespace DataTables
         /// <param name="dataTableType">数据表行的类型。</param>
         /// <param name="name">数据表名称。</param>
         /// <returns>是否销毁数据表成功。</returns>
-        public bool DestroyDataTable(Type dataTableType, string name = "")
+        public static bool DestroyDataTable(Type dataTableType, string name = "")
         {
             if (dataTableType == null)
             {
@@ -286,40 +399,57 @@ namespace DataTables
         /// </summary>
         /// <param name="dataTable">要销毁的数据表。</param>
         /// <returns>是否销毁数据表成功。</returns>
-        public bool DestroyDataTable(DataTableBase dataTable)
+        public static bool DestroyDataTable(DataTableBase dataTable)
         {
             if (dataTable == null)
             {
                 throw new Exception("Data table is invalid.");
             }
 
-            foreach (var pair in m_DataTables)
+            lock (s_Lock)
             {
-                if (pair.Value != dataTable) continue;
-                dataTable.Shutdown();
-                return m_DataTables.TryRemove(pair.Key, out var _);
-            }
+                foreach (var pair in s_DataTables)
+                {
+                    if (pair.Value != dataTable) continue;
+                    dataTable.Shutdown();
+                    return s_DataTables.TryRemove(pair.Key, out var _);
+                }
 
-            return false;
-        }
-
-        private bool InternalHasDataTable(TypeNamePair pair)
-        {
-            return m_DataTables.ContainsKey(pair);
-        }
-
-        private DataTableBase? InternalGetDataTable(TypeNamePair pair) => m_DataTables.GetValueOrDefault(pair);
-
-        private bool InternalDestroyDataTable(TypeNamePair pair)
-        {
-            if (m_DataTables.TryRemove(pair, out var dataTable))
-            {
-                dataTable.Shutdown();
-                return true;
-            }
-            else
-            {
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// 内部方法：供生成的DTXXX类使用的获取数据表方法
+        /// </summary>
+        /// <typeparam name="T">数据表类型</typeparam>
+        /// <returns>数据表实例</returns>
+        public static T? GetDataTableInternal<T>() where T : DataTableBase
+        {
+            var dataTable = InternalGetDataTable(new TypeNamePair(typeof(T), string.Empty));
+            return dataTable as T;
+        }
+
+        private static bool InternalHasDataTable(TypeNamePair pair)
+        {
+            return s_DataTables.ContainsKey(pair);
+        }
+
+        private static DataTableBase? InternalGetDataTable(TypeNamePair pair) => s_DataTables.GetValueOrDefault(pair);
+
+        private static bool InternalDestroyDataTable(TypeNamePair pair)
+        {
+            lock (s_Lock)
+            {
+                if (s_DataTables.TryRemove(pair, out var dataTable))
+                {
+                    dataTable.Shutdown();
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
         }
     }

@@ -21,10 +21,9 @@ public static class DataTableManagerExtension
     /// <summary>
     /// 预加载所有数据表。
     /// </summary>
-    /// <param name="manager"></param>
     /// <param name="onCompleted">全部数据表预加载完成时回调。</param>
     /// <param name="onProgress">单步加载完成时回调。</param>
-    public static void Preload(this DataTableManager manager, Action? onCompleted = default, Action<float>? onProgress = default)
+    public static void Preload(Action? onCompleted = default, Action<float>? onProgress = default)
     {
         const int total = 4;
         int done = 0;
@@ -39,10 +38,10 @@ public static class DataTableManagerExtension
             }
         };
 
-        manager.CreateDataTable<ConsoleApp.DTDataTableSample>(next);
-        manager.CreateDataTable<ConsoleApp.DTDataTableSplitSample>("x001", next);
-        manager.CreateDataTable<ConsoleApp.DTDataTableSplitSample>("x002", next);
-        manager.CreateDataTable<ConsoleApp.DTMatrixSample>(next);
+        DataTableManager.CreateDataTable<ConsoleApp.DTDataTableSample>(next);
+        DataTableManager.CreateDataTable<ConsoleApp.DTDataTableSplitSample>("x001", next);
+        DataTableManager.CreateDataTable<ConsoleApp.DTDataTableSplitSample>("x002", next);
+        DataTableManager.CreateDataTable<ConsoleApp.DTMatrixSample>(next);
     }
 }
 }

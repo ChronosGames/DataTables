@@ -131,7 +131,7 @@ namespace DataTables
 
         public static T? ReadJson<T>(this BinaryReader binaryReader)
         {
-            var plain = binaryReader.ReadString();
+            string plain = binaryReader.ReadString();
             if (string.IsNullOrEmpty(plain))
             {
                 return default;

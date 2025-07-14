@@ -154,32 +154,35 @@ Finally, you can regsiter and query by these files.
 ```csharp
 // 预加载指定数据表，然后，进行查询
 
-var manager = new DataTableManager();
-
-// 使用默认的数据表数据文件加载器
-manager.SetDataTableHelper(new DefaultDataTableHelper("<Data Files Dir>"));
+// 使用默认的数据表数据文件加载器（静态方法）
+DataTableManager.SetDataTableHelper(new DefaultDataTableHelper("<Data Files Dir>"));
 
 // 预加载DTScene数据表
-manager.CreateDataTable<DTScene>(null);
+DataTableManager.CreateDataTable<DTScene>(() => Console.WriteLine("DTScene加载完成"));
 
-// 由于默认数据表加载器是同步调用的方式，若可在Preload之后直接查询数据，否则要放在callback内
-var drScene1 = manager.GetDataTable<DRScene>().GetDataRow(x => x.Id == 2000);
-var drScene2 = manager.GetDataTable<DRScene>().GetDataRowById(2000);
+// 使用新的静态API直接查询数据
+var drScene1 = DTScene.GetDataRowById(2000);
+var drScene2 = DTScene.GetDataRowByType(SceneType.Battle);
 
 // -----------------------
 // 预加载全部数据表，然后，查询任意数据表的内容示例：
 
-var manager = new DataTableManager();
+// 注册Hook机制（可选）
+DataTableManager.HookDataTableLoaded<DTScene>(table =>
+{
+    Console.WriteLine($"DTScene已加载，包含 {table.Count} 行数据");
+});
 
-// 使用默认的数据表数据文件加载器
-manager.SetDataTableHelper(new DefaultDataTableHelper("<Data Files Dir>"));
+// 使用默认的数据表数据文件加载器（静态方法）
+DataTableManager.SetDataTableHelper(new DefaultDataTableHelper("<Data Files Dir>"));
 
-// 预加载所有的数据表
-manager.Preload(() => Console.WriteLine("数据表全部加载完毕"));
+// 预加载所有的数据表（使用扩展方法）
+DataTableManagerExtension.Preload(() => Console.WriteLine("数据表全部加载完毕"));
 
-// 由于默认数据表加载器是同步调用的方式，若可在Preload之后直接查询数据，否则要放在callback内
-var drScene1 = manager.GetDataTable<DRScene>().GetDataRow(x => x.Id == 2000);
-var drScene2 = manager.GetDataTable<DRScene>().GetDataRowById(2000);
+// 使用纯静态API查询数据，无需实例化
+var drScene1 = DTScene.GetDataRowById(2000);
+var drScene2 = DTScene.GetDataRowByType(SceneType.Battle);
+var scenes = DTScene.GetDataRowsGroupByName("BattleScene");
 ```
 
 You can invoke all indexed query by IntelliSense.
@@ -216,32 +219,35 @@ The rest is the same as .NET Core version.
 ```csharp
 // 预加载指定数据表，然后，进行查询
 
-var manager = new DataTableManager();
-
-// 使用默认的数据表数据文件加载器
-manager.SetDataTableHelper(new DefaultDataTableHelper("<Data Files Dir>"));
+// 使用默认的数据表数据文件加载器（静态方法）
+DataTableManager.SetDataTableHelper(new DefaultDataTableHelper("<Data Files Dir>"));
 
 // 预加载DTScene数据表
-manager.CreateDataTable<DTScene>(null);
+DataTableManager.CreateDataTable<DTScene>(() => Debug.Log("DTScene加载完成"));
 
-// 由于默认数据表加载器是同步调用的方式，若可在Preload之后直接查询数据，否则要放在callback内
-var drScene1 = manager.GetDataTable<DRScene>().GetDataRow(x => x.Id == 2000);
-var drScene2 = manager.GetDataTable<DRScene>().GetDataRowById(2000);
+// 使用新的静态API直接查询数据
+var drScene1 = DTScene.GetDataRowById(2000);
+var drScene2 = DTScene.GetDataRowByType(SceneType.Battle);
 
 // -----------------------
 // 预加载全部数据表，然后，查询任意数据表的内容示例：
 
-var manager = new DataTableManager();
+// 注册Hook机制（可选）
+DataTableManager.HookDataTableLoaded<DTScene>(table =>
+{
+    Debug.Log($"DTScene已加载，包含 {table.Count} 行数据");
+});
 
-// 使用默认的数据表数据文件加载器
-manager.SetDataTableHelper(new DefaultDataTableHelper("<Data Files Dir>"));
+// 使用默认的数据表数据文件加载器（静态方法）
+DataTableManager.SetDataTableHelper(new DefaultDataTableHelper("<Data Files Dir>"));
 
-// 预加载所有的数据表
-manager.Preload(() => Console.WriteLine("数据表全部加载完毕"));
+// 预加载所有的数据表（使用扩展方法）
+DataTableManagerExtension.Preload(() => Debug.Log("数据表全部加载完毕"));
 
-// 由于默认数据表加载器是同步调用的方式，若可在Preload之后直接查询数据，否则要放在callback内
-var drScene1 = manager.GetDataTable<DRScene>().GetDataRow(x => x.Id == 2000);
-var drScene2 = manager.GetDataTable<DRScene>().GetDataRowById(2000);
+// 使用纯静态API查询数据，无需实例化
+var drScene1 = DTScene.GetDataRowById(2000);
+var drScene2 = DTScene.GetDataRowByType(SceneType.Battle);
+var scenes = DTScene.GetDataRowsGroupByName("BattleScene");
 ```
 
 You can invoke all indexed query by IntelliSense.
@@ -276,6 +282,34 @@ openupm add game.phonix.datatables
 
 在提供的API中有一些宏定义，可用于调整API接口相关：
 * `DT_CHECK_NOT_FOUND`: 在Unity中定义该宏，可在调用查询相关接口时，检测到目标条目不存在时，会输出警告级别日志。
+
+## Hook机制
+
+DataTables现在支持Hook机制，允许在数据表加载完成后执行自定义逻辑：
+
+```csharp
+// 注册特定类型的数据表Hook
+DataTableManager.HookDataTableLoaded<DTScene>(table =>
+{
+    Console.WriteLine($"DTScene已加载，包含 {table.Count} 行数据");
+    // 可以在这里执行数据验证、索引构建等后处理逻辑
+});
+
+// 注册全局Hook（对所有数据表生效）
+DataTableManager.HookGlobalDataTableLoaded(table =>
+{
+    Console.WriteLine($"数据表 {table.GetType().Name} 已加载");
+});
+
+// 清除所有Hook
+DataTableManager.HookClear();
+```
+
+Hook机制的特点：
+- **类型安全**：特定类型的Hook只对指定的数据表类型生效
+- **执行时机**：在数据表加载完成后立即执行Hook回调
+- **异常处理**：Hook执行异常不会中断数据表加载过程
+- **线程安全**：支持多线程环境下的Hook注册和执行
 
 <!--
 When invoking `new MemoryDatabase(byte[] databaseBinary...)`, read and construct database from binary. If binary size is large then construct performance will slow down. `MemoryDatabase` has `ctor(..., int maxDegreeOfParallelism = 1)` option in constructor to construct in parallel.
@@ -350,11 +384,18 @@ jobs:
 
 ### 3. 数据查询返回null
 
-**问题**：使用GetDataRowById等方法查询时返回null。
+**问题**：使用静态API如DTScene.GetDataRowById()等方法查询时返回null。
 **解决方案**：
-- 确认数据表是否已正确加载
+- 确认数据表是否已正确加载（使用DataTableManager.HasDataTable<T>()检查）
 - 验证查询的ID或条件是否与数据表中的数据匹配
 - 在Unity项目中添加`DT_CHECK_NOT_FOUND`宏定义，以便在查询失败时输出警告日志
+- 使用Hook机制验证数据加载状态：
+```csharp
+DataTableManager.HookDataTableLoaded<DTScene>(table =>
+{
+    Console.WriteLine($"DTScene加载完成，数据行数：{table.Count}");
+});
+```
 
 ### 4. Unity与.NET Core版本兼容性
 

@@ -25,66 +25,6 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
 
     public DTDataTableSample(string name, int capacity) : base(name, capacity) { }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public DRDataTableSample? GetDataRowById(int Id)
-    {
-        if (m_Dict1.TryGetValue(Id, out var result))
-        {
-            return result;
-        }
-        else
-        {
-#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: Id={0}", Id);
-#endif
-            return null;
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public DRDataTableSample? GetDataRowByColor(ConsoleApp.ColorT Color)
-    {
-        if (m_Dict2.TryGetValue(Color, out var result))
-        {
-            return result;
-        }
-        else
-        {
-#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: Color={0}", Color);
-#endif
-            return null;
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public DRDataTableSample? GetDataRowByIdAndInt16Value(int Id, short Int16Value)
-    {
-        if (m_Dict3.TryGetValue((Id, Int16Value), out var result))
-        {
-            return result;
-        }
-        else
-        {
-#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: Id={0}, Int16Value={1}", Id, Int16Value);
-#endif
-            return null;
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public List<DRDataTableSample>? GetDataRowsGroupByNameAndBoolValue(string Name, bool BoolValue)
-    {
-        return m_Dict4.TryGetValue((Name, BoolValue), out var result) ? result : null;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public List<DRDataTableSample>? GetDataRowsGroupByName(string Name)
-    {
-        return m_Dict5.TryGetValue(Name, out var result) ? result : null;
-    }
-
     protected override void InternalAddDataRow(int index, DRDataTableSample dataRow)
     {
         base.InternalAddDataRow(index, dataRow);
@@ -117,6 +57,90 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
             }
         }
     }
+
+    #region Static API
+
+    /// <summary>
+    /// 根据索引获取数据行
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DRDataTableSample? GetDataRowById(int Id)
+    {
+        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
+        if (table?.m_Dict1.TryGetValue(Id, out var result) == true)
+        {
+            return result;
+        }
+        else
+        {
+#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
+            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: Id={0}", Id);
+#endif
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 根据索引获取数据行
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DRDataTableSample? GetDataRowByColor(ConsoleApp.ColorT Color)
+    {
+        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
+        if (table?.m_Dict2.TryGetValue(Color, out var result) == true)
+        {
+            return result;
+        }
+        else
+        {
+#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
+            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: Color={0}", Color);
+#endif
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 根据索引获取数据行
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DRDataTableSample? GetDataRowByIdAndInt16Value(int Id, short Int16Value)
+    {
+        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
+        if (table?.m_Dict3.TryGetValue((Id, Int16Value), out var result) == true)
+        {
+            return result;
+        }
+        else
+        {
+#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
+            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: Id={0}, Int16Value={1}", Id, Int16Value);
+#endif
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 根据分组获取数据行列表
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static List<DRDataTableSample>? GetDataRowsGroupByNameAndBoolValue(string Name, bool BoolValue)
+    {
+        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
+        return table?.m_Dict4.TryGetValue((Name, BoolValue), out var result) == true ? result : null;
+    }
+
+    /// <summary>
+    /// 根据分组获取数据行列表
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static List<DRDataTableSample>? GetDataRowsGroupByName(string Name)
+    {
+        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
+        return table?.m_Dict5.TryGetValue(Name, out var result) == true ? result : null;
+    }
+
+    #endregion
 }
 
 /// <summary>示例表</summary>

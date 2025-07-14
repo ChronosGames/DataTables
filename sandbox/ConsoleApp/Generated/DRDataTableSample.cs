@@ -64,17 +64,17 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     /// 根据索引获取数据行
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static DRDataTableSample? GetDataRowById(int Id)
+    public static DRDataTableSample? GetDataRowById(int id)
     {
         var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
-        if (table?.m_Dict1.TryGetValue(Id, out var result) == true)
+        if (table?.m_Dict1.TryGetValue(id, out var result) == true)
         {
             return result;
         }
         else
         {
 #if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: Id={0}", Id);
+            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: id={0}", id);
 #endif
             return null;
         }
@@ -84,17 +84,17 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     /// 根据索引获取数据行
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static DRDataTableSample? GetDataRowByColor(ConsoleApp.ColorT Color)
+    public static DRDataTableSample? GetDataRowByColor(ConsoleApp.ColorT color)
     {
         var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
-        if (table?.m_Dict2.TryGetValue(Color, out var result) == true)
+        if (table?.m_Dict2.TryGetValue(color, out var result) == true)
         {
             return result;
         }
         else
         {
 #if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: Color={0}", Color);
+            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: color={0}", color);
 #endif
             return null;
         }
@@ -104,17 +104,17 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     /// 根据索引获取数据行
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static DRDataTableSample? GetDataRowByIdAndInt16Value(int Id, short Int16Value)
+    public static DRDataTableSample? GetDataRowByIdAndInt16Value(int id, short int16Value)
     {
         var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
-        if (table?.m_Dict3.TryGetValue((Id, Int16Value), out var result) == true)
+        if (table?.m_Dict3.TryGetValue((id, int16Value), out var result) == true)
         {
             return result;
         }
         else
         {
 #if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: Id={0}, Int16Value={1}", Id, Int16Value);
+            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: id={0}, int16Value={1}", id, int16Value);
 #endif
             return null;
         }
@@ -124,20 +124,20 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     /// 根据分组获取数据行列表
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<DRDataTableSample>? GetDataRowsGroupByNameAndBoolValue(string Name, bool BoolValue)
+    public static List<DRDataTableSample>? GetDataRowsGroupByNameAndBoolValue(string name, bool boolValue)
     {
         var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
-        return table?.m_Dict4.TryGetValue((Name, BoolValue), out var result) == true ? result : null;
+        return table?.m_Dict4.TryGetValue((name, boolValue), out var result) == true ? result : null;
     }
 
     /// <summary>
     /// 根据分组获取数据行列表
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<DRDataTableSample>? GetDataRowsGroupByName(string Name)
+    public static List<DRDataTableSample>? GetDataRowsGroupByName(string name)
     {
         var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
-        return table?.m_Dict5.TryGetValue(Name, out var result) == true ? result : null;
+        return table?.m_Dict5.TryGetValue(name, out var result) == true ? result : null;
     }
 
     #endregion

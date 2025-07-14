@@ -91,14 +91,14 @@ public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTa
     public static <#= GenerationContext.DataRowClassName #>? GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
     {
         var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
-        if (table?.m_Dict<#= i + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + string.Join(", ", item) + ')' : item[0] #>, out var result) == true)
+        if (table?.m_Dict<#= i + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + GenerationContext.BuildCamelCaseParameters(item) + ')' : GenerationContext.ToCamelCase(item[0]) #>, out var result) == true)
         {
             return result;
         }
         else
         {
 #if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-            UnityEngine.Debug.LogWarningFormat("<#= GenerationContext.DataTableClassName #> not found index: <#= GenerationContext.BuildIndexsLogFormat(item) #>", <#= string.Join(", ", item) #>);
+            UnityEngine.Debug.LogWarningFormat("<#= GenerationContext.DataTableClassName #> not found index: <#= GenerationContext.BuildIndexsLogFormat(item) #>", <#= GenerationContext.BuildCamelCaseParameters(item) #>);
 #endif
             return null;
         }
@@ -116,7 +116,7 @@ public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTa
     public static List<<#= GenerationContext.DataRowClassName #>>? GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
     {
         var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
-        return table?.m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + string.Join(", ", item) + ')' : item[0] #>, out var result) == true ? result : null;
+        return table?.m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + GenerationContext.BuildCamelCaseParameters(item) + ')' : GenerationContext.ToCamelCase(item[0]) #>, out var result) == true ? result : null;
     }
 <#  } #>
 

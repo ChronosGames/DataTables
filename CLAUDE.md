@@ -88,6 +88,9 @@ DataTableManagerExtension.Preload(() => Console.WriteLine("All loaded"));
 var scene = DTScene.GetDataRowById(2000);  // Old naming convention
 var scenes = DTScene.GetDataRowsGroupByType(SceneType.Battle);
 
+// 注意：静态方法使用小驼峰形式的参数名
+// 例如：GetDataRowById(int id) 而不是 GetDataRowById(int Id)
+
 // Alternative: Get table instance if needed for complex operations
 var dtScene = DataTableManager.GetDataTable<DTScene>();
 if (dtScene != null)

@@ -331,7 +331,7 @@ namespace DataTables.GeneratorCore
             this.Write(".TryGetValue(");
             
             #line 94 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(item.Length > 1 ? '(' + string.Join(", ", item) + ')' : item[0]));
+            this.Write(this.ToStringHelper.ToStringWithCulture(item.Length > 1 ? '(' + GenerationContext.BuildCamelCaseParameters(item) + ')' : GenerationContext.ToCamelCase(item[0])));
             
             #line default
             #line hidden
@@ -352,7 +352,7 @@ namespace DataTables.GeneratorCore
             this.Write("\", ");
             
             #line 101 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(string.Join(", ", item)));
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildCamelCaseParameters(item)));
             
             #line default
             #line hidden
@@ -405,7 +405,7 @@ namespace DataTables.GeneratorCore
             this.Write(".TryGetValue(");
             
             #line 119 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(item.Length > 1 ? '(' + string.Join(", ", item) + ')' : item[0]));
+            this.Write(this.ToStringHelper.ToStringWithCulture(item.Length > 1 ? '(' + GenerationContext.BuildCamelCaseParameters(item) + ')' : GenerationContext.ToCamelCase(item[0])));
             
             #line default
             #line hidden

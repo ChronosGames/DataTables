@@ -98,7 +98,7 @@ public class GenerationContext
                 sb.Append(", ");
             }
 
-            sb.Append($"{fields[i]}={{{i}}}");
+            sb.Append($"{ToCamelCase(fields[i])}={{{i}}}");
         }
 
         return sb.ToString();
@@ -114,10 +114,37 @@ public class GenerationContext
 
         for (int i = 0; i < fields.Length; i++)
         {
-            result[i] = $"{DataTableProcessor.GetLanguageKeyword(GetField(fields[i])!)} {fields[i]}";
+            string paramName = ToCamelCase(fields[i]);
+            result[i] = $"{DataTableProcessor.GetLanguageKeyword(GetField(fields[i])!)} {paramName}";
         }
 
         return string.Join(", ", result);
+    }
+
+    /// <summary>
+    /// 将字符串转换为小驼峰命名
+    /// </summary>
+    /// <param name="str"></param>
+    /// <returns></returns>
+    public static string ToCamelCase(string str)
+    {
+        if (string.IsNullOrEmpty(str))
+            return str;
+        
+        if (str.Length == 1)
+            return str.ToLowerInvariant();
+        
+        return char.ToLowerInvariant(str[0]) + str.Substring(1);
+    }
+
+    /// <summary>
+    /// 获取小驼峰形式的参数名列表
+    /// </summary>
+    /// <param name="fields"></param>
+    /// <returns></returns>
+    public static string BuildCamelCaseParameters(string[] fields)
+    {
+        return string.Join(", ", fields.Select(ToCamelCase));
     }
 
     public string BuildIndexDictDefine(string[] fields)

@@ -18,6 +18,7 @@
         <PackageTags>database, embedded, inmemory, unity</PackageTags>
         <IsPackable>true</IsPackable>
         <TargetFramework>net8.0</TargetFramework>
+        <LangVersion>11</LangVersion>
     </PropertyGroup>
 
     <!-- Copy files for Unity -->

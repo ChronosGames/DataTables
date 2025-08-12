@@ -1,3 +1,50 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+## Table of Contents
+
+- [🚀 DataTables - 现代化高性能数据表系统](#-datatables---%E7%8E%B0%E4%BB%A3%E5%8C%96%E9%AB%98%E6%80%A7%E8%83%BD%E6%95%B0%E6%8D%AE%E8%A1%A8%E7%B3%BB%E7%BB%9F)
+  - [✨ 🆕 全新激进优化特性](#--%E5%85%A8%E6%96%B0%E6%BF%80%E8%BF%9B%E4%BC%98%E5%8C%96%E7%89%B9%E6%80%A7)
+    - [⚡ **异步优先架构**](#-%E5%BC%82%E6%AD%A5%E4%BC%98%E5%85%88%E6%9E%B6%E6%9E%84)
+    - [🛡️ **100%并发安全**](#-100%E5%B9%B6%E5%8F%91%E5%AE%89%E5%85%A8)
+    - [🧠 **智能内存管理**](#-%E6%99%BA%E8%83%BD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86)
+    - [🎯 **极简配置体验**](#-%E6%9E%81%E7%AE%80%E9%85%8D%E7%BD%AE%E4%BD%93%E9%AA%8C)
+  - [📋 目录](#-%E7%9B%AE%E5%BD%95)
+  - [🚀 快速开始](#-%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B)
+    - [.NET Core 项目](#net-core-%E9%A1%B9%E7%9B%AE)
+    - [Unity项目](#unity%E9%A1%B9%E7%9B%AE)
+  - [🆕 新API指南](#-%E6%96%B0api%E6%8C%87%E5%8D%97)
+    - [核心API对比](#%E6%A0%B8%E5%BF%83api%E5%AF%B9%E6%AF%94)
+    - [现代异步模式](#%E7%8E%B0%E4%BB%A3%E5%BC%82%E6%AD%A5%E6%A8%A1%E5%BC%8F)
+    - [智能配置系统](#%E6%99%BA%E8%83%BD%E9%85%8D%E7%BD%AE%E7%B3%BB%E7%BB%9F)
+  - [⚡ 性能优化](#-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96)
+    - [智能预热策略](#%E6%99%BA%E8%83%BD%E9%A2%84%E7%83%AD%E7%AD%96%E7%95%A5)
+    - [性能监控与统计](#%E6%80%A7%E8%83%BD%E7%9B%91%E6%8E%A7%E4%B8%8E%E7%BB%9F%E8%AE%A1)
+    - [Hook机制 2.0](#hook%E6%9C%BA%E5%88%B6-20)
+  - [🎮 Unity集成](#-unity%E9%9B%86%E6%88%90)
+    - [现代Unity最佳实践](#%E7%8E%B0%E4%BB%A3unity%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5)
+    - [Unity性能优化技巧](#unity%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E6%8A%80%E5%B7%A7)
+  - [🎯 高级功能](#-%E9%AB%98%E7%BA%A7%E5%8A%9F%E8%83%BD)
+    - [自定义数据源](#%E8%87%AA%E5%AE%9A%E4%B9%89%E6%95%B0%E6%8D%AE%E6%BA%90)
+    - [工厂模式优化](#%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F%E4%BC%98%E5%8C%96)
+    - [内存管理深度控制](#%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E6%B7%B1%E5%BA%A6%E6%8E%A7%E5%88%B6)
+  - [📋 数据表格式](#-%E6%95%B0%E6%8D%AE%E8%A1%A8%E6%A0%BC%E5%BC%8F)
+    - [表格型(Table)格式](#%E8%A1%A8%E6%A0%BC%E5%9E%8Btable%E6%A0%BC%E5%BC%8F)
+    - [生成的现代化API](#%E7%94%9F%E6%88%90%E7%9A%84%E7%8E%B0%E4%BB%A3%E5%8C%96api)
+    - [支持的数据类型](#%E6%94%AF%E6%8C%81%E7%9A%84%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B)
+  - [🛠️ 代码生成器](#-%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90%E5%99%A8)
+    - [CLI工具安装](#cli%E5%B7%A5%E5%85%B7%E5%AE%89%E8%A3%85)
+    - [现代化生成命令](#%E7%8E%B0%E4%BB%A3%E5%8C%96%E7%94%9F%E6%88%90%E5%91%BD%E4%BB%A4)
+    - [MSBuild集成](#msbuild%E9%9B%86%E6%88%90)
+  - [📈 迁移指南](#-%E8%BF%81%E7%A7%BB%E6%8C%87%E5%8D%97)
+    - [从旧版本升级](#%E4%BB%8E%E6%97%A7%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7)
+    - [渐进式升级策略](#%E6%B8%90%E8%BF%9B%E5%BC%8F%E5%8D%87%E7%BA%A7%E7%AD%96%E7%95%A5)
+    - [API映射表](#api%E6%98%A0%E5%B0%84%E8%A1%A8)
+  - [🏆 性能基准](#-%E6%80%A7%E8%83%BD%E5%9F%BA%E5%87%86)
+  - [📜 License](#-license)
+  - [🌟 支持项目](#-%E6%94%AF%E6%8C%81%E9%A1%B9%E7%9B%AE)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 [![GitHub Actions](https://github.com/ChronosGames/DataTables/workflows/Build-Debug/badge.svg)](https://github.com/ChronosGames/DataTables/actions) [![Releases](https://img.shields.io/github/release/ChronosGames/DataTables.svg)](https://github.com/ChronosGames/DataTables/releases)
 
 # 🚀 DataTables - 现代化高性能数据表系统

@@ -8,7 +8,7 @@ namespace DataTables
     /// 类型和名称的组合值。
     /// </summary>
     [StructLayout(LayoutKind.Auto)]
-    internal readonly struct TypeNamePair : IEquatable<TypeNamePair>
+    public readonly struct TypeNamePair : IEquatable<TypeNamePair>
     {
         /// <summary>
         /// 初始化类型和名称的组合值的新实例。

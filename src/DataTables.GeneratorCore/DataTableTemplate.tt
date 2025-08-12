@@ -78,6 +78,86 @@ public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTa
 <#  } #>
     }
 
+    #region Enhanced Static API
+
+    /// <summary>
+    /// 获取数据表实例 - 便于访问基类方法
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static <#= GenerationContext.DataTableClassName #> Table
+    {
+        get
+        {
+            var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
+            if (table == null)
+            {
+                throw new InvalidOperationException("<#= GenerationContext.DataTableClassName #> not loaded. Call DataTableManager.CreateDataTable<<#= GenerationContext.DataTableClassName #>>() first.");
+            }
+            return table;
+        }
+    }
+
+    /// <summary>
+    /// 安全获取数据表实例 - 返回null如果未加载
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static <#= GenerationContext.DataTableClassName #>? TableOrNull => DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
+
+    /// <summary>
+    /// 检查数据表是否已加载
+    /// </summary>
+    public static bool IsLoaded => DataTableManager.HasDataTable<<#= GenerationContext.DataTableClassName #>>();
+
+    /// <summary>
+    /// 获取数据表状态信息
+    /// </summary>
+    public static DataTableStatus Status
+    {
+        get
+        {
+            var table = TableOrNull;
+            if (table == null) return DataTableStatus.NotLoaded;
+            return table.Count > 0 ? DataTableStatus.LoadedWithData : DataTableStatus.LoadedEmpty;
+        }
+    }
+
+    /// <summary>
+    /// 静态版本：检查是否存在符合条件的数据行
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool HasDataRow(Predicate<<#= GenerationContext.DataRowClassName #>> condition) => Table.HasDataRow(condition);
+
+    /// <summary>
+    /// 静态版本：获取符合条件的第一个数据行
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static <#= GenerationContext.DataRowClassName #>? GetDataRow(Predicate<<#= GenerationContext.DataRowClassName #>> condition) => Table.GetDataRow(condition);
+
+    /// <summary>
+    /// 静态版本：获取符合条件的所有数据行
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static IEnumerable<<#= GenerationContext.DataRowClassName #>> GetDataRows(Predicate<<#= GenerationContext.DataRowClassName #>> condition) => Table.GetDataRows(condition);
+
+    /// <summary>
+    /// 静态版本：获取排序后的数据行
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static <#= GenerationContext.DataRowClassName #>[] GetDataRows(Comparison<<#= GenerationContext.DataRowClassName #>> comparison) => Table.GetDataRows(comparison);
+
+    /// <summary>
+    /// 静态版本：获取所有数据行
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static <#= GenerationContext.DataRowClassName #>[] GetAllDataRows() => Table.GetAllDataRows();
+
+    /// <summary>
+    /// 静态版本：数据行数量
+    /// </summary>
+    public static int Count => Table.Count;
+
+    #endregion
+
     #region Static API
 <#  for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {

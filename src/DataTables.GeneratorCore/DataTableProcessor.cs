@@ -12,6 +12,8 @@ namespace DataTables.GeneratorCore;
 public sealed partial class DataTableProcessor : IDisposable
 {
     private static readonly Regex NameRegex = new Regex(@"^[A-Za-z][A-Za-z0-9_]*$");
+    private const string DATA_TABLE_SIGNATURE = "DTABLE";
+    private const int DATA_TABLE_VERSION = 1;
 
     private readonly GenerationContext m_Context;
     private readonly IFormulaEvaluator m_FormulaEvaluator;
@@ -520,15 +522,24 @@ public sealed partial class DataTableProcessor : IDisposable
             using var fileStream = new FileStream(outputFileName, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true);
             using var binaryWriter = new BinaryWriter(fileStream, Encoding.UTF8, leaveOpen: true);
 
+            // 写入数据表签名
+            binaryWriter.Write(DATA_TABLE_SIGNATURE);
+            
+            // 写入数据表版本
+            binaryWriter.Write(DATA_TABLE_VERSION);
+
             // 写入行数占位
-            binaryWriter.Write(0);
+            binaryWriter.Write7BitEncodedInt(0);
 
             // 写入数据集
             int dataRowCount = WriteDataRows(sheet, binaryWriter);
 
-            // 重写行数
-            fileStream.Seek(0, SeekOrigin.Begin);
-            binaryWriter.Write(dataRowCount);
+            // 重写行数 (跳过签名和版本，定位到行数位置)
+            // String写入格式: 7BitEncodedInt(length) + UTF8字节
+            var signatureBytes = Encoding.UTF8.GetBytes(DATA_TABLE_SIGNATURE);
+            long countPosition = GetCompactIntSize(signatureBytes.Length) + signatureBytes.Length + sizeof(int);
+            fileStream.Seek(countPosition, SeekOrigin.Begin);
+            binaryWriter.Write7BitEncodedInt(dataRowCount);
 
             logger.Debug("  > Generate {0}.bytes to: {1}. - {2}ms", m_Context.DataRowClassName, outputFileName, Environment.TickCount - startTickCount);
         }
@@ -696,6 +707,18 @@ public sealed partial class DataTableProcessor : IDisposable
         {
             return ConvertToDigit(num / 26 - 1) + ConvertToDigit(num % 26);
         }
+    }
+
+    /// <summary>
+    /// 计算7BitEncodedInt编码后的字节数
+    /// </summary>
+    private static int GetCompactIntSize(int value)
+    {
+        if (value < 0x80) return 1;
+        if (value < 0x4000) return 2;
+        if (value < 0x200000) return 3;
+        if (value < 0x10000000) return 4;
+        return 5;
     }
 
     public void Dispose()

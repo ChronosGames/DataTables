@@ -25,6 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="DataTables\" />
     <Folder Include="Generated\" />
   </ItemGroup>
 

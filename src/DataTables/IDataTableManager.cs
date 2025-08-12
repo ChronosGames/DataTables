@@ -17,12 +17,6 @@ namespace DataTables
         }
 
         /// <summary>
-        /// 设置数据表辅助器。
-        /// </summary>
-        /// <param name="dataTableHelper">数据表辅助器。</param>
-        void SetDataTableHelper(IDataTableHelper dataTableHelper);
-
-        /// <summary>
         /// 是否存在数据表。
         /// </summary>
         /// <param name="dataTableType">数据表的类型。</param>

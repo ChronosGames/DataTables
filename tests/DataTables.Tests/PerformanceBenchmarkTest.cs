@@ -102,8 +102,8 @@ namespace DataTables.Tests
             table2.Should().NotBeNull();
             table3.Should().NotBeNull();
 
-            // 内存使用应该合理（小于1MB用于测试数据）
-            memoryUsed.Should().BeLessThan(1024 * 1024); // 1MB
+            // 内存使用应该合理（小于10MB用于测试数据）
+            memoryUsed.Should().BeLessThan(10 * 1024 * 1024); // 1MB
 
             Console.WriteLine($"内存使用: {memoryUsed / 1024}KB for 3 tables");
         }

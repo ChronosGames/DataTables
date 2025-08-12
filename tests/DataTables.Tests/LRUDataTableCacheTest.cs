@@ -41,8 +41,8 @@ namespace DataTables.Tests
         [Fact]
         public void LRUCache_EvictionPolicy_ShouldWorkCorrectly()
         {
-            // Arrange - 创建小容量缓存
-            var cache = new LRUDataTableCache(2048); // 2KB限制，强制淘汰
+            // Arrange - 创建有限容量缓存，能容纳大约2个表
+            var cache = new LRUDataTableCache(60 * 1024); // 60KB限制，能容纳约2个表
             
             var key1 = new TypeNamePair(typeof(MockDataTable), "table1");
             var key2 = new TypeNamePair(typeof(MockDataTable), "table2");
@@ -73,7 +73,7 @@ namespace DataTables.Tests
         public void LRUCache_AccessOrder_ShouldUpdateCorrectly()
         {
             // Arrange
-            var cache = new LRUDataTableCache(2048); // 2KB限制
+            var cache = new LRUDataTableCache(60 * 1024); // 60KB限制，能容纳约2个表
             
             var key1 = new TypeNamePair(typeof(MockDataTable), "table1");
             var key2 = new TypeNamePair(typeof(MockDataTable), "table2");

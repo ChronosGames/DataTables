@@ -174,7 +174,10 @@ namespace DataTables
             where TRow : DataRowBase
             where TFactory : IDataTableFactory<TTable, TRow>, new()
         {
-            s_Factories[typeof(TTable)] = new TFactory();
+            // 注册到两个地方确保一致性
+            var factory = new TFactory();
+            s_Factories[typeof(TTable)] = factory;
+            DataTableFactoryManager.RegisterFactory<TTable, TRow, TFactory>();
         }
 
         #endregion

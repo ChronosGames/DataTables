@@ -81,7 +81,6 @@ namespace DataTables
 
         private static readonly ConcurrentDictionary<TypeNamePair, DataTableBase> s_DataTables = new();
         private static readonly ConcurrentDictionary<TypeNamePair, Task<DataTableBase?>> s_LoadingTables = new();
-        private static readonly ConcurrentDictionary<Type, IDataTableFactory> s_Factories = new();
         private static LRUDataTableCache? s_Cache;
         private static IDataSource? s_DataSource;
         private static readonly object s_Lock = new object();
@@ -174,9 +173,6 @@ namespace DataTables
             where TRow : DataRowBase
             where TFactory : IDataTableFactory<TTable, TRow>, new()
         {
-            // 注册到两个地方确保一致性
-            var factory = new TFactory();
-            s_Factories[typeof(TTable)] = factory;
             DataTableFactoryManager.RegisterFactory<TTable, TRow, TFactory>();
         }
 
@@ -562,11 +558,10 @@ namespace DataTables
         private static DataTableBase CreateDataTableInstance(TypeNamePair typeNamePair, int capacity)
         {
             // 优先使用预注册的工厂（高性能）
-            if (s_Factories.TryGetValue(typeNamePair.Type, out var factory))
+            var dataTable = DataTableFactoryManager.CreateDataTable(typeNamePair.Type, typeNamePair.Name, capacity);
+            if (dataTable != null)
             {
-                // 使用反射调用工厂方法（需要优化成编译委托）
-                var createTableMethod = factory.GetType().GetMethod("CreateTable");
-                return (DataTableBase)createTableMethod!.Invoke(factory, new object[] { typeNamePair.Name, capacity })!;
+                return dataTable;
             }
 
             // 回退到反射模式（保持兼容性）
@@ -579,12 +574,17 @@ namespace DataTables
         private static DataRowBase CreateDataRowInstance(TypeNamePair typeNamePair)
         {
             // 优先使用预注册的工厂（高性能）
-            if (s_Factories.TryGetValue(typeNamePair.Type, out var factory))
+            var dataRow = DataTableFactoryManager.CreateDataRow(typeNamePair.Type);
+            if (dataRow != null)
             {
-                // 使用反射调用工厂方法（需要优化成编译委托）
-                var createRowMethod = factory.GetType().GetMethod("CreateRow");
-                return (DataRowBase)createRowMethod!.Invoke(factory, Array.Empty<object>())!;
+                return dataRow;
             }
+            // if (s_Factories.TryGetValue(typeNamePair.Type, out var factory))
+            // {
+            //     // 使用反射调用工厂方法（需要优化成编译委托）
+            //     var createRowMethod = factory.GetType().GetMethod("CreateRow");
+            //     return (DataRowBase)createRowMethod!.Invoke(factory, Array.Empty<object>())!;
+            // }
 
             // 回退到反射模式（保持兼容性）
             var dataRowType = typeNamePair.Type.BaseType!.GetGenericArguments()[0];

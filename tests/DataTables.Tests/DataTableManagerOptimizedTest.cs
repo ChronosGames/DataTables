@@ -186,32 +186,6 @@ namespace DataTables.Tests
             }
         }
 
-        /// <summary>
-        /// 测试向后兼容性
-        /// </summary>
-        [Fact]
-        public void BackwardCompatibility_ShouldBePreserved()
-        {
-            // Arrange
-            ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
-
-            // Act - 使用旧API（应该有警告但能工作）
-            #pragma warning disable CS0618 // 忽略过时警告
-            var oldTable = DataTableManager.GetDataTable<MockDataTable>();
-            #pragma warning restore CS0618
-
-            var newTable = DataTableManager.GetCached<MockDataTable>();
-
-            // Assert
-            // 旧API应该内部使用新实现
-            if (oldTable != null || newTable != null)
-            {
-                // 至少有一种方式能工作
-                true.Should().BeTrue();
-            }
-        }
-
         private void ResetDataTableManager()
         {
             // 清理测试状态

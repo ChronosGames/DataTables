@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 
 namespace DataTables
 {
@@ -21,7 +22,7 @@ namespace DataTables
         /// <returns>数据行实例</returns>
         DataRowBase CreateRow();
     }
-    
+
     /// <summary>
     /// 数据表工厂接口 - 消除反射调用的性能瓶颈
     /// </summary>
@@ -44,7 +45,7 @@ namespace DataTables
         /// </summary>
         /// <returns>数据行实例</returns>
         new TRow CreateRow();
-        
+
         // 显式实现基接口
         DataTableBase IDataTableFactory.CreateTable(string name, int capacity) => CreateTable(name, capacity);
         DataRowBase IDataTableFactory.CreateRow() => CreateRow();
@@ -55,7 +56,7 @@ namespace DataTables
     /// </summary>
     public static class DataTableFactoryManager
     {
-        private static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, object> s_Factories = new();
+        private static readonly ConcurrentDictionary<Type, IDataTableFactory> s_Factories = new();
 
         /// <summary>
         /// 注册数据表工厂
@@ -82,8 +83,8 @@ namespace DataTables
             where TTable : DataTableBase
             where TRow : DataRowBase
         {
-            return s_Factories.TryGetValue(typeof(TTable), out var factory) 
-                ? factory as IDataTableFactory<TTable, TRow> 
+            return s_Factories.TryGetValue(typeof(TTable), out IDataTableFactory? factory)
+                ? factory as IDataTableFactory<TTable, TRow>
                 : null;
         }
 
@@ -95,6 +96,28 @@ namespace DataTables
         public static bool HasFactory<TTable>() where TTable : DataTableBase
         {
             return s_Factories.ContainsKey(typeof(TTable));
+        }
+
+        public static DataTableBase? CreateDataTable(Type tableType, string name, int capacity)
+        {
+            if (s_Factories.TryGetValue(tableType, out var factory))
+            {
+                return factory.CreateTable(name, capacity);
+            }
+
+            // throw new InvalidOperationException($"No factory registered for type {tableType.FullName}");
+            return null;
+        }
+
+        public static DataRowBase? CreateDataRow(Type tableType)
+        {
+            if (s_Factories.TryGetValue(tableType, out var factory))
+            {
+                return factory.CreateRow();
+            }
+
+            // throw new InvalidOperationException($"No factory registered for type {tableType.FullName}");
+            return null;
         }
     }
 }

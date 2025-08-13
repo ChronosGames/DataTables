@@ -32,7 +32,7 @@ namespace DataTables
 
         public ValueTask<bool> IsAvailableAsync()
         {
-#if NET_5_OR_GREATER
+#if NET5_0_OR_GREATER
             return ValueTask.FromResult(Directory.Exists(_dataDirectory));
 #else
             return new ValueTask<bool>(Directory.Exists(_dataDirectory));

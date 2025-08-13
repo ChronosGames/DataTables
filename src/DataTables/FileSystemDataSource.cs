@@ -21,7 +21,7 @@ namespace DataTables
         public async ValueTask<byte[]> LoadAsync(string tableName)
         {
             var filePath = Path.Combine(_dataDirectory, $"{tableName}.bytes");
-            
+
             if (!File.Exists(filePath))
             {
                 throw new FileNotFoundException($"数据表文件不存在: {filePath}");
@@ -32,7 +32,11 @@ namespace DataTables
 
         public ValueTask<bool> IsAvailableAsync()
         {
+#if NET5_0_OR_GREATER
             return ValueTask.FromResult(Directory.Exists(_dataDirectory));
+#else
+            return new ValueTask<bool>(Directory.Exists(_dataDirectory));
+#endif
         }
     }
 }

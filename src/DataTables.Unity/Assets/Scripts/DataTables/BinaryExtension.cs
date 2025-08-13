@@ -142,7 +142,7 @@ namespace DataTables
 #elif UNITY_EDITOR
             return UnityEngine.JsonUtility.FromJson<T>(plain);
 #else
-            throw new NotImplementedException();
+            throw new NotSupportedException();
 #endif
         }
     }

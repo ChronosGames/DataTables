@@ -85,7 +85,7 @@ public class DataMatrix1 : DataMatrixBase1<Key1Enum, Key2Enum, ValueEnum>
 
     public override bool ParseDataRow(int index, BinaryReader reader)
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 }
 
@@ -122,7 +122,7 @@ public class DataMatrix3 : DataMatrixBase1<Key1Enum, Key2Enum, int[]>
         }
     }
 
-    public override bool ParseDataRow(int index, BinaryReader reader) => throw new NotImplementedException();
+    public override bool ParseDataRow(int index, BinaryReader reader) => throw new NotSupportedException();
 }
 
 public class DataMatrix4 : DataMatrixBase<Key1Enum, Key2Enum, int[]>

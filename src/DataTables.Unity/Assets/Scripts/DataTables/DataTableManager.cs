@@ -723,11 +723,14 @@ namespace DataTables
                 // 查找生成的DataTableManagerExtension类
                 var extensionType = AppDomain.CurrentDomain.GetAssemblies()
                     .SelectMany(a => a.GetTypes())
-                    .FirstOrDefault(t => t.Name == "DataTableManagerExtension" && t.GetMethod("Preload") != null);
+                    .FirstOrDefault(t => t.Name == "DataTableManagerExtension" && (t.GetMethod("PreloadByPriority") != null || t.GetMethod("Preload") != null));
 
                 if (extensionType != null)
                 {
-                    var preloadMethod = extensionType.GetMethod("Preload",
+                    // 优先使用按优先级预加载
+                    var preloadByPriority = extensionType.GetMethod("PreloadByPriority",
+                        new[] { typeof(Priority), typeof(Action), typeof(Action<float>) });
+                    var preloadMethod = preloadByPriority ?? extensionType.GetMethod("Preload",
                         new[] { typeof(Action), typeof(Action<float>) });
 
                     if (preloadMethod != null)
@@ -743,15 +746,31 @@ namespace DataTables
                             }
                         });
 
-                        preloadMethod.Invoke(null, new object[] {
-                            new Action(() => {
-                                if (!completed) {
-                                    completed = true;
-                                    tcs.SetResult(s_DataTables.Count);
-                                }
-                            }),
-                            null // 进度回调（可选）
-                        });
+                        if (preloadByPriority != null)
+                        {
+                            preloadByPriority.Invoke(null, new object[] {
+                                priorities,
+                                new Action(() => {
+                                    if (!completed) {
+                                        completed = true;
+                                        tcs.SetResult(s_DataTables.Count);
+                                    }
+                                }),
+                                (Action<float>?)null // 进度回调（可选）
+                            });
+                        }
+                        else
+                        {
+                            preloadMethod!.Invoke(null, new object[] {
+                                new Action(() => {
+                                    if (!completed) {
+                                        completed = true;
+                                        tcs.SetResult(s_DataTables.Count);
+                                    }
+                                }),
+                                (Action<float>?)null // 进度回调（可选）
+                            });
+                        }
 
                         loadedCount = await tcs.Task;
                     }

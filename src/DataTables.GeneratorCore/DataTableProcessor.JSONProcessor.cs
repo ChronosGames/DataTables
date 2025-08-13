@@ -41,7 +41,7 @@ public sealed partial class DataTableProcessor
             return value.StartsWith("\"") ? JsonUtility.Deserialize<string>(value)! : value;
         }
 
-        public override string GenerateTypeValue(string text) => throw new NotImplementedException();
+        public override string GenerateTypeValue(string text) => throw new NotSupportedException();
 
         public override void WriteToStream(BinaryWriter binaryWriter, string value)
         {

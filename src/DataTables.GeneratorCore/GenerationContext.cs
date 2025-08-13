@@ -33,6 +33,11 @@ public class GenerationContext
     public bool DisableTagsFilter { get; set; }
 
     /// <summary>
+    /// 表预热优先级：Critical/Normal/Lazy（默认Normal）
+    /// </summary>
+    public string Priority { get; set; } = "Normal";
+
+    /// <summary>
     /// 实际列
     /// </summary>
     public XField[] Fields { get; set; } = [];
@@ -130,10 +135,10 @@ public class GenerationContext
     {
         if (string.IsNullOrEmpty(str))
             return str;
-        
+
         if (str.Length == 1)
             return str.ToLowerInvariant();
-        
+
         return char.ToLowerInvariant(str[0]) + str.Substring(1);
     }
 

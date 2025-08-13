@@ -12,6 +12,11 @@ public partial class DataTableManagerExtensionTemplate
     public string DataRowPrefix { get; set; } = string.Empty;
 
     public IOrderedEnumerable<KeyValuePair<string, IOrderedEnumerable<string>>>? DataTables { get; set; }
+
+    /// <summary>
+    /// 每个完整表名到优先级字符串的映射（Critical/Normal/Lazy）
+    /// </summary>
+    public Dictionary<string, string>? TablePriorities { get; set; }
 }
 
 public partial class DataTableTemplate

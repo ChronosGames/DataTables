@@ -369,6 +369,17 @@ public sealed partial class DataTableProcessor : IDisposable
                     case "group":
                         m_Context.Groups.Add(args[1].Trim().Split('&'));
                         break;
+                    case "priority":
+                        // 支持在首行通过 priority=Critical|Normal|Lazy 指定表预热优先级（大小写不敏感）
+                        {
+                            var raw = args[1].Trim();
+                            var norm = raw.Equals("critical", StringComparison.OrdinalIgnoreCase) ? "Critical"
+                                : raw.Equals("normal", StringComparison.OrdinalIgnoreCase) ? "Normal"
+                                : raw.Equals("lazy", StringComparison.OrdinalIgnoreCase) ? "Lazy"
+                                : "Normal";
+                            m_Context.Priority = norm;
+                        }
+                        break;
                     case "child":
                         m_Context.Child = args[1].Trim();
                         break;
@@ -524,7 +535,7 @@ public sealed partial class DataTableProcessor : IDisposable
 
             // 写入数据表签名
             binaryWriter.Write(DATA_TABLE_SIGNATURE);
-            
+
             // 写入数据表版本
             binaryWriter.Write(DATA_TABLE_VERSION);
 

@@ -37,7 +37,7 @@ public sealed partial class DataTableProcessor
             return sbyte.Parse(value);
         }
 
-        public override string GenerateTypeValue(string text) => throw new NotImplementedException();
+        public override string GenerateTypeValue(string text) => throw new NotSupportedException();
 
         public override void WriteToStream(BinaryWriter binaryWriter, string value)
         {

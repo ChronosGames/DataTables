@@ -104,6 +104,11 @@ public sealed class DataTableGenerator
         var dict = list.GroupBy(k => k.DataTableClassFullName, v => v.Child).ToDictionary(k => k.Key, v => v.Where(x => !string.IsNullOrEmpty(x)).OrderBy(x => x));
         var sortedDict = from entry in dict orderby entry.Key ascending select entry;
 
+        // 收集每张表的优先级
+        var tablePriorities = list
+            .GroupBy(x => x.DataTableClassFullName)
+            .ToDictionary(g => g.Key, g => g.First().Priority);
+
         // 生成DataTableManagerExtension代码文件(放在未尾确保类名前缀会正确附加)
         if (!string.IsNullOrEmpty(codeOutputDir))
         {
@@ -111,6 +116,7 @@ public sealed class DataTableGenerator
             {
                 Namespace = usingNamespace,
                 DataTables = sortedDict,
+                TablePriorities = tablePriorities,
             };
             logger(WriteToFile(codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
         }

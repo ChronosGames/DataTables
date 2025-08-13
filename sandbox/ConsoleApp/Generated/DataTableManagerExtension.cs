@@ -18,6 +18,13 @@ public static class DataTableManagerExtension
         { "ConsoleApp.DTMatrixSample", Array.Empty<string>() },
     };
 
+    public static readonly Dictionary<string, Priority> Priorities = new Dictionary<string, Priority>
+    {
+        { "ConsoleApp.DTDataTableSample", Priority.Normal },
+        { "ConsoleApp.DTDataTableSplitSample", Priority.Normal },
+        { "ConsoleApp.DTMatrixSample", Priority.Normal },
+    };
+
     /// <summary>
     /// 预加载所有数据表。
     /// </summary>
@@ -42,6 +49,50 @@ public static class DataTableManagerExtension
         DataTableManager.CreateDataTable<ConsoleApp.DTDataTableSplitSample>("x001", next);
         DataTableManager.CreateDataTable<ConsoleApp.DTDataTableSplitSample>("x002", next);
         DataTableManager.CreateDataTable<ConsoleApp.DTMatrixSample>(next);
+    }
+
+    /// <summary>
+    /// 按优先级预加载数据表
+    /// </summary>
+    public static void PreloadByPriority(Priority priorities, Action? onCompleted = default, Action<float>? onProgress = default)
+    {
+        var selected = new List<Action<Action>>();
+        if (Priorities.ContainsKey("ConsoleApp.DTDataTableSample") && (priorities & Priorities["ConsoleApp.DTDataTableSample"]) != 0)
+        {
+            selected.Add(next => DataTableManager.CreateDataTable<ConsoleApp.DTDataTableSample>(next));
+        }
+        if (Priorities.ContainsKey("ConsoleApp.DTDataTableSplitSample") && (priorities & Priorities["ConsoleApp.DTDataTableSplitSample"]) != 0)
+        {
+            selected.Add(next => DataTableManager.CreateDataTable<ConsoleApp.DTDataTableSplitSample>("x001", next));
+            selected.Add(next => DataTableManager.CreateDataTable<ConsoleApp.DTDataTableSplitSample>("x002", next));
+        }
+        if (Priorities.ContainsKey("ConsoleApp.DTMatrixSample") && (priorities & Priorities["ConsoleApp.DTMatrixSample"]) != 0)
+        {
+            selected.Add(next => DataTableManager.CreateDataTable<ConsoleApp.DTMatrixSample>(next));
+        }
+
+        int total = selected.Count;
+        if (total == 0)
+        {
+            onCompleted?.Invoke();
+            return;
+        }
+
+        int done = 0;
+        void next()
+        {
+            done++;
+            onProgress?.Invoke((float)done / total);
+            if (done == total)
+            {
+                onCompleted?.Invoke();
+            }
+        }
+
+        foreach (var action in selected)
+        {
+            action(next);
+        }
     }
 }
 }

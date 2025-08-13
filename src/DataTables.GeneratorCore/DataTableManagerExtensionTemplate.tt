@@ -26,6 +26,15 @@ public static class DataTableManagerExtension
 } #>
     };
 
+    public static readonly Dictionary<string, Priority> Priorities = new Dictionary<string, Priority>
+    {
+<# if (TablePriorities != null) {
+   foreach (var kv in TablePriorities.OrderBy(k=>k.Key)) { #>
+        { "<#= kv.Key #>", Priority.<#= kv.Value #> },<#=Environment.NewLine#><#
+   }
+} #>
+    };
+
     /// <summary>
     /// 预加载所有数据表。
     /// </summary>
@@ -62,6 +71,47 @@ foreach (var pair in DataTables)
     }
 }
 #>
+    }
+
+    /// <summary>
+    /// 按优先级预加载数据表
+    /// </summary>
+    public static void PreloadByPriority(Priority priorities, Action? onCompleted = default, Action<float>? onProgress = default)
+    {
+        var selected = new List<Action<Action>>();
+<# foreach (var pair in DataTables) { #>
+        if (Priorities.ContainsKey("<#= pair.Key #>") && (priorities & Priorities["<#= pair.Key #>"]) != 0)
+        {
+<# if (!pair.Value.Any()) { #>
+            selected.Add(next => DataTableManager.CreateDataTable<<#=pair.Key#>>(next));
+<# } else { foreach (var name in pair.Value) { #>
+            selected.Add(next => DataTableManager.CreateDataTable<<#=pair.Key#>>("<#=name#>", next));
+<# } } #>
+        }
+<# } #>
+
+        int total = selected.Count;
+        if (total == 0)
+        {
+            onCompleted?.Invoke();
+            return;
+        }
+
+        int done = 0;
+        void next()
+        {
+            done++;
+            onProgress?.Invoke((float)done / total);
+            if (done == total)
+            {
+                onCompleted?.Invoke();
+            }
+        }
+
+        foreach (var action in selected)
+        {
+            action(next);
+        }
     }
 }
 <# if (!string.IsNullOrEmpty(Namespace)) { #>

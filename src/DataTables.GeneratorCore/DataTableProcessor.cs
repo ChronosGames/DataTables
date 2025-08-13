@@ -18,9 +18,10 @@ public sealed partial class DataTableProcessor : IDisposable
     private readonly GenerationContext m_Context;
     private readonly IFormulaEvaluator m_FormulaEvaluator;
     private readonly string m_Tags;
+    private readonly ParseOptions m_Options;
+    private readonly DiagnosticsCollector m_Diagnostics;
 
-    private FileStream? m_FileStream;
-    private BinaryWriter? m_BinaryWriter;
+
 
     /// <summary>
     /// 初始数据行序号
@@ -32,90 +33,58 @@ public sealed partial class DataTableProcessor : IDisposable
         m_Context = context;
         m_FormulaEvaluator = formulaEvaluator;
         m_Tags = tags;
+        m_Options = new ParseOptions { FilterColumnTags = tags };
+        m_Diagnostics = new DiagnosticsCollector();
+
+        m_FirstDataRowIndex = -1;
+    }
+
+    public DiagnosticsCollector Diagnostics => m_Diagnostics;
+
+    public ParseOptions Options => m_Options;
+
+    public DataTableProcessor(GenerationContext context, IFormulaEvaluator formulaEvaluator, ParseOptions options, DiagnosticsCollector diagnostics)
+    {
+        m_Context = context;
+        m_FormulaEvaluator = formulaEvaluator;
+        m_Options = options ?? new ParseOptions();
+        m_Tags = m_Options.FilterColumnTags;
+        m_Diagnostics = diagnostics ?? new DiagnosticsCollector();
 
         m_FirstDataRowIndex = -1;
     }
 
     public void CreateGenerationContext(ISheet sheet)
     {
-        int rowIndex = 0;
-
-        for (int i = sheet.FirstRowNum; i <= sheet.LastRowNum; i++)
+        var sw = Stopwatch.StartNew();
+        // 定位首个有效行并解析表头
+        int headerRowIndex = ParserUtils.GetFirstValidRowIndex(sheet);
+        if (headerRowIndex == -1)
         {
-            var row = sheet.GetRow(i);
-            if (!ValidRow(row))
-            {
-                continue;
-            }
-
-            switch (rowIndex++)
-            {
-                case 0: // 标题行
-                {
-                    ParseSheetInfoRow(GetCellString(row.GetCell(row.FirstCellNum)));
-                    break;
-                }
-                case 1: // 字段注释行 / Column模式：首个字段行
-                {
-                    if (m_Context.DataSetType == "matrix")
-                    {
-                        ParseMatrixInfo(row);
-                        m_FirstDataRowIndex = i + 1;
-                        return;
-                    }
-                    else if (m_Context.DataSetType == "column")
-                    {
-                        // Column 模式：第2行开始即为字段定义行
-                        ParseColumnFields(sheet, i);
-                        // 数据从字段三列之后开始（A:Title, B:Name, C:Type => D列开始）
-                        m_Context.ColumnFirstDataColIndex = row.FirstCellNum + 3;
-                        m_FirstDataRowIndex = i; // 行遍历用于定位列注释行，真实写出按列
-                        return;
-                    }
-                    else
-                    {
-                        ParseFieldCommentRow(row);
-                    }
-                    break;
-                }
-                case 2: // 字段名称行（RowTable）
-                {
-                    if (m_Context.DataSetType == "matrix")
-                    {
-
-                    }
-                    else if (m_Context.DataSetType == "column")
-                    {
-                        // 已在 ParseColumnFields 完成
-                    }
-                    else
-                    {
-                        ParseFieldNameRow(row);
-                    }
-                    break;
-                }
-                case 3: // 字段类型行（RowTable）
-                {
-                    if (m_Context.DataSetType == "matrix")
-                    {
-
-                    }
-                    else if (m_Context.DataSetType == "column")
-                    {
-                        // 已在 ParseColumnFields 完成
-                        m_FirstDataRowIndex = i + 1;
-                        return;
-                    }
-                    else
-                    {
-                        ParseFieldTypeRow(row);
-                        m_FirstDataRowIndex = i + 1;
-                        return;
-                    }
-                    break;
-                }
-            }
+            m_Diagnostics.Warn(m_Context.FileName, m_Context.SheetName, string.Empty, "未找到有效表头行");
+            return;
         }
+
+        var headerRow = sheet.GetRow(headerRowIndex);
+        ParseSheetInfoRow(GetCellString(headerRow.GetCell(headerRow.FirstCellNum)));
+
+        // 按模式选择解析器
+        ITableSchemaParser parser = m_Context.DataSetType == "matrix"
+            ? new MatrixTableParser()
+            : m_Context.DataSetType == "column" ? new ColumnTableParser() : new RowTableParser();
+        // 使用抽象 Reader 包装 NPOI Sheet
+        int nextIndex = parser.Parse(new NpoiSheetReader(sheet), m_Context, m_Options, m_Diagnostics);
+        if (nextIndex == -1)
+        {
+            m_Diagnostics.Warn(m_Context.FileName, m_Context.SheetName, string.Empty, "表头或字段信息不完整，解析终止");
+            return;
+        }
+
+        // 不同模式的 nextIndex 语义不同；column 返回字段起始行，其余返回数据起始行
+        m_FirstDataRowIndex = m_Context.DataSetType == "column" ? nextIndex : nextIndex;
+
+        sw.Stop();
+        m_Diagnostics.GetMetrics(m_Context.FileName, m_Context.SheetName).ParseElapsedMs += sw.ElapsedMilliseconds;
     }
 
     private static bool ValidRow(IRow? row)
@@ -152,6 +121,23 @@ public sealed partial class DataTableProcessor : IDisposable
         }
 
         return true;
+    }
+
+    private static int FindNextValidRowIndex(ISheet sheet, int startExclusive)
+    {
+        for (int i = startExclusive + 1; i <= sheet.LastRowNum; i++)
+        {
+            if (ValidRow(sheet.GetRow(i)))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static int GetFirstValidRowIndex(ISheet sheet)
+    {
+        return FindNextValidRowIndex(sheet, sheet.FirstRowNum - 1);
     }
 
     // 是否有效行
@@ -276,26 +262,56 @@ public sealed partial class DataTableProcessor : IDisposable
             throw new Exception("表格头部信息不全");
         }
 
-        // 检查是否存在正确的索引配置
-        foreach (var index in m_Context.Indexs)
+        // 规范化并检查索引配置（大小写不敏感匹配到实际字段名）
+        var fieldMap = m_Context.Fields
+            .Where(f => !string.IsNullOrEmpty(f.Name))
+            .GroupBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        for (int idx = 0; idx < m_Context.Indexs.Count; idx++)
         {
-            foreach (var fieldName in index)
+            var index = m_Context.Indexs[idx];
+            for (int i = 0; i < index.Length; i++)
             {
-                if (!m_Context.Fields.Any(x => !x.IsIgnore && x.Name == fieldName))
+                var rawName = (index[i] ?? string.Empty).Trim();
+                if (!fieldMap.TryGetValue(rawName, out var field))
                 {
-                    throw new Exception($"Index配置中发现不存在的字段: {fieldName}");
+                    var available = string.Join(", ", m_Context.Fields.Where(f => !string.IsNullOrEmpty(f.Name)).Select(f => f.Name));
+                    throw new Exception($"Index配置中发现不存在的字段: {rawName}. 可用字段: [{available}]");
+                }
+                if (field.IsIgnore)
+                {
+                    var reason = field.IsTagFiltered ? "(因标签过滤被忽略)" : field.IsComment ? "(为注释列被忽略)" : "(被忽略)";
+                    throw new Exception($"Index配置引用了被忽略的字段: {rawName} {reason}");
+                }
+                // 用实际字段名回填，确保后续代码生成一致
+                if (!string.Equals(index[i], field.Name, StringComparison.Ordinal))
+                {
+                    index[i] = field.Name;
                 }
             }
         }
 
-        // 检查是否存在正确的分组配置
-        foreach (var group in m_Context.Groups)
+        // 规范化并检查分组配置（大小写不敏感匹配到实际字段名）
+        for (int g = 0; g < m_Context.Groups.Count; g++)
         {
-            foreach (var fieldName in group)
+            var group = m_Context.Groups[g];
+            for (int i = 0; i < group.Length; i++)
             {
-                if (!m_Context.Fields.Any(x => !x.IsIgnore && x.Name == fieldName))
+                var rawName = (group[i] ?? string.Empty).Trim();
+                if (!fieldMap.TryGetValue(rawName, out var field))
                 {
-                    throw new Exception($"Group配置中发现不存在的字段: {fieldName}");
+                    var available = string.Join(", ", m_Context.Fields.Where(f => !string.IsNullOrEmpty(f.Name)).Select(f => f.Name));
+                    throw new Exception($"Group配置中发现不存在的字段: {rawName}. 可用字段: [{available}]");
+                }
+                if (field.IsIgnore)
+                {
+                    var reason = field.IsTagFiltered ? "(因标签过滤被忽略)" : field.IsComment ? "(为注释列被忽略)" : "(被忽略)";
+                    throw new Exception($"Group配置引用了被忽略的字段: {rawName} {reason}");
+                }
+                if (!string.Equals(group[i], field.Name, StringComparison.Ordinal))
+                {
+                    group[i] = field.Name;
                 }
             }
         }
@@ -305,6 +321,11 @@ public sealed partial class DataTableProcessor : IDisposable
 
     private void ValidateFormulaCellString(ICell cell, string value)
     {
+        if (!m_Options.ValidateFormulaConsistency || m_Options.FormulaPolicy == FormulaEvaluationPolicy.Off)
+        {
+            return;
+        }
+
         CellValue? result;
         try
         {
@@ -383,11 +404,19 @@ public sealed partial class DataTableProcessor : IDisposable
                         m_Context.DisableTagsFilter = bool.Parse(args[1].Trim());
                         break;
                     case "index":
-                        m_Context.Indexs.Add(args[1].Trim().Split('&'));
+                    {
+                        var fields = args[1]
+                            .Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        m_Context.Indexs.Add(fields);
                         break;
+                    }
                     case "group":
-                        m_Context.Groups.Add(args[1].Trim().Split('&'));
+                    {
+                        var fields = args[1]
+                            .Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        m_Context.Groups.Add(fields);
                         break;
+                    }
                     case "priority":
                         // 支持在首行通过 priority=Critical|Normal|Lazy 指定表预热优先级（大小写不敏感）
                         {
@@ -404,7 +433,8 @@ public sealed partial class DataTableProcessor : IDisposable
                         break;
                     case "matrix":
                     {
-                        var fields = args[1].Trim().Split('&');
+                        var fields = args[1]
+                            .Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                         m_Context.Fields =
                         [
                             new XField(0) { Name = DataMatrixTemplate.kKey1, TypeName = fields[0] },
@@ -471,14 +501,36 @@ public sealed partial class DataTableProcessor : IDisposable
             if (!m_Context.DisableTagsFilter)
             {
                 var index = text.LastIndexOf('@');
-                if (index != -1)
+                if (!string.IsNullOrEmpty(m_Tags))
                 {
-                    if (!string.IsNullOrEmpty(m_Tags) && !ContainTags(text.Substring(index + 1).ToUpper(), m_Tags.ToUpper()))
+                    if (index == -1)
                     {
                         field.IsIgnore = true;
                         continue;
                     }
-
+                    var tagText = text.Substring(index + 1);
+                    bool match = false;
+                    for (int ci = 0; ci < m_Tags.Length && !match; ci++)
+                    {
+                        char f = char.ToUpperInvariant(m_Tags[ci]);
+                        foreach (var tc in tagText)
+                        {
+                            if (char.ToUpperInvariant(tc) == f)
+                            {
+                                match = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!match)
+                    {
+                        field.IsIgnore = true;
+                        continue;
+                    }
+                    text = text.Substring(0, index);
+                }
+                else if (index != -1)
+                {
                     text = text.Substring(0, index);
                 }
             }
@@ -620,6 +672,7 @@ public sealed partial class DataTableProcessor : IDisposable
                     var mk = GetCellString(markRow?.GetCell(c));
                     if (!string.IsNullOrEmpty(mk) && mk.TrimStart().StartsWith("#", StringComparison.Ordinal))
                     {
+                        m_Diagnostics.GetMetrics(m_Context.FileName, m_Context.SheetName).SkippedColumnCount++;
                         continue;
                     }
                 }
@@ -684,6 +737,10 @@ public sealed partial class DataTableProcessor : IDisposable
                 var cellString = GetCellString(row.GetCell(pair.Key));
                 if (string.IsNullOrEmpty(cellString) || cellString == m_Context.MatrixDefaultValue)
                 {
+                    if (cellString == m_Context.MatrixDefaultValue)
+                    {
+                        m_Diagnostics.GetMetrics(m_Context.FileName, m_Context.SheetName).MatrixDefaultSkippedCount++;
+                    }
                     continue;
                 }
 
@@ -900,18 +957,5 @@ public sealed partial class DataTableProcessor : IDisposable
         return 5;
     }
 
-    public void Dispose()
-    {
-        if (m_BinaryWriter != null)
-        {
-            m_BinaryWriter.Dispose();
-            m_BinaryWriter = null;
-        }
-
-        if (m_FileStream != null)
-        {
-            m_FileStream.Dispose();
-            m_FileStream = null;
-        }
-    }
+    public void Dispose() { }
 }

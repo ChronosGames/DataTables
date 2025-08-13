@@ -1,4 +1,5 @@
 using System.IO;
+using System.Globalization;
 
 namespace DataTables.GeneratorCore;
 
@@ -32,10 +33,10 @@ public sealed partial class DataTableProcessor
             };
         }
 
-        public override float Parse(string value)
-        {
-            return string.IsNullOrEmpty(value) ? 0 : float.Parse(value);
-        }
+		public override float Parse(string value)
+		{
+			return string.IsNullOrEmpty(value) ? 0 : float.Parse(value, CultureInfo.InvariantCulture);
+		}
 
         public override string GenerateTypeValue(string text) => Parse(text).ToString() + 'f';
 

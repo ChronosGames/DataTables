@@ -32,7 +32,15 @@ public class MyCommands
         string usingNamespace = "",
         string prefixClassName = "",
         string filterColumnTags = "",
-        bool forceOverwrite = false)
+        bool forceOverwrite = false,
+        // ParseOptions
+        bool strictNameValidation = true,
+        bool validateFormulaConsistency = true,
+        string formulaPolicy = "ValidateOnly", // Off|ValidateOnly|ForceEvaluate
+        string columnCommentMarkerText = "#列注释标志",
+        string rowCommentMarkerText = "#行注释标志",
+        string skipCellMarker = "#",
+        string diagnosticsJsonOutput = "")
     {
         var oldEncoding = Console.OutputEncoding;
         Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -42,11 +50,26 @@ public class MyCommands
 
         try
         {
+            var options = new ParseOptions
+            {
+                FilterColumnTags = filterColumnTags,
+                StrictNameValidation = strictNameValidation,
+                ValidateFormulaConsistency = validateFormulaConsistency,
+                FormulaPolicy = formulaPolicy.Equals("off", StringComparison.OrdinalIgnoreCase) ? FormulaEvaluationPolicy.Off
+                    : formulaPolicy.Equals("forceevaluate", StringComparison.OrdinalIgnoreCase) ? FormulaEvaluationPolicy.ForceEvaluate
+                    : FormulaEvaluationPolicy.ValidateOnly,
+                ColumnCommentMarkerText = columnCommentMarkerText,
+                RowCommentMarkerText = rowCommentMarkerText,
+                SkipCellMarker = skipCellMarker,
+            };
+
             await new DataTableGenerator().GenerateFile(inputDirectories, searchPattern, codeOutputDir, dataOutputDir, usingNamespace, prefixClassName,
                 importNamespaces: importNamespaces,
                 filterColumnTags: filterColumnTags,
                 forceOverwrite,
-                Console.WriteLine);
+                Console.WriteLine,
+                options,
+                string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput);
         }
         catch (Exception e)
         {
@@ -78,7 +101,15 @@ public class MyCommands
         string importNamespaces = "",
         string usingNamespace = "",
         string prefixClassName = "",
-        string filterColumnTags = "")
+        string filterColumnTags = "",
+        // ParseOptions
+        bool strictNameValidation = true,
+        bool validateFormulaConsistency = true,
+        string formulaPolicy = "ValidateOnly",
+        string columnCommentMarkerText = "#列注释标志",
+        string rowCommentMarkerText = "#行注释标志",
+        string skipCellMarker = "#",
+        string diagnosticsJsonOutput = "")
     {
         var oldEncoding = Console.OutputEncoding;
         Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -88,11 +119,26 @@ public class MyCommands
 
         try
         {
+            var options = new ParseOptions
+            {
+                FilterColumnTags = filterColumnTags,
+                StrictNameValidation = strictNameValidation,
+                ValidateFormulaConsistency = validateFormulaConsistency,
+                FormulaPolicy = formulaPolicy.Equals("off", StringComparison.OrdinalIgnoreCase) ? FormulaEvaluationPolicy.Off
+                    : formulaPolicy.Equals("forceevaluate", StringComparison.OrdinalIgnoreCase) ? FormulaEvaluationPolicy.ForceEvaluate
+                    : FormulaEvaluationPolicy.ValidateOnly,
+                ColumnCommentMarkerText = columnCommentMarkerText,
+                RowCommentMarkerText = rowCommentMarkerText,
+                SkipCellMarker = skipCellMarker,
+            };
+
             await new DataTableGenerator().GenerateFile(inputDirectories, searchPattern, string.Empty, dataOutputDir, usingNamespace, prefixClassName,
                 importNamespaces: importNamespaces,
                 filterColumnTags: filterColumnTags,
                 true,
-                Console.WriteLine);
+                Console.WriteLine,
+                options,
+                string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput);
         }
         catch (Exception e)
         {

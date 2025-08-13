@@ -1,3 +1,5 @@
+using System;
+using System.Globalization;
 using System.IO;
 
 namespace DataTables.GeneratorCore;
@@ -39,7 +41,17 @@ public sealed partial class DataTableProcessor
                 return 0;
             }
 
-            return JsonUtility.Deserialize<uint>(value);
+            var trimmed = value.Trim();
+            if (trimmed.Length > 0 && trimmed[0] == '"')
+            {
+                var s = JsonUtility.Deserialize<string>(trimmed) ?? string.Empty;
+                if (uint.TryParse(s.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var n))
+                {
+                    return n;
+                }
+            }
+
+            return JsonUtility.Deserialize<uint>(trimmed);
         }
 
         public override string GenerateTypeValue(string text) => Parse(text).ToString();

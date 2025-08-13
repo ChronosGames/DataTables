@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Globalization;
 
 namespace DataTables.GeneratorCore;
 
@@ -28,18 +29,28 @@ public sealed partial class DataTableProcessor
 
         public override Type Type => typeof(DateTime);
 
-        public override string GenerateTypeValue(string text)
-        {
-            var datetime = Parse(text);
-            return $"new DateTime({datetime.Year}, {datetime.Month}, {datetime.Day}, {datetime.Hour}, {datetime.Minute}, {datetime.Second})";
-        }
+		public override string GenerateTypeValue(string text)
+		{
+			var datetime = Parse(text);
+			return $"new DateTime({datetime.Year}, {datetime.Month}, {datetime.Day}, {datetime.Hour}, {datetime.Minute}, {datetime.Second})";
+		}
 
-        public override DateTime Parse(string value)
-        {
-            new DateTime(2012, 2, 2, 3, 4, 5);
+		public override DateTime Parse(string value)
+		{
+			if (string.IsNullOrWhiteSpace(value))
+			{
+				throw new InvalidCastException("无法将空值转换为DateTime类型");
+			}
 
-            return DateTime.Parse(value);
-        }
+			var formats = new[] { "yyyy-MM-dd", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-ddTHH:mm:ss" };
+			var text = value.Trim();
+			if (DateTime.TryParseExact(text, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var result))
+			{
+				return result;
+			}
+
+			throw new InvalidCastException($"无法将{value}转换为DateTime类型，期望格式：yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss 或 yyyy-MM-ddTHH:mm:ss（InvariantCulture）");
+		}
 
         public override string GenerateDeserializeCode(GenerationContext context, string typeName, string propertyName, int depth)
         {

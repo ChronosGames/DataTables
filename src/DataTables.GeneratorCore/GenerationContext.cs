@@ -246,5 +246,10 @@ public class XField(int index)
     /// 是否注释
     /// </summary>
     public bool IsComment { get; set; }
+
+    /// <summary>
+    /// 是否因标签过滤而被忽略
+    /// </summary>
+    public bool IsTagFiltered { get; set; }
 }
 

@@ -20,7 +20,7 @@ public sealed class DataTableGenerator
         m_Locks = new();
     }
 
-    public async Task GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string dataRowClassPrefix, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger)
+    public async Task GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string dataRowClassPrefix, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger, ParseOptions? options = null, string? diagnosticsJsonOutput = null)
     {
         // By default, ExcelDataReader throws a NotSupportedException "No data is available for encoding 1252." on .NET Core.
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -73,7 +73,7 @@ public sealed class DataTableGenerator
             }
         }
 
-        if (filePaths.Count() == 0)
+        if (filePaths.Count == 0)
         {
             throw new InvalidOperationException("Not found Excel files, inputDir: " + inputDirectories.Length);
         }
@@ -88,6 +88,11 @@ public sealed class DataTableGenerator
             Directory.CreateDirectory(dataOutputDir);
         }
 
+        var parseOptions = options ?? new ParseOptions { FilterColumnTags = filterColumnTags };
+
+        var allDiagnostics = new System.Collections.Concurrent.ConcurrentBag<Diagnostic>();
+        var allMetrics = new System.Collections.Concurrent.ConcurrentBag<DiagnosticsMetrics>();
+
         await Parallel.ForEachAsync(filePaths, async (pair, cancellationToken) => GenerateExcel(pair.Value,
             usingNamespace: usingNamespace,
             forceOverwrite: forceOverwrite,
@@ -97,6 +102,9 @@ public sealed class DataTableGenerator
             prefixClassName: dataRowClassPrefix,
             usingStrings: usingStrings,
             filterColumnTags: filterColumnTags,
+            options: parseOptions,
+            collectDiagnostic: d => allDiagnostics.Add(d),
+            collectMetrics: m => allMetrics.Add(m),
             log: logger));
 
         logger("Generate Manager Files:");
@@ -121,6 +129,40 @@ public sealed class DataTableGenerator
             logger(WriteToFile(codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
         }
 
+        // 聚合并输出诊断统计（控制台）
+        var metricsList = allMetrics.ToList();
+        if (metricsList.Count > 0)
+        {
+            var ignored = metricsList.Sum(m => m.IgnoredFieldCount);
+            var tagFiltered = metricsList.Sum(m => m.TagFilteredFieldCount);
+            var skippedCols = metricsList.Sum(m => m.SkippedColumnCount);
+            var matrixSkipped = metricsList.Sum(m => m.MatrixDefaultSkippedCount);
+            var parseMs = metricsList.Sum(m => m.ParseElapsedMs);
+            var genMs = metricsList.Sum(m => m.GenerateElapsedMs);
+            logger($"Diagnostics Summary: IgnoredFields={ignored}, TagFiltered={tagFiltered}, SkippedColumns={skippedCols}, MatrixDefaultSkipped={matrixSkipped}, ParseMs={parseMs}, GenerateMs={genMs}");
+
+            foreach (var m in metricsList)
+            {
+                logger($"  - [{m.File}/{m.Sheet}] Ignored={m.IgnoredFieldCount}, TagFiltered={m.TagFilteredFieldCount}, SkippedCols={m.SkippedColumnCount}, MatrixSkipped={m.MatrixDefaultSkippedCount}, ParseMs={m.ParseElapsedMs}, GenMs={m.GenerateElapsedMs}");
+            }
+        }
+
+        // 输出诊断报告（可选）
+        if (!string.IsNullOrEmpty(diagnosticsJsonOutput))
+        {
+            var report = new DiagnosticsReport
+            {
+                InfoCount = allDiagnostics.Count(x => x.Severity == DiagnosticSeverity.Info),
+                WarningCount = allDiagnostics.Count(x => x.Severity == DiagnosticSeverity.Warning),
+                ErrorCount = allDiagnostics.Count(x => x.Severity == DiagnosticSeverity.Error),
+                Items = allDiagnostics.ToList(),
+                Metrics = metricsList
+            };
+            var json = System.Text.Json.JsonSerializer.Serialize(report, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(diagnosticsJsonOutput, json);
+            logger($"Diagnostics report saved: {diagnosticsJsonOutput}");
+        }
+
         logger(string.Empty);
         logger("===========================================================");
         logger($"数据表导出完成: {list.Count(x => !x.Failed && !x.Skiped)} 成功，{list.Count(x => x.Failed)} 失败，{list.Count(x => x.Skiped)} 已跳过");
@@ -128,7 +170,7 @@ public sealed class DataTableGenerator
         Environment.ExitCode = list.Any(x => x.Failed) ? 1 : 0;
     }
 
-    private async Task GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string dataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log)
+    private async Task GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string dataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log, ParseOptions options, Action<Diagnostic> collectDiagnostic, Action<DiagnosticsMetrics> collectMetrics)
     {
         using (var logger = new ILogger(log))
         {
@@ -166,10 +208,14 @@ public sealed class DataTableGenerator
 
                     logger.Debug("Generate Excel File: [{0}]({1})", filePath.Trim('\\'), context.SheetName);
 
-                    var processor = new DataTableProcessor(context, formulaEvaluator, filterColumnTags);
+                    // 初始化可选解析参数
+                    var diagnostics = new DiagnosticsCollector();
+                    var processor = new DataTableProcessor(context, formulaEvaluator, options, diagnostics);
+                    var genSw = System.Diagnostics.Stopwatch.StartNew();
                     try
                     {
                         // 初始化GenerateContext
+                        // 仍使用 NPOI sheet；解析器内部已使用抽象层
                         processor.CreateGenerationContext(sheet);
                         if (!processor.ValidateGenerationContext())
                         {
@@ -186,6 +232,10 @@ public sealed class DataTableGenerator
                         // 生成数据文件
                         processor.GenerateDataFile(filePath, dataOutputDir, forceOverwrite, sheet, logger);
 
+                        // 诊断信息输出（可选：当前写入 Debug）
+                        foreach (var d in processor.Diagnostics.Items) collectDiagnostic(d);
+                        foreach (var m in processor.Diagnostics.GetAllMetrics()) collectMetrics(m);
+
                         // 注册至队列中
                         list.Add(context);
                     }
@@ -195,6 +245,8 @@ public sealed class DataTableGenerator
                     }
                     finally
                     {
+                        genSw.Stop();
+                        diagnostics.GetMetrics(context.FileName, context.SheetName).GenerateElapsedMs += genSw.ElapsedMilliseconds;
                         processor.Dispose();
                     }
                 }

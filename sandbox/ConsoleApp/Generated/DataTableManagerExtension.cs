@@ -13,7 +13,6 @@ public static class DataTableManagerExtension
 {
     public static readonly Dictionary<string, string[]> Tables = new Dictionary<string, string[]>
     {
-        { "ConsoleApp.DTColumnTableSample", Array.Empty<string>() },
         { "ConsoleApp.DTDataTableSample", Array.Empty<string>() },
         { "ConsoleApp.DTDataTableSplitSample", new string[] {"x001", "x002"} },
         { "ConsoleApp.DTMatrixSample", Array.Empty<string>() },
@@ -21,7 +20,6 @@ public static class DataTableManagerExtension
 
     public static readonly Dictionary<string, Priority> Priorities = new Dictionary<string, Priority>
     {
-        { "ConsoleApp.DTColumnTableSample", Priority.Normal },
         { "ConsoleApp.DTDataTableSample", Priority.Normal },
         { "ConsoleApp.DTDataTableSplitSample", Priority.Normal },
         { "ConsoleApp.DTMatrixSample", Priority.Normal },
@@ -34,7 +32,7 @@ public static class DataTableManagerExtension
     /// <param name="onProgress">单步加载完成时回调。</param>
     public static void Preload(Action? onCompleted = default, Action<float>? onProgress = default)
     {
-        const int total = 5;
+        const int total = 4;
         int done = 0;
 
         void next()
@@ -47,7 +45,6 @@ public static class DataTableManagerExtension
             }
         };
 
-        DataTableManager.CreateDataTable<ConsoleApp.DTColumnTableSample>(next);
         DataTableManager.CreateDataTable<ConsoleApp.DTDataTableSample>(next);
         DataTableManager.CreateDataTable<ConsoleApp.DTDataTableSplitSample>("x001", next);
         DataTableManager.CreateDataTable<ConsoleApp.DTDataTableSplitSample>("x002", next);
@@ -60,10 +57,6 @@ public static class DataTableManagerExtension
     public static void PreloadByPriority(Priority priorities, Action? onCompleted = default, Action<float>? onProgress = default)
     {
         var selected = new List<Action<Action>>();
-        if (Priorities.ContainsKey("ConsoleApp.DTColumnTableSample") && (priorities & Priorities["ConsoleApp.DTColumnTableSample"]) != 0)
-        {
-            selected.Add(next => DataTableManager.CreateDataTable<ConsoleApp.DTColumnTableSample>(next));
-        }
         if (Priorities.ContainsKey("ConsoleApp.DTDataTableSample") && (priorities & Priorities["ConsoleApp.DTDataTableSample"]) != 0)
         {
             selected.Add(next => DataTableManager.CreateDataTable<ConsoleApp.DTDataTableSample>(next));

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Globalization;
 
 namespace DataTables.GeneratorCore;
 
@@ -36,10 +37,14 @@ public sealed partial class DataTableProcessor
 
         public override string GenerateTypeValue(string text) => Parse(text).ToString() + 'm';
 
-        public override decimal Parse(string value)
-        {
-            return decimal.Parse(value);
-        }
+		public override decimal Parse(string value)
+		{
+			if (string.IsNullOrWhiteSpace(value))
+			{
+				throw new InvalidCastException("无法将空值转换为decimal类型");
+			}
+			return decimal.Parse(value, NumberStyles.Number, CultureInfo.InvariantCulture);
+		}
 
         public override void WriteToStream(BinaryWriter binaryWriter, string value)
         {

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Globalization;
 
 namespace DataTables.GeneratorCore;
 
@@ -36,10 +37,10 @@ public sealed partial class DataTableProcessor
 
         public override string GenerateTypeValue(string text) => Parse(text).ToString() + 'd';
 
-        public override double Parse(string value)
-        {
-            return string.IsNullOrEmpty(value) ? 0d : double.Parse(value);
-        }
+		public override double Parse(string value)
+		{
+			return string.IsNullOrEmpty(value) ? 0d : double.Parse(value, CultureInfo.InvariantCulture);
+		}
 
         public override void WriteToStream(BinaryWriter binaryWriter, string value)
         {

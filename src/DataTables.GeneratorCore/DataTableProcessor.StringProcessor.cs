@@ -31,10 +31,17 @@ public sealed partial class DataTableProcessor
             };
         }
 
-        public override string Parse(string value)
-        {
-            return string.IsNullOrEmpty(value) ? string.Empty : value;
-        }
+		public override string Parse(string value)
+		{
+			if (string.IsNullOrEmpty(value))
+			{
+				return string.Empty;
+			}
+			var normalized = value.Trim();
+			// 统一换行符为 \n
+			normalized = normalized.Replace("\r\n", "\n").Replace("\r", "\n");
+			return normalized;
+		}
 
         public override string GenerateTypeValue(string text) => $"{Parse(text)}";
 

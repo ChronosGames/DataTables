@@ -34,6 +34,7 @@
   - [🛠️ 代码生成器](#-%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90%E5%99%A8)
     - [CLI工具安装](#cli%E5%B7%A5%E5%85%B7%E5%AE%89%E8%A3%85)
     - [现代化生成命令](#%E7%8E%B0%E4%BB%A3%E5%8C%96%E7%94%9F%E6%88%90%E5%91%BD%E4%BB%A4)
+    - [解析选项与诊断](#%E8%A7%A3%E6%9E%90%E9%80%89%E9%A1%B9%E4%B8%8E%E8%AF%8A%E6%96%AD)
     - [MSBuild集成](#msbuild%E9%9B%86%E6%88%90)
   - [📈 迁移指南](#-%E8%BF%81%E7%A7%BB%E6%8C%87%E5%8D%97)
     - [从旧版本升级](#%E4%BB%8E%E6%97%A7%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7)
@@ -92,9 +93,9 @@ DataTableManager.UseNetwork("https://api.com/");    // 网络源
 DataTableManager.UseCustomSource(customSource);     // 自定义源
 
 // 🔧 简化Hook机制
-DataTableManager.OnLoaded<DTScene>(table => 
+DataTableManager.OnLoaded<DTScene>(table =>
     Console.WriteLine($"场景表已加载: {table.Count} 行"));
-DataTableManager.OnAnyLoaded(table => 
+DataTableManager.OnAnyLoaded(table =>
     Console.WriteLine($"{table.GetType().Name} 已加载"));
 ```
 
@@ -142,7 +143,7 @@ Console.WriteLine("数据预热完成！");
 // 🎯 一行代码完成所有配置
 DataTableManager.UseFileSystem("./DataTables");
 DataTableManager.EnableMemoryManagement(50); // 50MB智能缓存
-DataTableManager.EnableProfiling(stats => 
+DataTableManager.EnableProfiling(stats =>
     Console.WriteLine($"加载{stats.TableCount}个表，耗时{stats.LoadTime}ms"));
 ```
 
@@ -156,18 +157,18 @@ DataTableManager.EnableProfiling(stats =>
 using DataTables;
 using UnityEngine;
 
-public class GameManager : MonoBehaviour 
+public class GameManager : MonoBehaviour
 {
-    async void Start() 
+    async void Start()
     {
         // 🌟 异步优先 - 无阻塞启动
         var config = await DataTableManager.LoadAsync<DTGameConfig>();
         Debug.Log($"游戏版本: {config?.Version}");
-        
+
         // 🔥 智能分层预热
         await DataTableManager.PreheatAsync(Priority.Critical);
         Debug.Log("关键数据预热完成，游戏可以启动！");
-        
+
         // 后台预热其他数据
         _ = DataTableManager.PreheatAsync(Priority.Normal | Priority.Lazy);
     }
@@ -233,7 +234,7 @@ DataTableManager.UseCustomSource(new MyCustomDataSource());
 DataTableManager.EnableMemoryManagement(100); // 100MB限制
 
 // 性能监控
-DataTableManager.EnableProfiling(stats => 
+DataTableManager.EnableProfiling(stats =>
 {
     Console.WriteLine($"加载了 {stats.TableCount} 个表");
     Console.WriteLine($"总耗时: {stats.LoadTime}ms");
@@ -301,7 +302,7 @@ Console.WriteLine($"场景表是否已加载: {isLoaded}");
 DataTableManager.OnLoaded<DTScene>(table =>
 {
     Console.WriteLine($"✅ 场景表加载完成: {table.Count} 行数据");
-    
+
     // 自定义后处理
     ValidateSceneData(table);
     BuildSceneIndex(table);
@@ -337,20 +338,20 @@ public class ModernDataTableDemo : MonoBehaviour
         // 🚀 启动时快速初始化
         DataTableManager.UseFileSystem(Application.streamingAssetsPath + "/DataTables");
         DataTableManager.EnableMemoryManagement(30); // Unity环境30MB限制
-        
+
         // 立即加载核心表
         await DataTableManager.LoadAsync<DTGameConfig>();
-        
+
         // 后台预热其他表
         _ = DataTableManager.PreheatAsync(Priority.Normal | Priority.Lazy);
     }
-    
+
     async void Start()
     {
         // 🎯 场景相关数据预热
         await DataTableManager.PreheatAsync(Priority.Critical);
         Debug.Log("关键数据已就绪，游戏可以开始！");
-        
+
         // 使用数据
         var config = DataTableManager.GetCached<DTGameConfig>();
         if (config != null)
@@ -359,7 +360,7 @@ public class ModernDataTableDemo : MonoBehaviour
             Debug.Log($"游戏版本: {gameConfig?.Version}");
         }
     }
-    
+
     void OnApplicationPause(bool pauseStatus)
     {
         if (pauseStatus)
@@ -384,22 +385,22 @@ public class MobileOptimizationDemo : MonoBehaviour
         var systemMemory = SystemInfo.systemMemorySize;
         var cacheSize = systemMemory > 4096 ? 50 : 20; // 4GB+设备使用50MB，否则20MB
         DataTableManager.EnableMemoryManagement(cacheSize);
-        
+
         // 监听内存警告
         Application.lowMemory += OnLowMemory;
     }
-    
+
     private void OnLowMemory()
     {
         Debug.Log("收到内存警告，清理数据表缓存");
         DataTableManager.ClearCache();
     }
-    
+
     // 场景切换时的优化策略
     public async void LoadScene(int sceneId)
     {
         var sceneConfig = DTScene.GetDataRowById(sceneId);
-        
+
         // 预加载场景相关数据
         var preloadTasks = new[]
         {
@@ -407,9 +408,9 @@ public class MobileOptimizationDemo : MonoBehaviour
             DataTableManager.LoadAsync<DTQuest>(),
             DataTableManager.LoadAsync<DTItem>()
         };
-        
+
         await Task.WhenAll(preloadTasks);
-        
+
         // 开始切换场景
         UnityEngine.SceneManagement.SceneManager.LoadScene(sceneConfig.SceneName);
     }
@@ -429,27 +430,27 @@ public class EncryptedDataSource : IDataSource
 {
     private readonly string _baseDirectory;
     private readonly byte[] _encryptionKey;
-    
+
     public EncryptedDataSource(string baseDirectory, byte[] encryptionKey)
     {
         _baseDirectory = baseDirectory;
         _encryptionKey = encryptionKey;
     }
-    
+
     public async ValueTask<byte[]> LoadAsync(string tableName)
     {
         var filePath = Path.Combine(_baseDirectory, $"{tableName}.encrypted");
         var encryptedData = await File.ReadAllBytesAsync(filePath);
-        
+
         // 自定义解密逻辑
         return DecryptData(encryptedData, _encryptionKey);
     }
-    
+
     public ValueTask<bool> IsAvailableAsync()
     {
         return ValueTask.FromResult(Directory.Exists(_baseDirectory));
     }
-    
+
     private byte[] DecryptData(byte[] encryptedData, byte[] key)
     {
         // 实现你的解密算法
@@ -471,10 +472,10 @@ DataTableManager.UseCustomSource(encryptedSource);
 // 实现数据表工厂
 public class DTSceneFactory : IDataTableFactory<DTScene, DRScene>
 {
-    public DTScene CreateTable(string name, int capacity) 
+    public DTScene CreateTable(string name, int capacity)
         => new DTScene(name, capacity);
-    
-    public DRScene CreateRow() 
+
+    public DRScene CreateRow()
         => new DRScene();
 }
 
@@ -583,7 +584,7 @@ dotnet dtgen -i ./Tables -co ./Generated -do ./Data -n MyProject -p DT
 # 高级生成 - 包含工厂模式优化
 dotnet dtgen \
   -i "./Tables" \              # 输入目录
-  -co "./Generated" \          # 代码输出目录  
+  -co "./Generated" \          # 代码输出目录
   -do "./Data" \               # 数据输出目录
   -n "MyProject" \             # 命名空间
   -p "DT" \                    # 类名前缀
@@ -593,17 +594,56 @@ dotnet dtgen \
   -f                           # 强制覆写
 ```
 
+### 解析选项与诊断
+
+```bash
+# 启用严格名称校验与公式一致性校验，并生成诊断报告
+dotnet dtgen \
+  -i "./Tables" -co "./Generated" -do "./Data" -n "MyProject" -p "DT" \
+  --strictNameValidation true \
+  --validateFormulaConsistency true \
+  --formulaPolicy ValidateOnly \
+  --columnCommentMarkerText "#列注释标志" \
+  --rowCommentMarkerText "#行注释标志" \
+  --skipCellMarker "#" \
+  -t "CLIENT && !SERVER" \
+  --diagnosticsJsonOutput diagnostics.json
+
+# 关闭公式评估，快速导出
+dotnet dtgen -i ./Tables -co ./Generated -do ./Data --formulaPolicy Off
+```
+
+#### 标签过滤语法（TFE Lite）
+
+- 语法元素（大小写不敏感）：
+  - 标识符：`[A-Za-z0-9_]+`
+  - 布尔运算：`AND`、`OR`、`NOT`（别名：`&&`、`||`、`!`）
+  - 括号：`(`、`)`
+- 优先级：`NOT > AND > OR`
+- 空表达式：视为 `true`（不过滤）
+- Excel 标签标注：在列标题末尾用 `@` 标注标签，多个标签可用空格、逗号、分号、竖线、中文逗号等分隔。
+  - 示例：`Hp@CLIENT`、`Atk@CLIENT,SERVER`、`Speed@client|pve`
+- 过滤表达式示例：
+  - `CLIENT AND NOT SERVER`
+  - `(CLIENT OR EDITOR) AND NOT LEGACY`
+  - `PVE || PVP`
+  - `!INTERNAL`
+
+诊断报告（JSON）字段：
+- InfoCount / WarningCount / ErrorCount
+- Items: [ { Severity, File, Sheet, Cell, Message } ]
+
 ### MSBuild集成
 
 ```xml
 <!-- 现代化MSBuild集成 -->
 <Target Name="DataTablesGen" BeforeTargets="BeforeBuild">
-    <DataTablesGenerator 
-        UsingNamespace="$(ProjectName)" 
-        InputDirectory="$(ProjectDir)Tables" 
-        CodeOutputDirectory="$(ProjectDir)Generated" 
-        DataOutputDirectory="$(ProjectDir)DataTables" 
-        PrefixClassName="DT" 
+    <DataTablesGenerator
+        UsingNamespace="$(ProjectName)"
+        InputDirectory="$(ProjectDir)Tables"
+        CodeOutputDirectory="$(ProjectDir)Generated"
+        DataOutputDirectory="$(ProjectDir)DataTables"
+        PrefixClassName="DT"
         EnableFactoryPattern="true"
         AsyncFirstAPI="true"
         FilterColumnTags="RELEASE"
@@ -643,7 +683,7 @@ DataTableManager.SetDataTableHelper(helper);
 var table = DataTableManager.GetDataTable<DTScene>();
 ```
 
-2. **阶段2 - 新功能使用新API** 
+2. **阶段2 - 新功能使用新API**
 ```csharp
 // 新功能采用现代API
 await DataTableManager.LoadAsync<DTNewTable>();
@@ -653,7 +693,7 @@ DataTableManager.EnableMemoryManagement(50);
 3. **阶段3 - 逐步重构**
 ```csharp
 // 逐步替换旧API调用
-// DataTableManager.CreateDataTable<T>(callback) 
+// DataTableManager.CreateDataTable<T>(callback)
 // → await DataTableManager.LoadAsync<T>()
 ```
 
@@ -693,7 +733,7 @@ This library is under the MIT License.
 
 如果这个项目对你有帮助，请考虑：
 - ⭐ 给项目点星
-- 🐛 报告bug和建议  
+- 🐛 报告bug和建议
 - 💡 贡献代码和文档
 - 📢 向其他开发者推荐
 

@@ -489,7 +489,7 @@ namespace DataTables
             {
                 // 清理失败的加载任务
                 s_LoadingTables.TryRemove(typeNamePair, out _);
-                Console.WriteLine($"Failed to load table {typeNamePair}: {ex.Message}");
+                Log.Error($"Failed to load table {typeNamePair}: {ex.Message}", ex);
                 return null;
             }
         }
@@ -507,7 +507,7 @@ namespace DataTables
             catch (Exception ex)
             {
                 // 可以选择静默失败或抛出异常
-                Console.WriteLine($"Failed to load table {typeNamePair}: {ex.Message}");
+                Log.Error($"Failed to load table {typeNamePair}: {ex.Message}", ex);
                 onCompleted?.Invoke(); // 即使失败也要回调，避免死锁
             }
         }

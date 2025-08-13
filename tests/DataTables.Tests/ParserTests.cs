@@ -117,21 +117,21 @@ public class ParserTests
 		var sh = wb.CreateSheet("Sheet1");
 		var r0 = sh.CreateRow(0); r0.CreateCell(0).SetCellValue("dtgen=column,class=Cfg");
 		// Title 含标签： A 列在 @CLIENT， B 列在 @SERVER， C 列在 @CLIENT 和 @SERVER
-		var r1 = sh.CreateRow(1); r1.CreateCell(0).SetCellValue("Hp@CLIENT"); r1.CreateCell(1).SetCellValue("hp"); r1.CreateCell(2).SetCellValue("int");
-		var r2 = sh.CreateRow(2); r2.CreateCell(0).SetCellValue("Md@SERVER"); r2.CreateCell(1).SetCellValue("md"); r2.CreateCell(2).SetCellValue("int");
-		var r3 = sh.CreateRow(3); r3.CreateCell(0).SetCellValue("Atk@CLIENT,SERVER"); r3.CreateCell(1).SetCellValue("atk"); r3.CreateCell(2).SetCellValue("int");
+		var r1 = sh.CreateRow(1); r1.CreateCell(0).SetCellValue("Hp@C"); r1.CreateCell(1).SetCellValue("hp"); r1.CreateCell(2).SetCellValue("int");
+		var r2 = sh.CreateRow(2); r2.CreateCell(0).SetCellValue("Md@S"); r2.CreateCell(1).SetCellValue("md"); r2.CreateCell(2).SetCellValue("int");
+		var r3 = sh.CreateRow(3); r3.CreateCell(0).SetCellValue("Atk@CS"); r3.CreateCell(1).SetCellValue("atk"); r3.CreateCell(2).SetCellValue("int");
 
 		var ctx = new GenerationContext { SheetName = "Sheet1" };
 		var parser = new ColumnTableParser();
-		var opts = new ParseOptions { FilterColumnTags = "CLIENT AND NOT SERVER" };
+		var opts = new ParseOptions { FilterColumnTags = "C" };
 		var diags = new DiagnosticsCollector();
 		parser.Parse(new NpoiSheetReader(sh), ctx, opts, diags);
 
-		// 预期：Hp 保留（CLIENT 且非 SERVER），Md 被过滤（SERVER），Atk 被过滤（既有 CLIENT 又有 SERVER，不满足 NOT SERVER）
+		// 预期：Hp 保留（C），Md 被过滤（S），Atk 保留（既有 C 又有 S）
 		ctx.Fields.Should().HaveCount(3);
 		ctx.Fields[0].IsIgnore.Should().BeFalse();
 		ctx.Fields[1].IsTagFiltered.Should().BeTrue();
-		ctx.Fields[2].IsTagFiltered.Should().BeTrue();
+		ctx.Fields[2].IsTagFiltered.Should().BeFalse();
 	}
 }
 

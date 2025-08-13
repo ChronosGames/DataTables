@@ -1,0 +1,7 @@
+EnumName,Value
+SceneType,Town
+SceneType,Dungeon
+SceneType,Home
+Quality,Low
+Quality,Medium
+Quality,High

@@ -57,6 +57,16 @@ public class GenerationContext
     /// </summary>
     public string MatrixDefaultValue { get; set; } = string.Empty;
 
+		/// <summary>
+		/// 数据起始列（Column 模式专用），通常为 D 列（索引 3）
+		/// </summary>
+		public int ColumnFirstDataColIndex { get; set; } = -1;
+
+		/// <summary>
+		/// 列注释标记所在的行索引（Column 模式专用），用于按列跳过导出
+		/// </summary>
+		public int ColumnCommentRowIndex { get; set; } = -1;
+
     /// <summary>
     /// 记录列编号与名称的对照关系
     /// <para>Matrix模式专用</para>

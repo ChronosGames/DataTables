@@ -55,12 +55,21 @@ public sealed partial class DataTableProcessor : IDisposable
                     ParseSheetInfoRow(GetCellString(row.GetCell(row.FirstCellNum)));
                     break;
                 }
-                case 1: // 字段注释行
+                case 1: // 字段注释行 / Column模式：首个字段行
                 {
                     if (m_Context.DataSetType == "matrix")
                     {
                         ParseMatrixInfo(row);
                         m_FirstDataRowIndex = i + 1;
+                        return;
+                    }
+                    else if (m_Context.DataSetType == "column")
+                    {
+                        // Column 模式：第2行开始即为字段定义行
+                        ParseColumnFields(sheet, i);
+                        // 数据从字段三列之后开始（A:Title, B:Name, C:Type => D列开始）
+                        m_Context.ColumnFirstDataColIndex = row.FirstCellNum + 3;
+                        m_FirstDataRowIndex = i; // 行遍历用于定位列注释行，真实写出按列
                         return;
                     }
                     else
@@ -69,11 +78,15 @@ public sealed partial class DataTableProcessor : IDisposable
                     }
                     break;
                 }
-                case 2: // 字段名称行
+                case 2: // 字段名称行（RowTable）
                 {
                     if (m_Context.DataSetType == "matrix")
                     {
 
+                    }
+                    else if (m_Context.DataSetType == "column")
+                    {
+                        // 已在 ParseColumnFields 完成
                     }
                     else
                     {
@@ -81,11 +94,17 @@ public sealed partial class DataTableProcessor : IDisposable
                     }
                     break;
                 }
-                case 3: // 字段类型行
+                case 3: // 字段类型行（RowTable）
                 {
                     if (m_Context.DataSetType == "matrix")
                     {
 
+                    }
+                    else if (m_Context.DataSetType == "column")
+                    {
+                        // 已在 ParseColumnFields 完成
+                        m_FirstDataRowIndex = i + 1;
+                        return;
                     }
                     else
                     {
@@ -575,15 +594,69 @@ public sealed partial class DataTableProcessor : IDisposable
     {
         int dataRowCount = 0;
 
-        for (int i = m_FirstDataRowIndex; i <= sheet.LastRowNum; i++)
+        if (m_Context.DataSetType == "column")
         {
-            var row = sheet.GetRow(i);
-            if (!IgnoreDataRow(row))
+            // 计算最大列号
+            int maxLastCellNum = 0;
+            for (int r = m_FirstDataRowIndex; r <= sheet.LastRowNum; r++)
             {
-                continue;
+                var row = sheet.GetRow(r);
+                if (row == null) continue;
+                if (row.LastCellNum > maxLastCellNum) maxLastCellNum = row.LastCellNum;
             }
 
-            dataRowCount += WriteRowBytes(writer, row);
+            // 若存在列注释标记行，则记录其行索引
+            if (m_Context.ColumnCommentRowIndex >= 0)
+            {
+                // 已设置则使用
+            }
+
+            for (int c = m_Context.ColumnFirstDataColIndex; c < maxLastCellNum; c++)
+            {
+                // 列注释行：以 # 开头的单元格跳过该列
+                if (m_Context.ColumnCommentRowIndex >= 0)
+                {
+                    var markRow = sheet.GetRow(m_Context.ColumnCommentRowIndex);
+                    var mk = GetCellString(markRow?.GetCell(c));
+                    if (!string.IsNullOrEmpty(mk) && mk.TrimStart().StartsWith("#", StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+                }
+
+                // 若整列为空，则跳过
+                bool hasAnyValue = false;
+                foreach (var field in m_Context.Fields)
+                {
+                    if (field.IsIgnore) { continue; }
+                    var row = sheet.GetRow(field.Index);
+                    var text = GetCellString(row?.GetCell(c));
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        hasAnyValue = true;
+                        break;
+                    }
+                }
+                if (!hasAnyValue)
+                {
+                    continue;
+                }
+
+                dataRowCount += WriteColumnBytes(writer, sheet, c);
+            }
+        }
+        else
+        {
+            for (int i = m_FirstDataRowIndex; i <= sheet.LastRowNum; i++)
+            {
+                var row = sheet.GetRow(i);
+                if (!IgnoreDataRow(row))
+                {
+                    continue;
+                }
+
+                dataRowCount += WriteRowBytes(writer, row);
+            }
         }
 
         return dataRowCount;
@@ -669,6 +742,101 @@ public sealed partial class DataTableProcessor : IDisposable
 
             return 1;
         }
+    }
+
+    private int WriteColumnBytes(BinaryWriter writer, ISheet sheet, int columnIndex)
+    {
+        foreach (var field in m_Context.Fields)
+        {
+            if (field.IsIgnore) { continue; }
+
+            var processor = DataProcessorUtility.GetDataProcessor(field.TypeName);
+            try
+            {
+                var row = sheet.GetRow(field.Index);
+                var cell = row?.GetCell(columnIndex);
+                processor.WriteToStream(writer, GetCellString(cell));
+            }
+            catch (Exception e)
+            {
+                throw new Exception($"解析单元格内容时出错: {GetRowColString(field.Index, columnIndex)}", e);
+            }
+        }
+
+        return 1;
+    }
+
+    private void ParseColumnFields(ISheet sheet, int startRowIndex)
+    {
+        // 统计有效字段行数量，建立 Fields 数组
+        var fields = new System.Collections.Generic.List<XField>();
+
+        for (int r = startRowIndex; r <= sheet.LastRowNum; r++)
+        {
+            var row = sheet.GetRow(r);
+            if (!ValidRow(row))
+            {
+                continue;
+            }
+
+            // 检测列注释标记行
+            var nameCellText = GetCellString(row!.GetCell(row.FirstCellNum + 1));
+            if (!string.IsNullOrEmpty(nameCellText) && nameCellText.Trim() == "#列注释标志")
+            {
+                m_Context.ColumnCommentRowIndex = r;
+                continue;
+            }
+
+            // A:Title
+            var titleCell = row.GetCell(row.FirstCellNum + 0);
+            var titleText = GetCellString(titleCell);
+            var field = new XField(r)
+            {
+                Title = titleText,
+                Note = titleCell != null ? GetCellNote(titleCell) : string.Empty,
+            };
+
+            // 标签过滤
+            if (!m_Context.DisableTagsFilter)
+            {
+                var idx = titleText.LastIndexOf('@');
+                if (idx != -1)
+                {
+                    if (!string.IsNullOrEmpty(m_Tags) && !ContainTags(titleText.Substring(idx + 1).ToUpper(), m_Tags.ToUpper()))
+                    {
+                        field.IsIgnore = true;
+                    }
+                    else
+                    {
+                        field.Title = titleText.Substring(0, idx);
+                    }
+                }
+            }
+
+            // B:Name
+            var nameText = GetCellString(row.GetCell(row.FirstCellNum + 1));
+            if (string.IsNullOrEmpty(nameText) || nameText.TrimStart().StartsWith("#", StringComparison.Ordinal))
+            {
+                field.IsIgnore = true;
+                field.IsComment = !string.IsNullOrEmpty(nameText) && nameText.Trim() == "#行注释标志";
+            }
+            else
+            {
+                if (!NameRegex.IsMatch(nameText))
+                {
+                    throw new FormatException($"数据列名称不合法: {nameText}");
+                }
+                field.Name = nameText;
+            }
+
+            // C:Type
+            var typeText = GetCellString(row.GetCell(row.FirstCellNum + 2));
+            field.TypeName = typeText;
+
+            fields.Add(field);
+        }
+
+        m_Context.Fields = fields.ToArray();
     }
 
     public static string GetDeserializeMethodString(GenerationContext context, XField property)

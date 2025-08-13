@@ -36,6 +36,9 @@ internal static class Program
         // ⚡ 异步优先API演示
         await AsyncFirstAPIDemo();
 
+        // 🧩 ColumnTable 示例演示
+        await ColumnTableDemo();
+
         // 🧠 智能内存管理演示
         await MemoryManagementDemo();
 
@@ -86,7 +89,7 @@ internal static class Program
                 if (sampleTable != null)
                 {
                     Console.WriteLine($"✅ 成功加载数据表: {sampleTable.Count} 行数据");
-                    
+
                     // 演示静态API - 这些是生成的便捷方法
                     var row1 = DTDataTableSample.GetDataRowById(1);
                     var rowsByName = DTDataTableSample.GetDataRowsGroupByName("示例字符串1");
@@ -113,6 +116,33 @@ internal static class Program
         }
 
         Console.WriteLine("✅ 异步优先架构已就绪\n");
+    }
+
+    static async Task ColumnTableDemo()
+    {
+        Console.WriteLine("🧩 ColumnTable 示例演示");
+        Console.WriteLine("---------------------");
+
+        try
+        {
+            // 准备一个简单的 ColumnTable 的 .bytes（已放在 DataTables 目录后可直接加载）
+            // 这里演示按名称加载失败容错
+            var table = await DataTableManager.LoadAsync<DTColumnTableSample>();
+            if (table != null)
+            {
+                Console.WriteLine($"✅ 载入示例数据: 当前已有 {table.Count} 行");
+            }
+            else
+            {
+                Console.WriteLine("ℹ️ 未检测到示例 .bytes，可在工程中添加 Column 布局的示例后重试");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"📝 ColumnTable 演示异常: {ex.Message}");
+        }
+
+        Console.WriteLine();
     }
 
     static async Task MemoryManagementDemo()

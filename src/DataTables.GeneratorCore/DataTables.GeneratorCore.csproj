@@ -12,44 +12,28 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="DataTableTemplate.cs">
-      <DependentUpon>DataTableTemplate.tt</DependentUpon>
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-    </Compile>
-    <Compile Update="DataMatrixTemplate.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>DataMatrixTemplate.tt</DependentUpon>
-    </Compile>
     <Compile Update="DataTableManagerExtensionTemplate.cs">
       <DependentUpon>DataTableManagerExtensionTemplate.tt</DependentUpon>
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
-    <Compile Update="DataMatrixTemplate.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>DataMatrixTemplate.tt</DependentUpon>
-    </Compile>
     <Compile Update="DataTableTemplate.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
       <DependentUpon>DataTableTemplate.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
     </Compile>
     <Compile Update="DataMatrixTemplate.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
       <DependentUpon>DataMatrixTemplate.tt</DependentUpon>
-    </Compile>
-    <Compile Update="DataTableTemplate.cs">
-      <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
-      <DependentUpon>DataTableTemplate.tt</DependentUpon>
+      <AutoGen>True</AutoGen>
     </Compile>
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="DataTableManagerExtensionTemplate.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>DataTableManagerExtensionTemplate.cs</LastGenOutput>
+    </None>
     <None Update="DataTableTemplate.tt">
       <LastGenOutput>DataTableTemplate.cs</LastGenOutput>
       <Generator>TextTemplatingFilePreprocessor</Generator>
@@ -57,10 +41,6 @@
     <None Update="DataMatrixTemplate.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>DataMatrixTemplate.cs</LastGenOutput>
-    </None>
-    <None Update="DataTableManagerExtensionTemplate.tt">
-      <LastGenOutput>DataTableManagerExtensionTemplate.cs</LastGenOutput>
-      <Generator>TextTemplatingFilePreprocessor</Generator>
     </None>
   </ItemGroup>
 

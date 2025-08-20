@@ -8,7 +8,6 @@
     - [🛡️ **100%并发安全**](#-100%E5%B9%B6%E5%8F%91%E5%AE%89%E5%85%A8)
     - [🧠 **智能内存管理**](#-%E6%99%BA%E8%83%BD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86)
     - [🎯 **极简配置体验**](#-%E6%9E%81%E7%AE%80%E9%85%8D%E7%BD%AE%E4%BD%93%E9%AA%8C)
-  - [📋 目录](#-%E7%9B%AE%E5%BD%95)
   - [🚀 快速开始](#-%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B)
     - [.NET Core 项目](#net-core-%E9%A1%B9%E7%9B%AE)
     - [Unity项目](#unity%E9%A1%B9%E7%9B%AE)
@@ -51,69 +50,7 @@
 
 # 🚀 DataTables - 现代化高性能数据表系统
 
-> **激进优化的异步优先数据表解决方案** - 适用于.NET Core服务端与Unity客户端
-
-## ✨ 🆕 全新激进优化特性
-
-### ⚡ **异步优先架构**
-```csharp
-// 🌟 现代异步API - 高性能无阻塞
-var scene = await DataTableManager.LoadAsync<DTScene>();
-var items = DataTableManager.GetCached<DTItem>(); // 缓存优先，零延迟
-
-// 🔥 智能批量预热
-await DataTableManager.PreheatAsync(Priority.Critical | Priority.Normal);
-await DataTableManager.PreloadAllAsync(); // 服务器全量预热
-
-// 📊 实时状态监控
-bool loaded = DataTableManager.IsLoaded<DTScene>();
-var stats = DataTableManager.GetCacheStats();
-```
-
-### 🛡️ **100%并发安全**
-- **无竞态条件**: ConcurrentDictionary + Task缓存模式完全消除TOCTOU问题
-- **高性能并发**: 零锁设计，多线程访问无性能损失
-- **异步优先**: ValueTask优化，避免阻塞死锁
-
-### 🧠 **智能内存管理**
-```csharp
-// 🎯 一行代码启用智能内存管理
-DataTableManager.EnableMemoryManagement(50); // 50MB LRU缓存
-
-// 📈 内存使用监控
-var cacheStats = DataTableManager.GetCacheStats();
-Console.WriteLine($"缓存命中率: {cacheStats?.HitRate:P}");
-Console.WriteLine($"内存使用: {cacheStats?.MemoryUsage / 1024 / 1024:F1}MB");
-```
-
-### 🎯 **极简配置体验**
-```csharp
-// 🌟 零配置启动 - 智能数据源检测
-DataTableManager.UseFileSystem("./DataTables");     // 文件系统
-DataTableManager.UseNetwork("https://api.com/");    // 网络源
-DataTableManager.UseCustomSource(customSource);     // 自定义源
-
-// 🔧 简化Hook机制
-DataTableManager.OnLoaded<DTScene>(table =>
-    Console.WriteLine($"场景表已加载: {table.Count} 行"));
-DataTableManager.OnAnyLoaded(table =>
-    Console.WriteLine($"{table.GetType().Name} 已加载"));
-```
-
----
-
-## 📋 目录
-
-- [快速开始](#-快速开始)
-- [新API指南](#-新api指南)
-- [性能优化](#-性能优化)
-- [Unity集成](#-unity集成)
-- [高级功能](#-高级功能)
-- [数据表格式](#-数据表格式)
-- [代码生成器](#-代码生成器)
-- [迁移指南](#-迁移指南)
-
----
+> **异步优先数据表解决方案** - 适用于.NET Core服务端与Unity客户端
 
 ## 🚀 快速开始
 

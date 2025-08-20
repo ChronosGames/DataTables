@@ -96,7 +96,7 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
     /// 根据Key1和Key2获取数据值 (静态方法)
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= BuildTypeString(kValue) #>? GetDataRowStatic(<#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2)
+    public static <#= BuildTypeString(kValue) #>? GetRow(<#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2)
     {
         var table = DataTableManager.GetDataTableInternal<DT<#= GenerationContext.ClassName #>>();
         return table?.Get(key1, key2);
@@ -106,7 +106,7 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
     /// 根据Key1和Key2获取数据值，如果不存在则返回默认值 (静态方法)
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= BuildTypeString(kValue) #> GetDataRowOrDefaultStatic(<#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2)
+    public static <#= BuildTypeString(kValue) #> GetRowOrDefault(<#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2)
     {
         var table = DataTableManager.GetDataTableInternal<DT<#= GenerationContext.ClassName #>>();
         if (table != null)

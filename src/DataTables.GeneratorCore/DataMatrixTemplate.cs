@@ -280,7 +280,7 @@ namespace DataTables.GeneratorCore
             
             #line default
             #line hidden
-            this.Write("? GetDataRowStatic(");
+            this.Write("? GetRow(");
             
             #line 99 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataMatrixTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));
@@ -308,7 +308,7 @@ namespace DataTables.GeneratorCore
             
             #line default
             #line hidden
-            this.Write(" GetDataRowOrDefaultStatic(");
+            this.Write(" GetRowOrDefault(");
             
             #line 109 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataMatrixTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));

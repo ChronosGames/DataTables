@@ -10,6 +10,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using DataTables;
 
 #nullable enable
@@ -39,6 +40,84 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
         SetDataRow(index, <#= kKey1 #>, <#= kKey2 #>, <#= kValue #>);
         return true;
     }
+
+    #region Instance API
+
+    /// <summary>
+    /// 根据Key1和Key2获取数据值 (实例方法)
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public <#= BuildTypeString(kValue) #>? GetDataRow(<#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2)
+    {
+        return Get(key1, key2);
+    }
+
+    /// <summary>
+    /// 根据Key1和Key2获取数据值，如果不存在则返回默认值 (实例方法)
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public <#= BuildTypeString(kValue) #> GetDataRowOrDefault(<#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2)
+    {
+        <#= BuildTypeString(kValue) #>? result = Get(key1, key2);
+        return result.HasValue ? result.Value : DefaultValue;
+    }
+
+    #endregion
+
+    #region Static API
+
+    /// <summary>
+    /// 获取数据矩阵实例 - 便于访问基类方法 (静态方法)
+    /// </summary>
+    public static DT<#= GenerationContext.ClassName #> Table
+    {
+        get
+        {
+            var table = DataTableManager.GetDataTableInternal<DT<#= GenerationContext.ClassName #>>();
+            if (table == null)
+            {
+                throw new InvalidOperationException("DT<#= GenerationContext.ClassName #> not loaded. Call DataTableManager.CreateDataTable<DT<#= GenerationContext.ClassName #>>() first.");
+            }
+            return table;
+        }
+    }
+
+    /// <summary>
+    /// 安全获取数据矩阵实例 - 返回null如果未加载 (静态方法)
+    /// </summary>
+    public static DT<#= GenerationContext.ClassName #>? TableOrNull => DataTableManager.GetDataTableInternal<DT<#= GenerationContext.ClassName #>>();
+
+    /// <summary>
+    /// 检查数据矩阵是否已加载 (静态方法)
+    /// </summary>
+    public static bool IsLoaded => DataTableManager.HasDataTable<DT<#= GenerationContext.ClassName #>>();
+
+    /// <summary>
+    /// 根据Key1和Key2获取数据值 (静态方法)
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static <#= BuildTypeString(kValue) #>? GetDataRowStatic(<#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2)
+    {
+        var table = DataTableManager.GetDataTableInternal<DT<#= GenerationContext.ClassName #>>();
+        return table?.Get(key1, key2);
+    }
+
+    /// <summary>
+    /// 根据Key1和Key2获取数据值，如果不存在则返回默认值 (静态方法)
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static <#= BuildTypeString(kValue) #> GetDataRowOrDefaultStatic(<#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2)
+    {
+        var table = DataTableManager.GetDataTableInternal<DT<#= GenerationContext.ClassName #>>();
+        if (table != null)
+        {
+            <#= BuildTypeString(kValue) #>? result = table.Get(key1, key2);
+            return result.HasValue ? result.Value : table.DefaultValue;
+        }
+        return default(<#= BuildTypeString(kValue) #>);
+    }
+
+    #endregion
 }
 
 <# if (!string.IsNullOrEmpty(GenerationContext.Namespace)) { #>

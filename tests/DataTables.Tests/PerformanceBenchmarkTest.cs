@@ -29,7 +29,7 @@ namespace DataTables.Tests
 
             for (int i = 0; i < concurrentCount; i++)
             {
-                tasks.Add(DataTableManager.GetDataTableAsync<MockDataTable>());
+                tasks.Add(DataTableManager.GetOrCreateDataTableAsync<MockDataTable>());
             }
 
             var results = await Task.WhenAll(tasks.Select(t => t.AsTask()));
@@ -66,7 +66,7 @@ namespace DataTables.Tests
 
             for (int i = 0; i < loadCount; i++)
             {
-                var table = await DataTableManager.GetDataTableAsync<MockDataTable>();
+                var table = await DataTableManager.GetOrCreateDataTableAsync<MockDataTable>();
                 table.Should().NotBeNull();
             }
 
@@ -90,9 +90,9 @@ namespace DataTables.Tests
             var memoryBefore = GC.GetTotalMemory(true);
 
             // Act - 加载多个数据表
-            var table1 = await DataTableManager.GetDataTableAsync<MockDataTable>();
-            var table2 = await DataTableManager.GetDataTableAsync<MockDataTable2>();
-            var table3 = await DataTableManager.GetDataTableAsync<MockDataTable3>();
+            var table1 = await DataTableManager.GetOrCreateDataTableAsync<MockDataTable>();
+            var table2 = await DataTableManager.GetOrCreateDataTableAsync<MockDataTable2>();
+            var table3 = await DataTableManager.GetOrCreateDataTableAsync<MockDataTable3>();
 
             var memoryAfter = GC.GetTotalMemory(false);
             var memoryUsed = memoryAfter - memoryBefore;

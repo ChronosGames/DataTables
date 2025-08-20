@@ -283,9 +283,58 @@ namespace DataTables.GeneratorCore
             
             #line default
             #line hidden
-            this.Write("    }\r\n\r\n    #region Static API\r\n");
+            this.Write("    }\r\n\r\n    #region Enhanced Static API\r\n\r\n    /// <summary>\r\n    /// 获取数据表实例 - 便于访问基类方法\r\n    /// </summary>\r\n    //public static ");
             
-            #line 82 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 86 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataTableClassName));
+            
+            #line default
+            #line hidden
+            this.Write(" Table\r\n    //{\r\n    //    get\r\n    //    {\r\n    //        var table = DataTableManager.GetDataTableInternal<");
+            
+            #line 90 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataTableClassName));
+            
+            #line default
+            #line hidden
+            this.Write(">();\r\n    //        if (table == null)\r\n    //        {\r\n    //            throw new InvalidOperationException(\"");
+            
+            #line 93 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataTableClassName));
+            
+            #line default
+            #line hidden
+            this.Write(" not loaded. Call DataTableManager.CreateDataTable<");
+            
+            #line 93 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataTableClassName));
+            
+            #line default
+            #line hidden
+            this.Write(">() first.\");\r\n    //        }\r\n    //        return table;\r\n    //    }\r\n    //}\r\n\r\n    /// <summary>\r\n    /// 安全获取数据表实例 - 返回null如果未加载\r\n    /// </summary>\r\n    //public static ");
+            
+            #line 102 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataTableClassName));
+            
+            #line default
+            #line hidden
+            this.Write("? TableOrNull => DataTableManager.GetDataTableInternal<");
+            
+            #line 102 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataTableClassName));
+            
+            #line default
+            #line hidden
+            this.Write(">();\r\n\r\n    /// <summary>\r\n    /// 检查数据表是否已加载\r\n    /// </summary>\r\n    //public static bool IsLoaded => DataTableManager.HasDataTable<");
+            
+            #line 107 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataTableClassName));
+            
+            #line default
+            #line hidden
+            this.Write(">();\r\n\r\n    /// <summary>\r\n    /// 获取数据表状态信息\r\n    /// </summary>\r\n    //public static DataTableStatus Status\r\n    //{\r\n    //    get\r\n    //    {\r\n    //        var table = TableOrNull;\r\n    //        if (table == null) return DataTableStatus.NotLoaded;\r\n    //        return table.Count > 0 ? DataTableStatus.LoadedWithData : DataTableStatus.LoadedEmpty;\r\n    //    }\r\n    //}\r\n\r\n    #endregion\r\n\r\n    #region Instance API\r\n");
+            
+            #line 125 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
   for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {
         var item = GenerationContext.Indexs[i];
@@ -293,72 +342,65 @@ namespace DataTables.GeneratorCore
             
             #line default
             #line hidden
-            this.Write("\r\n    /// <summary>\r\n    /// 根据索引获取数据行\r\n    /// </summary>\r\n    [MethodImpl(MethodImplOptions.AggressiveInlining)]\r\n    public static ");
+            this.Write("\r\n    /// <summary>\r\n    /// 根据索引获取数据行 (实例方法)\r\n    /// </summary>\r\n    [MethodImpl(MethodImplOptions.AggressiveInlining)]\r\n    public ");
             
-            #line 91 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 134 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataRowClassName));
             
             #line default
             #line hidden
             this.Write("? GetDataRowBy");
             
-            #line 91 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 134 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join("And", item)));
             
             #line default
             #line hidden
             this.Write("(");
             
-            #line 91 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 134 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildMethodParameters(item)));
             
             #line default
             #line hidden
-            this.Write(")\r\n    {\r\n        var table = DataTableManager.GetDataTableInternal<");
+            this.Write(")\r\n    {\r\n        if (m_Dict");
             
-            #line 93 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataTableClassName));
-            
-            #line default
-            #line hidden
-            this.Write(">();\r\n        if (table?.m_Dict");
-            
-            #line 94 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 136 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i + 1));
             
             #line default
             #line hidden
             this.Write(".TryGetValue(");
             
-            #line 94 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 136 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(item.Length > 1 ? '(' + GenerationContext.BuildCamelCaseParameters(item) + ')' : GenerationContext.ToCamelCase(item[0])));
             
             #line default
             #line hidden
-            this.Write(", out var result) == true)\r\n        {\r\n            return result;\r\n        }\r\n        else\r\n        {\r\n#if DT_CHECK_NOT_FOUND && UNITY_EDITOR\r\n            UnityEngine.Debug.LogWarningFormat(\"");
+            this.Write(", out var result))\r\n        {\r\n            return result;\r\n        }\r\n        else\r\n        {\r\n#if DT_CHECK_NOT_FOUND && UNITY_EDITOR\r\n            UnityEngine.Debug.LogWarningFormat(\"");
             
-            #line 101 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 143 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataTableClassName));
             
             #line default
             #line hidden
             this.Write(" not found index: ");
             
-            #line 101 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 143 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildIndexsLogFormat(item)));
             
             #line default
             #line hidden
             this.Write("\", ");
             
-            #line 101 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 143 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildCamelCaseParameters(item)));
             
             #line default
             #line hidden
             this.Write(");\r\n#endif\r\n            return null;\r\n        }\r\n    }\r\n");
             
-            #line 106 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 148 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
   }
     for (var j = 0; j < GenerationContext.Groups.Count; j++)
     {
@@ -367,72 +409,198 @@ namespace DataTables.GeneratorCore
             
             #line default
             #line hidden
-            this.Write("\r\n    /// <summary>\r\n    /// 根据分组获取数据行列表\r\n    /// </summary>\r\n    [MethodImpl(MethodImplOptions.AggressiveInlining)]\r\n    public static List<");
+            this.Write("\r\n    /// <summary>\r\n    /// 根据分组获取数据行列表 (实例方法)\r\n    /// </summary>\r\n    [MethodImpl(MethodImplOptions.AggressiveInlining)]\r\n    public List<");
             
-            #line 116 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 158 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataRowClassName));
             
             #line default
             #line hidden
             this.Write(">? GetDataRowsGroupBy");
             
-            #line 116 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 158 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(string.Join("And", item)));
             
             #line default
             #line hidden
             this.Write("(");
             
-            #line 116 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 158 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildMethodParameters(item)));
             
             #line default
             #line hidden
-            this.Write(")\r\n    {\r\n        var table = DataTableManager.GetDataTableInternal<");
+            this.Write(")\r\n    {\r\n        return m_Dict");
             
-            #line 118 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataTableClassName));
-            
-            #line default
-            #line hidden
-            this.Write(">();\r\n        return table?.m_Dict");
-            
-            #line 119 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 160 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.Indexs.Count + j + 1));
             
             #line default
             #line hidden
             this.Write(".TryGetValue(");
             
-            #line 119 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 160 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(item.Length > 1 ? '(' + GenerationContext.BuildCamelCaseParameters(item) + ')' : GenerationContext.ToCamelCase(item[0])));
+            
+            #line default
+            #line hidden
+            this.Write(", out var result) ? result : null;\r\n    }\r\n");
+            
+            #line 162 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+  } 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n    #endregion\r\n\r\n    #region Static API\r\n");
+            
+            #line 167 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+  for (var i = 0; i < GenerationContext.Indexs.Count; i++)
+    {
+        var item = GenerationContext.Indexs[i];
+
+            
+            #line default
+            #line hidden
+            this.Write("\r\n    /// <summary>\r\n    /// 根据索引获取数据行 (静态方法)\r\n    /// </summary>\r\n    [MethodImpl(MethodImplOptions.AggressiveInlining)]\r\n    public static ");
+            
+            #line 176 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataRowClassName));
+            
+            #line default
+            #line hidden
+            this.Write("? GetDataRowBy");
+            
+            #line 176 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(string.Join("And", item)));
+            
+            #line default
+            #line hidden
+            this.Write("Static(");
+            
+            #line 176 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildMethodParameters(item)));
+            
+            #line default
+            #line hidden
+            this.Write(")\r\n    {\r\n        var table = DataTableManager.GetDataTableInternal<");
+            
+            #line 178 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataTableClassName));
+            
+            #line default
+            #line hidden
+            this.Write(">();\r\n        if (table?.m_Dict");
+            
+            #line 179 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(i + 1));
+            
+            #line default
+            #line hidden
+            this.Write(".TryGetValue(");
+            
+            #line 179 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(item.Length > 1 ? '(' + GenerationContext.BuildCamelCaseParameters(item) + ')' : GenerationContext.ToCamelCase(item[0])));
+            
+            #line default
+            #line hidden
+            this.Write(", out var result) == true)\r\n        {\r\n            return result;\r\n        }\r\n        else\r\n        {\r\n#if DT_CHECK_NOT_FOUND && UNITY_EDITOR\r\n            UnityEngine.Debug.LogWarningFormat(\"");
+            
+            #line 186 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataTableClassName));
+            
+            #line default
+            #line hidden
+            this.Write(" not found index: ");
+            
+            #line 186 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildIndexsLogFormat(item)));
+            
+            #line default
+            #line hidden
+            this.Write("\", ");
+            
+            #line 186 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildCamelCaseParameters(item)));
+            
+            #line default
+            #line hidden
+            this.Write(");\r\n#endif\r\n            return null;\r\n        }\r\n    }\r\n");
+            
+            #line 191 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+  }
+    for (var j = 0; j < GenerationContext.Groups.Count; j++)
+    {
+        var item = GenerationContext.Groups[j];
+
+            
+            #line default
+            #line hidden
+            this.Write("\r\n    /// <summary>\r\n    /// 根据分组获取数据行列表 (静态方法)\r\n    /// </summary>\r\n    [MethodImpl(MethodImplOptions.AggressiveInlining)]\r\n    public static List<");
+            
+            #line 201 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataRowClassName));
+            
+            #line default
+            #line hidden
+            this.Write(">? GetDataRowsGroupBy");
+            
+            #line 201 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(string.Join("And", item)));
+            
+            #line default
+            #line hidden
+            this.Write("Static(");
+            
+            #line 201 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.BuildMethodParameters(item)));
+            
+            #line default
+            #line hidden
+            this.Write(")\r\n    {\r\n        var table = DataTableManager.GetDataTableInternal<");
+            
+            #line 203 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataTableClassName));
+            
+            #line default
+            #line hidden
+            this.Write(">();\r\n        return table?.m_Dict");
+            
+            #line 204 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.Indexs.Count + j + 1));
+            
+            #line default
+            #line hidden
+            this.Write(".TryGetValue(");
+            
+            #line 204 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(item.Length > 1 ? '(' + GenerationContext.BuildCamelCaseParameters(item) + ')' : GenerationContext.ToCamelCase(item[0])));
             
             #line default
             #line hidden
             this.Write(", out var result) == true ? result : null;\r\n    }\r\n");
             
-            #line 121 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 206 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
   } 
             
             #line default
             #line hidden
             this.Write("\r\n    #endregion\r\n}\r\n\r\n/// <summary>");
             
-            #line 126 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 211 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildSummary(GenerationContext.Title)));
             
             #line default
             #line hidden
             this.Write("</summary>\r\npublic sealed partial class ");
             
-            #line 127 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 212 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataRowClassName));
             
             #line default
             #line hidden
             this.Write(" : DataRowBase\r\n{\r\n");
             
-            #line 129 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 214 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
  foreach(var item in GenerationContext.Fields)
 {
     if (item.IsIgnore) continue;
@@ -442,42 +610,42 @@ namespace DataTables.GeneratorCore
             #line hidden
             this.Write("\r\n    /// <summary>");
             
-            #line 134 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 219 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildSummary(item.Title)));
             
             #line default
             #line hidden
             this.Write("</summary>");
             
-            #line 134 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 219 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(string.IsNullOrEmpty(item.Note) ? string.Empty : Environment.NewLine + "    /// <remarks>" + BuildSummary(item.Note) + "</remarks>"));
             
             #line default
             #line hidden
             this.Write("\r\n    public ");
             
-            #line 135 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 220 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(GetPropertyTypeString(item)));
             
             #line default
             #line hidden
             this.Write(" ");
             
-            #line 135 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 220 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(item.Name));
             
             #line default
             #line hidden
             this.Write(" { get; private set; }\r\n");
             
-            #line 136 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 221 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("\r\n    public override bool Deserialize(BinaryReader reader)\r\n    {\r\n");
             
-            #line 140 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 225 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
  foreach(var item in GenerationContext.Fields)
 {
     if (item.IsIgnore) continue;
@@ -487,28 +655,28 @@ namespace DataTables.GeneratorCore
             #line hidden
             this.Write("        ");
             
-            #line 144 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 229 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(GetDeserializeMethodString(item)));
             
             #line default
             #line hidden
             this.Write("\r\n");
             
-            #line 145 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 230 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("        return true;\r\n    }\r\n}\r\n\r\n");
             
-            #line 150 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 235 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
  if (!string.IsNullOrEmpty(Namespace)) { 
             
             #line default
             #line hidden
             this.Write("}\r\n");
             
-            #line 152 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
+            #line 237 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataTableTemplate.tt"
  } 
             
             #line default

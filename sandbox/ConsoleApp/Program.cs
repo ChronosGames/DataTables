@@ -90,9 +90,9 @@ internal static class Program
                 {
                     Console.WriteLine($"✅ 成功加载数据表: {sampleTable.Count} 行数据");
 
-                    // 演示静态API - 这些是生成的便捷方法
-                    var row1 = DTDataTableSample.GetDataRowById(1);
-                    var rowsByName = DTDataTableSample.GetDataRowsGroupByName("示例字符串1");
+                    // 演示静态API - 使用Static后缀的静态方法
+                    var row1 = DTDataTableSample.GetDataRowByIdStatic(1);
+                    var rowsByName = DTDataTableSample.GetDataRowsGroupByNameStatic("示例字符串1");
                     Console.WriteLine($"✅ 静态API测试: 找到ID=1的行: {row1?.Name}, 分组查询结果: {rowsByName?.Count ?? 0}条");
                 }
                 else

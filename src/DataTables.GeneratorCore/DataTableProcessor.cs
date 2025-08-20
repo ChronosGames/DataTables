@@ -367,18 +367,6 @@ public sealed partial class DataTableProcessor : IDisposable
         }
     }
 
-    private static bool ContainTags(string text, string tags)
-    {
-        for (int i = 0; i < text.Length; i++)
-        {
-            if (tags.Contains(text[i]))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     // 解析第一行的表头信息
     private bool ParseSheetInfoRow(string cellString)
@@ -501,36 +489,15 @@ public sealed partial class DataTableProcessor : IDisposable
             if (!m_Context.DisableTagsFilter)
             {
                 var index = text.LastIndexOf('@');
-                if (!string.IsNullOrEmpty(m_Tags))
+                if (index != -1)
                 {
-                    if (index == -1)
-                    {
-                        field.IsIgnore = true;
-                        continue;
-                    }
                     var tagText = text.Substring(index + 1);
-                    bool match = false;
-                    for (int ci = 0; ci < m_Tags.Length && !match; ci++)
-                    {
-                        char f = char.ToUpperInvariant(m_Tags[ci]);
-                        foreach (var tc in tagText)
-                        {
-                            if (char.ToUpperInvariant(tc) == f)
-                            {
-                                match = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!match)
+                    if (!string.IsNullOrEmpty(m_Tags) && !TagFilterUtils.Evaluate(tagText, m_Tags))
                     {
                         field.IsIgnore = true;
+                        field.IsTagFiltered = true;
                         continue;
                     }
-                    text = text.Substring(0, index);
-                }
-                else if (index != -1)
-                {
                     text = text.Substring(0, index);
                 }
             }
@@ -859,9 +826,11 @@ public sealed partial class DataTableProcessor : IDisposable
                 var idx = titleText.LastIndexOf('@');
                 if (idx != -1)
                 {
-                    if (!string.IsNullOrEmpty(m_Tags) && !ContainTags(titleText.Substring(idx + 1).ToUpper(), m_Tags.ToUpper()))
+                    var tagText = titleText.Substring(idx + 1);
+                    if (!string.IsNullOrEmpty(m_Tags) && !TagFilterUtils.Evaluate(tagText, m_Tags))
                     {
                         field.IsIgnore = true;
+                        field.IsTagFiltered = true;
                     }
                     else
                     {

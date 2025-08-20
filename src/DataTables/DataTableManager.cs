@@ -23,6 +23,16 @@ namespace DataTables
     }
 
     /// <summary>
+    /// 数据表状态
+    /// </summary>
+    public enum DataTableStatus
+    {
+        NotLoaded,      // 未加载
+        LoadedEmpty,    // 已加载但无数据
+        LoadedWithData  // 已加载且包含数据
+    }
+
+    /// <summary>
     /// 缓存统计信息
     /// </summary>
     public readonly struct CacheStats
@@ -231,7 +241,7 @@ namespace DataTables
             where T : DataTableBase
         {
             cancellationToken.ThrowIfCancellationRequested();
-            return await GetDataTableAsync<T>();
+            return await GetOrCreateDataTableAsync<T>();
         }
 
         /// <summary>
@@ -261,6 +271,16 @@ namespace DataTables
         public static bool IsLoaded<T>() where T : DataTableBase
         {
             return GetCached<T>() != null;
+        }
+
+        /// <summary>
+        /// 检查数据表是否已加载 (HasDataTable别名)
+        /// </summary>
+        /// <typeparam name="T">数据表类型</typeparam>
+        /// <returns>是否已加载</returns>
+        public static bool HasDataTable<T>() where T : DataTableBase
+        {
+            return IsLoaded<T>();
         }
 
         #endregion
@@ -359,7 +379,7 @@ namespace DataTables
         /// </summary>
         /// <typeparam name="T">数据表类型</typeparam>
         /// <returns>数据表实例</returns>
-        public static async ValueTask<T?> GetDataTableAsync<T>() where T : DataTableBase
+        public static async ValueTask<T?> GetOrCreateDataTableAsync<T>() where T : DataTableBase
         {
             var typeNamePair = new TypeNamePair(typeof(T), string.Empty);
 
@@ -395,17 +415,6 @@ namespace DataTables
         {
             // 优化：直接使用新的缓存优先接口
             return GetCached<T>();
-        }
-
-        /// <summary>
-        /// 内部方法：供生成的DTXXX类使用的异步加载方法
-        /// </summary>
-        /// <typeparam name="T">数据表类型</typeparam>
-        /// <returns>数据表实例</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static async ValueTask<T?> GetDataTableInternalAsync<T>() where T : DataTableBase
-        {
-            return await GetDataTableAsync<T>();
         }
 
 
@@ -579,12 +588,6 @@ namespace DataTables
             {
                 return dataRow;
             }
-            // if (s_Factories.TryGetValue(typeNamePair.Type, out var factory))
-            // {
-            //     // 使用反射调用工厂方法（需要优化成编译委托）
-            //     var createRowMethod = factory.GetType().GetMethod("CreateRow");
-            //     return (DataRowBase)createRowMethod!.Invoke(factory, Array.Empty<object>())!;
-            // }
 
             // 回退到反射模式（保持兼容性）
             var dataRowType = typeNamePair.Type.BaseType!.GetGenericArguments()[0];

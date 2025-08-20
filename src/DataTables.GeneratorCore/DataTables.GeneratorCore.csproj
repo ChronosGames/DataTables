@@ -27,6 +27,26 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Update="DataMatrixTemplate.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DataMatrixTemplate.tt</DependentUpon>
+    </Compile>
+    <Compile Update="DataTableTemplate.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DataTableTemplate.tt</DependentUpon>
+    </Compile>
+    <Compile Update="DataMatrixTemplate.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DataMatrixTemplate.tt</DependentUpon>
+    </Compile>
+    <Compile Update="DataTableTemplate.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DataTableTemplate.tt</DependentUpon>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>

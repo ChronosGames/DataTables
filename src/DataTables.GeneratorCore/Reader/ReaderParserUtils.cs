@@ -119,44 +119,18 @@ internal static class ReaderParserUtils
 			if (!context.DisableTagsFilter)
 			{
 				var idx = titleText.LastIndexOf('@');
-				var filter = options.FilterColumnTags ?? string.Empty;
-				if (!string.IsNullOrEmpty(filter))
+				if (idx != -1)
 				{
-					if (idx == -1)
+					var tagText = titleText.Substring(idx + 1);
+					if (!string.IsNullOrEmpty(options.FilterColumnTags) && !TagFilterUtils.Evaluate(tagText, options.FilterColumnTags))
 					{
 						field.IsIgnore = true;
 						field.IsTagFiltered = true;
 					}
 					else
 					{
-						var tagText = titleText.Substring(idx + 1);
-						bool match = false;
-						for (int ci = 0; ci < filter.Length && !match; ci++)
-						{
-							char f = char.ToUpperInvariant(filter[ci]);
-							foreach (var tc in tagText)
-							{
-								if (char.ToUpperInvariant(tc) == f)
-								{
-									match = true;
-									break;
-								}
-							}
-						}
-						if (!match)
-						{
-							field.IsIgnore = true;
-							field.IsTagFiltered = true;
-						}
-						else
-						{
-							field.Title = titleText.Substring(0, idx);
-						}
+						field.Title = titleText.Substring(0, idx);
 					}
-				}
-				else if (idx != -1)
-				{
-					field.Title = titleText.Substring(0, idx);
 				}
 			}
 

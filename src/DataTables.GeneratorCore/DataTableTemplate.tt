@@ -83,78 +83,83 @@ public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTa
     /// <summary>
     /// 获取数据表实例 - 便于访问基类方法
     /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= GenerationContext.DataTableClassName #> Table
-    {
-        get
-        {
-            var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
-            if (table == null)
-            {
-                throw new InvalidOperationException("<#= GenerationContext.DataTableClassName #> not loaded. Call DataTableManager.CreateDataTable<<#= GenerationContext.DataTableClassName #>>() first.");
-            }
-            return table;
-        }
-    }
+    //public static <#= GenerationContext.DataTableClassName #> Table
+    //{
+    //    get
+    //    {
+    //        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
+    //        if (table == null)
+    //        {
+    //            throw new InvalidOperationException("<#= GenerationContext.DataTableClassName #> not loaded. Call DataTableManager.CreateDataTable<<#= GenerationContext.DataTableClassName #>>() first.");
+    //        }
+    //        return table;
+    //    }
+    //}
 
     /// <summary>
     /// 安全获取数据表实例 - 返回null如果未加载
     /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= GenerationContext.DataTableClassName #>? TableOrNull => DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
+    //public static <#= GenerationContext.DataTableClassName #>? TableOrNull => DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
 
     /// <summary>
     /// 检查数据表是否已加载
     /// </summary>
-    public static bool IsLoaded => DataTableManager.HasDataTable<<#= GenerationContext.DataTableClassName #>>();
+    //public static bool IsLoaded => DataTableManager.HasDataTable<<#= GenerationContext.DataTableClassName #>>();
 
     /// <summary>
     /// 获取数据表状态信息
     /// </summary>
-    public static DataTableStatus Status
+    //public static DataTableStatus Status
+    //{
+    //    get
+    //    {
+    //        var table = TableOrNull;
+    //        if (table == null) return DataTableStatus.NotLoaded;
+    //        return table.Count > 0 ? DataTableStatus.LoadedWithData : DataTableStatus.LoadedEmpty;
+    //    }
+    //}
+
+    #endregion
+
+    #region Instance API
+<#  for (var i = 0; i < GenerationContext.Indexs.Count; i++)
     {
-        get
+        var item = GenerationContext.Indexs[i];
+#>
+
+    /// <summary>
+    /// 根据索引获取数据行 (实例方法)
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public <#= GenerationContext.DataRowClassName #>? GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    {
+        if (m_Dict<#= i + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + GenerationContext.BuildCamelCaseParameters(item) + ')' : GenerationContext.ToCamelCase(item[0]) #>, out var result))
         {
-            var table = TableOrNull;
-            if (table == null) return DataTableStatus.NotLoaded;
-            return table.Count > 0 ? DataTableStatus.LoadedWithData : DataTableStatus.LoadedEmpty;
+            return result;
+        }
+        else
+        {
+#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
+            UnityEngine.Debug.LogWarningFormat("<#= GenerationContext.DataTableClassName #> not found index: <#= GenerationContext.BuildIndexsLogFormat(item) #>", <#= GenerationContext.BuildCamelCaseParameters(item) #>);
+#endif
+            return null;
         }
     }
+<#  }
+    for (var j = 0; j < GenerationContext.Groups.Count; j++)
+    {
+        var item = GenerationContext.Groups[j];
+#>
 
     /// <summary>
-    /// 静态版本：检查是否存在符合条件的数据行
+    /// 根据分组获取数据行列表 (实例方法)
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool HasDataRow(Predicate<<#= GenerationContext.DataRowClassName #>> condition) => Table.HasDataRow(condition);
-
-    /// <summary>
-    /// 静态版本：获取符合条件的第一个数据行
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= GenerationContext.DataRowClassName #>? GetDataRow(Predicate<<#= GenerationContext.DataRowClassName #>> condition) => Table.GetDataRow(condition);
-
-    /// <summary>
-    /// 静态版本：获取符合条件的所有数据行
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static IEnumerable<<#= GenerationContext.DataRowClassName #>> GetDataRows(Predicate<<#= GenerationContext.DataRowClassName #>> condition) => Table.GetDataRows(condition);
-
-    /// <summary>
-    /// 静态版本：获取排序后的数据行
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= GenerationContext.DataRowClassName #>[] GetDataRows(Comparison<<#= GenerationContext.DataRowClassName #>> comparison) => Table.GetDataRows(comparison);
-
-    /// <summary>
-    /// 静态版本：获取所有数据行
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= GenerationContext.DataRowClassName #>[] GetAllDataRows() => Table.GetAllDataRows();
-
-    /// <summary>
-    /// 静态版本：数据行数量
-    /// </summary>
-    public static int Count => Table.Count;
+    public List<<#= GenerationContext.DataRowClassName #>>? GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    {
+        return m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + GenerationContext.BuildCamelCaseParameters(item) + ')' : GenerationContext.ToCamelCase(item[0]) #>, out var result) ? result : null;
+    }
+<#  } #>
 
     #endregion
 
@@ -165,10 +170,10 @@ public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTa
 #>
 
     /// <summary>
-    /// 根据索引获取数据行
+    /// 根据索引获取数据行 (静态方法)
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= GenerationContext.DataRowClassName #>? GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    public static <#= GenerationContext.DataRowClassName #>? GetDataRowBy<#= string.Join("And", item) #>Static(<#= GenerationContext.BuildMethodParameters(item) #>)
     {
         var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
         if (table?.m_Dict<#= i + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + GenerationContext.BuildCamelCaseParameters(item) + ')' : GenerationContext.ToCamelCase(item[0]) #>, out var result) == true)
@@ -190,10 +195,10 @@ public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTa
 #>
 
     /// <summary>
-    /// 根据分组获取数据行列表
+    /// 根据分组获取数据行列表 (静态方法)
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<<#= GenerationContext.DataRowClassName #>>? GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    public static List<<#= GenerationContext.DataRowClassName #>>? GetDataRowsGroupBy<#= string.Join("And", item) #>Static(<#= GenerationContext.BuildMethodParameters(item) #>)
     {
         var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
         return table?.m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + GenerationContext.BuildCamelCaseParameters(item) + ')' : GenerationContext.ToCamelCase(item[0]) #>, out var result) == true ? result : null;

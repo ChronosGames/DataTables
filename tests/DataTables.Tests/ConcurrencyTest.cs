@@ -30,7 +30,7 @@ namespace DataTables.Tests
             // Act - 并发加载同一个表
             for (int i = 0; i < concurrentCount; i++)
             {
-                tasks.Add(DataTableManager.GetDataTableAsync<MockDataTable>());
+                tasks.Add(DataTableManager.GetOrCreateDataTableAsync<MockDataTable>());
             }
 
             var results = await Task.WhenAll(tasks.Select(t => t.AsTask()));
@@ -57,9 +57,9 @@ namespace DataTables.Tests
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             // Act - 并发加载多个相同类型的表（简化测试）
-            var task1 = DataTableManager.GetDataTableAsync<MockDataTable>().AsTask();
-            var task2 = DataTableManager.GetDataTableAsync<MockDataTable>().AsTask();
-            var task3 = DataTableManager.GetDataTableAsync<MockDataTable>().AsTask();
+            var task1 = DataTableManager.GetOrCreateDataTableAsync<MockDataTable>().AsTask();
+            var task2 = DataTableManager.GetOrCreateDataTableAsync<MockDataTable>().AsTask();
+            var task3 = DataTableManager.GetOrCreateDataTableAsync<MockDataTable>().AsTask();
 
             var results = await Task.WhenAll(task1, task2, task3);
             stopwatch.Stop();

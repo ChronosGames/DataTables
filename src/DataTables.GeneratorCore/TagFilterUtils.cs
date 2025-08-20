@@ -19,12 +19,33 @@ internal static class TagFilterUtils
 	{
 		var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 		if (string.IsNullOrWhiteSpace(columnTagText)) return set;
-		// 将非单词字符作为分隔符（支持空格、逗号、分号、竖线、中文逗号等）
-		var parts = Regex.Split(columnTagText.Trim(), @"[^A-Za-z0-9_]+");
-		foreach (var p in parts)
+		
+		var text = columnTagText.Trim();
+		
+		// 检查是否包含分隔符（新格式）
+		if (Regex.IsMatch(text, @"[^A-Za-z0-9_]+"))
 		{
-			var t = p.Trim();
-			if (t.Length > 0) set.Add(t);
+			// 新格式：使用分隔符分割（支持空格、逗号、分号、竖线、中文逗号等）
+			var parts = Regex.Split(text, @"[^A-Za-z0-9_]+");
+			foreach (var p in parts)
+			{
+				var t = p.Trim();
+				if (t.Length > 0) set.Add(t);
+			}
+		}
+		else
+		{
+			// 兼容性格式：单个连续字符串，可能是多个单字符标签连接（如"CS"表示"C"和"S"）
+			// 先尝试作为整体标签
+			set.Add(text);
+			// 同时支持单字符拆分（向后兼容）
+			foreach (char c in text)
+			{
+				if (char.IsLetterOrDigit(c))
+				{
+					set.Add(c.ToString());
+				}
+			}
 		}
 		return set;
 	}

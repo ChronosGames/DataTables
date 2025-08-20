@@ -133,5 +133,29 @@ public class ParserTests
 		ctx.Fields[1].IsTagFiltered.Should().BeTrue();
 		ctx.Fields[2].IsTagFiltered.Should().BeFalse();
 	}
+
+	[Fact]
+	public void ColumnTableParser_Should_Not_Filter_Fields_Without_Tags()
+	{
+		var wb = new XSSFWorkbook();
+		var sh = wb.CreateSheet("Sheet1");
+		var r0 = sh.CreateRow(0); r0.CreateCell(0).SetCellValue("dtgen=column,class=Cfg");
+		// 列无标签 和 列有标签的混合测试
+		var r1 = sh.CreateRow(1); r1.CreateCell(0).SetCellValue("Id"); r1.CreateCell(1).SetCellValue("id"); r1.CreateCell(2).SetCellValue("int");
+		var r2 = sh.CreateRow(2); r2.CreateCell(0).SetCellValue("Name"); r2.CreateCell(1).SetCellValue("name"); r2.CreateCell(2).SetCellValue("string");
+		var r3 = sh.CreateRow(3); r3.CreateCell(0).SetCellValue("Level@S"); r3.CreateCell(1).SetCellValue("level"); r3.CreateCell(2).SetCellValue("int");
+
+		var ctx = new GenerationContext { SheetName = "Sheet1" };
+		var parser = new ColumnTableParser();
+		var opts = new ParseOptions { FilterColumnTags = "C" };
+		var diags = new DiagnosticsCollector();
+		parser.Parse(new NpoiSheetReader(sh), ctx, opts, diags);
+
+		// 预期：Id 和 Name 保留（无标签），Level 被过滤（有标签但不匹配）
+		ctx.Fields.Should().HaveCount(3);
+		ctx.Fields[0].IsIgnore.Should().BeFalse(); // Id - 无标签，不过滤
+		ctx.Fields[1].IsIgnore.Should().BeFalse(); // Name - 无标签，不过滤
+		ctx.Fields[2].IsTagFiltered.Should().BeTrue(); // Level@S - 有标签但不匹配，被过滤
+	}
 }
 

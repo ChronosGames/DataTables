@@ -44,34 +44,35 @@ internal static class ReaderParserUtils
 				var filter = options.FilterColumnTags ?? string.Empty;
 				if (!string.IsNullOrEmpty(filter))
 				{
-					// 指定了单字母过滤：只有带有匹配标签的列才保留
-					if (index == -1)
+					// 指定了标签过滤：保留没有标签的字段和匹配标签的字段
+					if (index != -1)
 					{
-						field.IsIgnore = true;
-						field.IsTagFiltered = true;
-						continue;
-					}
-					var tagText = text.Substring(index + 1);
-					bool match = false;
-					for (int ci = 0; ci < filter.Length && !match; ci++)
-					{
-						char f = char.ToUpperInvariant(filter[ci]);
-						foreach (var tc in tagText)
+						var tagText = text.Substring(index + 1);
+						bool match = false;
+						for (int ci = 0; ci < filter.Length && !match; ci++)
 						{
-							if (char.ToUpperInvariant(tc) == f)
+							char f = char.ToUpperInvariant(filter[ci]);
+							foreach (var tc in tagText)
 							{
-								match = true;
-								break;
+								if (char.ToUpperInvariant(tc) == f)
+								{
+									match = true;
+									break;
+								}
 							}
 						}
+						if (!match)
+						{
+							field.IsIgnore = true;
+							field.IsTagFiltered = true;
+							continue;
+						}
 					}
-					if (!match)
+					// 没有标签的字段保留（对所有环境可用）
+					if (index != -1)
 					{
-						field.IsIgnore = true;
-						field.IsTagFiltered = true;
-						continue;
+						text = text.Substring(0, index);
 					}
-					text = text.Substring(0, index);
 				}
 				else if (index != -1)
 				{

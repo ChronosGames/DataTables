@@ -32,6 +32,15 @@ public sealed class RowTableParser : ITableSchemaParser
 		{
 			if (field.IsIgnore) continue;
 			var text = (nameRowObj.GetCell(field.Index)?.GetString() ?? string.Empty).Trim();
+			
+			// 如果字段名为空或是注释，标记为忽略但不抛出异常
+			if (string.IsNullOrEmpty(text) || text.TrimStart().StartsWith("#", StringComparison.Ordinal))
+			{
+				field.IsIgnore = true;
+				field.IsComment = !string.IsNullOrEmpty(text) && text.Trim().StartsWith("#");
+				continue;
+			}
+			
 			if (options.StrictNameValidation && !NameRegex.IsMatch(text))
 			{
 				throw new FormatException($"数据列名称不合法: {text}");

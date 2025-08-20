@@ -58,8 +58,8 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public <#= BuildTypeString(kValue) #> GetDataRowOrDefault(<#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2)
     {
-        <#= BuildTypeString(kValue) #>? result = Get(key1, key2);
-        return result.HasValue ? result.Value : DefaultValue;
+        var result = Get(key1, key2);
+        return result != null ? result : DefaultValue;
     }
 
     #endregion
@@ -111,8 +111,8 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
         var table = DataTableManager.GetDataTableInternal<DT<#= GenerationContext.ClassName #>>();
         if (table != null)
         {
-            <#= BuildTypeString(kValue) #>? result = table.Get(key1, key2);
-            return result.HasValue ? result.Value : table.DefaultValue;
+            var result = table.Get(key1, key2);
+            return result != null ? result : table.DefaultValue;
         }
         return default(<#= BuildTypeString(kValue) #>);
     }

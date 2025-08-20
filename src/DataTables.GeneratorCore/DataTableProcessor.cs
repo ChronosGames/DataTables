@@ -21,8 +21,6 @@ public sealed partial class DataTableProcessor : IDisposable
     private readonly ParseOptions m_Options;
     private readonly DiagnosticsCollector m_Diagnostics;
 
-
-
     /// <summary>
     /// 初始数据行序号
     /// </summary>
@@ -276,13 +274,25 @@ public sealed partial class DataTableProcessor : IDisposable
                 var rawName = (index[i] ?? string.Empty).Trim();
                 if (!fieldMap.TryGetValue(rawName, out var field))
                 {
+                    // 检查是否存在但被忽略的字段
+                    var ignoredField = m_Context.Fields.FirstOrDefault(f =>
+                        string.Equals(f.Name, rawName, StringComparison.OrdinalIgnoreCase) ||
+                        (!string.IsNullOrEmpty(f.Title) && string.Equals(f.Title, rawName, StringComparison.OrdinalIgnoreCase)));
+
+                    if (ignoredField != null && ignoredField.IsIgnore)
+                    {
+                        var reason = ignoredField.IsTagFiltered ? $"因标签过滤被忽略（当前过滤标签: {m_Options.FilterColumnTags}）" :
+                                   ignoredField.IsComment ? "为注释列被忽略" : "被忽略";
+                        throw new Exception($"Index配置引用了被忽略的字段: {rawName} ({reason})。请调整标签过滤参数或修改Index配置。");
+                    }
+
                     var available = string.Join(", ", m_Context.Fields.Where(f => !string.IsNullOrEmpty(f.Name)).Select(f => f.Name));
                     throw new Exception($"Index配置中发现不存在的字段: {rawName}. 可用字段: [{available}]");
                 }
                 if (field.IsIgnore)
                 {
-                    var reason = field.IsTagFiltered ? "(因标签过滤被忽略)" : field.IsComment ? "(为注释列被忽略)" : "(被忽略)";
-                    throw new Exception($"Index配置引用了被忽略的字段: {rawName} {reason}");
+                    var reason = field.IsTagFiltered ? $"因标签过滤被忽略（当前过滤标签: {m_Options.FilterColumnTags}）" : field.IsComment ? "为注释列被忽略" : "被忽略";
+                    throw new Exception($"Index配置引用了被忽略的字段: {rawName} ({reason})。请调整标签过滤参数或修改Index配置。");
                 }
                 // 用实际字段名回填，确保后续代码生成一致
                 if (!string.Equals(index[i], field.Name, StringComparison.Ordinal))
@@ -517,6 +527,15 @@ public sealed partial class DataTableProcessor : IDisposable
             }
 
             var text = GetCellString(row.GetCell(field.Index));
+
+            // 如果字段名为空或是注释，标记为忽略但不抛出异常
+            if (string.IsNullOrEmpty(text) || text.TrimStart().StartsWith("#", StringComparison.Ordinal))
+            {
+                field.IsIgnore = true;
+                field.IsComment = !string.IsNullOrEmpty(text) && text.Trim().StartsWith("#");
+                continue;
+            }
+
             if (!NameRegex.IsMatch(text))
             {
                 throw new FormatException($"数据列名称不合法: {text}");

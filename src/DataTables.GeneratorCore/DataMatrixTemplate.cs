@@ -217,14 +217,7 @@ namespace DataTables.GeneratorCore
             
             #line default
             #line hidden
-            this.Write(" key2)\r\n    {\r\n        ");
-            
-            #line 61 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataMatrixTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kValue)));
-            
-            #line default
-            #line hidden
-            this.Write("? result = Get(key1, key2);\r\n        return result.HasValue ? result.Value : DefaultValue;\r\n    }\r\n\r\n    #endregion\r\n\r\n    #region Static API\r\n\r\n    /// <summary>\r\n    /// 获取数据矩阵实例 - 便于访问基类方法 (静态方法)\r\n    /// </summary>\r\n    public static DT");
+            this.Write(" key2)\r\n    {\r\n        var result = Get(key1, key2);\r\n        return result != null ? result : DefaultValue;\r\n    }\r\n\r\n    #endregion\r\n\r\n    #region Static API\r\n\r\n    /// <summary>\r\n    /// 获取数据矩阵实例 - 便于访问基类方法 (静态方法)\r\n    /// </summary>\r\n    public static DT");
             
             #line 72 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataMatrixTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
@@ -329,14 +322,7 @@ namespace DataTables.GeneratorCore
             
             #line default
             #line hidden
-            this.Write(">();\r\n        if (table != null)\r\n        {\r\n            ");
-            
-            #line 114 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataMatrixTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kValue)));
-            
-            #line default
-            #line hidden
-            this.Write("? result = table.Get(key1, key2);\r\n            return result.HasValue ? result.Value : table.DefaultValue;\r\n        }\r\n        return default(");
+            this.Write(">();\r\n        if (table != null)\r\n        {\r\n            var result = table.Get(key1, key2);\r\n            return result != null ? result : table.DefaultValue;\r\n        }\r\n        return default(");
             
             #line 117 "D:\Projects\ChronosGames\DataTables\src\DataTables.GeneratorCore\DataMatrixTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kValue)));

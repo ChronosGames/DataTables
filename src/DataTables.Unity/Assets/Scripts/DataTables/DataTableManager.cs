@@ -249,9 +249,9 @@ namespace DataTables
         /// </summary>
         /// <typeparam name="T">数据表类型</typeparam>
         /// <returns>数据表实例，如果未加载则返回null</returns>
-        public static T? GetCached<T>() where T : DataTableBase
+        public static T? GetCached<T>(string name = "") where T : DataTableBase
         {
-            var typeNamePair = new TypeNamePair(typeof(T), string.Empty);
+            var typeNamePair = new TypeNamePair(typeof(T), name);
 
             // 优先从LRU缓存获取
             if (s_Cache != null && s_Cache.TryGet<T>(typeNamePair, out var cached))

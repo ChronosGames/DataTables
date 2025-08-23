@@ -90,7 +90,7 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
     /// <summary>
     /// 检查数据矩阵是否已加载 (静态方法)
     /// </summary>
-    public static bool IsLoaded => DataTableManager.HasDataTable<DT<#= GenerationContext.ClassName #>>();
+    public static bool IsLoaded => DataTableManager.IsLoaded<DT<#= GenerationContext.ClassName #>>();
 
     /// <summary>
     /// 根据Key1和Key2获取数据值 (静态方法)

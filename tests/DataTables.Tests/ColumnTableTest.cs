@@ -90,7 +90,7 @@ namespace DataTables.Tests
             int version = br.ReadInt32();
             version.Should().BeGreaterThan(0);
             // 读取行数 7-bit 编码
-            int rowCount = DataTables.BinaryExtension.Read7BitEncodedInt32(br);
+            int rowCount = br.ReadUInt16();
             // 示例中：三条数据（1001/1002/1003）
             rowCount.Should().Be(3);
         }

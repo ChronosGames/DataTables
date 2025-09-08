@@ -87,6 +87,8 @@ namespace DataTables
     /// </summary>
     public static class DataTableManager
     {
+        private const int DataTableVersion = 2;
+
         #region InternalFields
 
         private static readonly ConcurrentDictionary<TypeNamePair, DataTableBase> s_DataTables = new();
@@ -536,12 +538,12 @@ namespace DataTables
             }
 
             var readVersion = br.ReadInt32();
-            if (readVersion != 1)
+            if (readVersion != DataTableVersion)
             {
                 throw new Exception($"Unsupported data table version {readVersion} for '{typeNamePair}'.");
             }
 
-            var readCount = br.Read7BitEncodedInt32();
+            var readCount = br.ReadUInt16();
 
             // 尝试使用高性能工厂模式
             var dataTable = CreateDataTableInstance(typeNamePair, readCount);

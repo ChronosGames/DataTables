@@ -13,7 +13,7 @@ public sealed partial class DataTableProcessor : IDisposable
 {
     private static readonly Regex NameRegex = new Regex(@"^[A-Za-z][A-Za-z0-9_]*$");
     private const string DATA_TABLE_SIGNATURE = "DTABLE";
-    private const int DATA_TABLE_VERSION = 1;
+    private const int DATA_TABLE_VERSION = 2;
 
     private readonly GenerationContext m_Context;
     private readonly IFormulaEvaluator m_FormulaEvaluator;
@@ -597,17 +597,17 @@ public sealed partial class DataTableProcessor : IDisposable
             binaryWriter.Write(DATA_TABLE_VERSION);
 
             // 写入行数占位
-            binaryWriter.Write7BitEncodedInt32(0);
+            binaryWriter.Write(ushort.MinValue);
 
             // 写入数据集
             int dataRowCount = WriteDataRows(sheet, binaryWriter);
 
             // 重写行数 (跳过签名和版本，定位到行数位置)
             // String写入格式: 7BitEncodedInt(length) + UTF8字节
-            var signatureBytes = Encoding.UTF8.GetBytes(DATA_TABLE_SIGNATURE);
+            byte[] signatureBytes = Encoding.UTF8.GetBytes(DATA_TABLE_SIGNATURE);
             long countPosition = GetCompactIntSize(signatureBytes.Length) + signatureBytes.Length + sizeof(int);
             fileStream.Seek(countPosition, SeekOrigin.Begin);
-            binaryWriter.Write7BitEncodedInt32(dataRowCount);
+            binaryWriter.Write((ushort)dataRowCount);
 
             logger.Debug("  > Generate {0}.bytes to: {1}. - {2}ms", m_Context.DataRowClassName, outputFileName, Environment.TickCount - startTickCount);
         }

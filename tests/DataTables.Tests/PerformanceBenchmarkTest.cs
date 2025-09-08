@@ -148,8 +148,8 @@ namespace DataTables.Tests
             using var bw = new System.IO.BinaryWriter(ms);
 
             bw.Write("DTABLE");  // 签名
-            bw.Write(1);         // 版本
-            bw.Write7BitEncodedInt32(0); // 数据行数
+            bw.Write(2);         // 版本
+            bw.Write(ushort.MinValue); // 数据行数
 
             return ms.ToArray();
         }

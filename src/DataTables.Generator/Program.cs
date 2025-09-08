@@ -42,9 +42,6 @@ public class MyCommands
         string skipCellMarker = "#",
         string diagnosticsJsonOutput = "")
     {
-        var oldEncoding = Console.OutputEncoding;
-        Console.OutputEncoding = System.Text.Encoding.UTF8;
-
         var sw = Stopwatch.StartNew();
         Console.WriteLine("Start DataTables CodeGeneration");
 
@@ -74,13 +71,11 @@ public class MyCommands
         catch (Exception e)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(e);
+            Console.Error.WriteLine(e);
             Console.ResetColor();
         }
 
         Console.WriteLine("Complete DataTables Generation, elapsed: " + sw.Elapsed);
-
-        Console.OutputEncoding = oldEncoding;
     }
 
     /// <summary>
@@ -143,7 +138,7 @@ public class MyCommands
         catch (Exception e)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(e);
+            Console.Error.WriteLine(e);
             Console.ResetColor();
         }
 

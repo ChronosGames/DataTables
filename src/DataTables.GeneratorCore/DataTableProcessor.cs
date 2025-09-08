@@ -597,7 +597,7 @@ public sealed partial class DataTableProcessor : IDisposable
             binaryWriter.Write(DATA_TABLE_VERSION);
 
             // 写入行数占位
-            binaryWriter.Write7BitEncodedInt(0);
+            binaryWriter.Write7BitEncodedInt32(0);
 
             // 写入数据集
             int dataRowCount = WriteDataRows(sheet, binaryWriter);
@@ -607,7 +607,7 @@ public sealed partial class DataTableProcessor : IDisposable
             var signatureBytes = Encoding.UTF8.GetBytes(DATA_TABLE_SIGNATURE);
             long countPosition = GetCompactIntSize(signatureBytes.Length) + signatureBytes.Length + sizeof(int);
             fileStream.Seek(countPosition, SeekOrigin.Begin);
-            binaryWriter.Write7BitEncodedInt(dataRowCount);
+            binaryWriter.Write7BitEncodedInt32(dataRowCount);
 
             logger.Debug("  > Generate {0}.bytes to: {1}. - {2}ms", m_Context.DataRowClassName, outputFileName, Environment.TickCount - startTickCount);
         }

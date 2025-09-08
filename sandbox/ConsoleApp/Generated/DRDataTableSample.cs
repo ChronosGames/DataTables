@@ -250,6 +250,36 @@ public sealed partial class DRDataTableSample : DataRowBase
     /// <summary>数组</summary>
     public int[] ArrayValue { get; private set; }
 
+    /// <summary>
+    /// 二维数组
+    /// <para>使用标准JSON格式串</para>
+    /// <para>备注1字符串</para>
+    /// </summary>
+    public int[][] Array2DValue { get; private set; }
+
+    /// <summary>一维字符串数组</summary>
+    public string[] ArrayStringValue { get; private set; }
+
+    /// <summary>三维数组</summary>
+    public int[][][] Array3DValue { get; private set; }
+
+    /// <summary>枚举与整形的字典</summary>
+    public Dictionary<ColorT, int> MapEnumToInt { get; private set; }
+
+    /// <summary>枚举数组</summary>
+    public ColorT[] EnumArray { get; private set; }
+
+    /// <summary>JSON类</summary>
+    /// <remarks>
+    /// 批注示例文本，请注意查阅！
+    /// <para>&lt;color&gt;Red&lt;/color&gt;</para>
+    /// <para>&lt;b&gt;abc&lt;/b&gt;</para>
+    /// </remarks>
+    public SampleParent CustomJSON { get; private set; }
+
+    /// <summary>自定义类</summary>
+    public CustomSample CustomFieldType { get; private set; }
+
     public override bool Deserialize(BinaryReader reader)
     {
         Id = reader.Read7BitEncodedInt32();
@@ -277,6 +307,105 @@ public sealed partial class DRDataTableSample : DataRowBase
                 ArrayValue[x1] = key1;
             }
         }
+        {
+            var __Array2DValue_Count1 = reader.Read7BitEncodedInt32();
+            Array2DValue = new int[__Array2DValue_Count1][];
+            for (int x1 = 0; x1 < __Array2DValue_Count1; x1++)
+            {
+                int[] key1;
+                {
+                    var __key1_Count3 = reader.Read7BitEncodedInt32();
+                    key1 = new int[__key1_Count3];
+                    for (int x3 = 0; x3 < __key1_Count3; x3++)
+                    {
+                        int key3;
+                        key3 = reader.Read7BitEncodedInt32();
+                        key1[x3] = key3;
+                    }
+                }
+                Array2DValue[x1] = key1;
+            }
+        }
+        {
+            var __ArrayStringValue_Count1 = reader.Read7BitEncodedInt32();
+            ArrayStringValue = new string[__ArrayStringValue_Count1];
+            for (int x1 = 0; x1 < __ArrayStringValue_Count1; x1++)
+            {
+                string key1;
+                key1 = reader.ReadString();
+                ArrayStringValue[x1] = key1;
+            }
+        }
+        {
+            var __Array3DValue_Count1 = reader.Read7BitEncodedInt32();
+            Array3DValue = new int[__Array3DValue_Count1][][];
+            for (int x1 = 0; x1 < __Array3DValue_Count1; x1++)
+            {
+                int[][] key1;
+                {
+                    var __key1_Count3 = reader.Read7BitEncodedInt32();
+                    key1 = new int[__key1_Count3][];
+                    for (int x3 = 0; x3 < __key1_Count3; x3++)
+                    {
+                        int[] key3;
+                        {
+                            var __key3_Count5 = reader.Read7BitEncodedInt32();
+                            key3 = new int[__key3_Count5];
+                            for (int x5 = 0; x5 < __key3_Count5; x5++)
+                            {
+                                int key5;
+                                key5 = reader.Read7BitEncodedInt32();
+                                key3[x5] = key5;
+                            }
+                        }
+                        key1[x3] = key3;
+                    }
+                }
+                Array3DValue[x1] = key1;
+            }
+        }
+        {
+            MapEnumToInt = new Dictionary<ColorT, int>();
+            var __MapEnumToInt_Count1 = reader.Read7BitEncodedInt32();
+            for (int x1 = 0; x1 < __MapEnumToInt_Count1; x1++)
+            {
+                ColorT key1;
+                {
+                    ColorT __enumVal = default;
+                    var __enumStr = reader.ReadString();
+                    if (!string.IsNullOrEmpty(__enumStr) && !Enum.TryParse(__enumStr, out __enumVal))
+                    {
+                        throw new ArgumentException();
+                    }
+                    key1 = __enumVal;
+                }
+                int value1;
+                value1 = reader.Read7BitEncodedInt32();
+                MapEnumToInt.Add(key1, value1);
+            }
+        }
+        {
+            var __EnumArray_Count1 = reader.Read7BitEncodedInt32();
+            EnumArray = new ColorT[__EnumArray_Count1];
+            for (int x1 = 0; x1 < __EnumArray_Count1; x1++)
+            {
+                ColorT key1;
+                {
+                    ColorT __enumVal = default;
+                    var __enumStr = reader.ReadString();
+                    if (!string.IsNullOrEmpty(__enumStr) && !Enum.TryParse(__enumStr, out __enumVal))
+                    {
+                        throw new ArgumentException();
+                    }
+                    key1 = __enumVal;
+                }
+                EnumArray[x1] = key1;
+            }
+        }
+        {
+            CustomJSON = reader.ReadJson<SampleParent>();
+        }
+        CustomFieldType = new CustomSample(reader.ReadString());
         return true;
     }
 }

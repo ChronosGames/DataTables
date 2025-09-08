@@ -56,7 +56,7 @@ namespace DataTables.Tests
                 r3.CreateCell(4, CellType.String).SetCellValue("2");
                 r3.CreateCell(5, CellType.String).SetCellValue("3");
 
-                using var fsx = File.Create(xlsxPath);
+                await using var fsx = File.Create(xlsxPath);
                 wb.Write(fsx);
             }
 
@@ -76,18 +76,18 @@ namespace DataTables.Tests
 
             // Assert data file exists
             // 类名 ItemConfig → DataTable 名称前缀 DT，输出文件 DataTables.Tests.Generated.DTItemConfig.bytes
-            var dataFile = Directory.GetFiles(dataOut, "*.bytes", SearchOption.AllDirectories)
+            string? dataFile = Directory.GetFiles(dataOut, "*.bytes", SearchOption.AllDirectories)
                                      .FirstOrDefault(p => Path.GetFileName(p).Contains("DTItemConfig"));
             dataFile.Should().NotBeNull();
 
             // 运行时加载验证：通过 DataTable 基础设施读取并计数（无需生成代码类）
-            using var fs = File.OpenRead(dataFile!);
+            await using var fs = File.OpenRead(dataFile!);
             using var br = new BinaryReader(fs);
             // 读取签名
-            var signature = br.ReadString();
+            string signature = br.ReadString();
             signature.Should().Be("DTABLE");
             // 读取版本
-            var version = br.ReadInt32();
+            int version = br.ReadInt32();
             version.Should().BeGreaterThan(0);
             // 读取行数 7-bit 编码
             int rowCount = DataTables.BinaryExtension.Read7BitEncodedInt32(br);

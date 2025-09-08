@@ -52,8 +52,8 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool GetDataRowOrDefault(short key1, long key2)
     {
-        bool? result = Get(key1, key2);
-        return result.HasValue ? result.Value : DefaultValue;
+        var result = Get(key1, key2);
+        return result != null ? result : DefaultValue;
     }
 
     #endregion
@@ -84,7 +84,7 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
     /// <summary>
     /// 检查数据矩阵是否已加载 (静态方法)
     /// </summary>
-    public static bool IsLoaded => DataTableManager.HasDataTable<DTMatrixSample>();
+    public static bool IsLoaded => DataTableManager.IsLoaded<DTMatrixSample>();
 
     /// <summary>
     /// 根据Key1和Key2获取数据值 (静态方法)
@@ -105,8 +105,8 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
         var table = DataTableManager.GetDataTableInternal<DTMatrixSample>();
         if (table != null)
         {
-            bool? result = table.Get(key1, key2);
-            return result.HasValue ? result.Value : table.DefaultValue;
+            var result = table.Get(key1, key2);
+            return result != null ? result : table.DefaultValue;
         }
         return default(bool);
     }

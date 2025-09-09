@@ -233,9 +233,6 @@ namespace DataTables
         /// 创建数据行实例 - 由子类实现以提供具体的DataRow类型
         /// </summary>
         /// <returns></returns>
-        protected virtual MatrixDataRowBase<TKey1, TKey2, TValue> CreateDataRowInstance()
-        {
-            throw new NotImplementedException("Subclass must implement CreateDataRowInstance() method to provide specific MatrixDataRow type.");
-        }
+        protected abstract MatrixDataRowBase<TKey1, TKey2, TValue> CreateDataRowInstance();
     }
 }

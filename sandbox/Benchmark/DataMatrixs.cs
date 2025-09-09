@@ -107,6 +107,8 @@ public class DataMatrix2 : DataMatrixBase<Key1Enum, Key2Enum, ValueEnum>
         m_Key1Comparer = new Key1Comparer();
         m_Key2Comparer = new Key2Comparer();
     }
+
+    protected override MatrixDataRowBase<Key1Enum, Key2Enum, ValueEnum> CreateDataRowInstance() => throw new NotImplementedException();
 }
 
 public class DataMatrix3 : DataMatrixBase1<Key1Enum, Key2Enum, int[]>
@@ -137,6 +139,8 @@ public class DataMatrix4 : DataMatrixBase<Key1Enum, Key2Enum, int[]>
             }
         }
     }
+
+    protected override MatrixDataRowBase<Key1Enum, Key2Enum, int[]> CreateDataRowInstance() => throw new NotImplementedException();
 }
 
 public class DataMatrix6 : DataMatrixBase<string, Key2Enum, int[]>
@@ -151,4 +155,6 @@ public class DataMatrix6 : DataMatrixBase<string, Key2Enum, int[]>
             }
         }
     }
+
+    protected override MatrixDataRowBase<string, Key2Enum, int[]> CreateDataRowInstance() => throw new NotImplementedException();
 }

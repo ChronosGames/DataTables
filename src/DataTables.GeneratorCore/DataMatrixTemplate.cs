@@ -275,7 +275,127 @@ namespace DataTables.GeneratorCore
             
             #line default
             #line hidden
-            this.Write(");\r\n    }\r\n\r\n    #endregion\r\n}\r\n\r\n");
+            this.Write(");\r\n    }\r\n\r\n    #endregion\r\n\r\n    #region MatrixDataRow Support\r\n\r\n    /// <summary>\r\n    /// 创建数据行实例\r\n    /// </summary>\r\n    protected override MatrixDataRowBase<");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));
+            
+            #line default
+            #line hidden
+            this.Write(", ");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey2)));
+            
+            #line default
+            #line hidden
+            this.Write(", ");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kValue)));
+            
+            #line default
+            #line hidden
+            this.Write("> CreateDataRowInstance()\r\n    {\r\n        return new DR");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
+            
+            #line default
+            #line hidden
+            this.Write("();\r\n    }\r\n\r\n    #endregion\r\n}\r\n\r\n/// <summary>\r\n/// ");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
+            
+            #line default
+            #line hidden
+            this.Write(" 的数据行类 - 包含RowKey、ColumnKey和Value\r\n/// </summary>\r\npublic sealed class DR");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
+            
+            #line default
+            #line hidden
+            this.Write(" : MatrixDataRowBase<");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));
+            
+            #line default
+            #line hidden
+            this.Write(", ");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey2)));
+            
+            #line default
+            #line hidden
+            this.Write(", ");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kValue)));
+            
+            #line default
+            #line hidden
+            this.Write(">\r\n{\r\n    /// <summary>\r\n    /// 构造函数\r\n    /// </summary>\r\n    public DR");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
+            
+            #line default
+            #line hidden
+            this.Write("() : base()\r\n    {\r\n    }\r\n\r\n    /// <summary>\r\n    /// 构造函数\r\n    /// </summary>\r\n    /// <param name=\"rowKey\">行键</param>\r\n    /// <param name=\"columnKey\">列键</param>\r\n    /// <param name=\"value\">值</param>\r\n    public DR");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
+            
+            #line default
+            #line hidden
+            this.Write("(");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));
+            
+            #line default
+            #line hidden
+            this.Write(" rowKey, ");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey2)));
+            
+            #line default
+            #line hidden
+            this.Write(" columnKey, ");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kValue)));
+            
+            #line default
+            #line hidden
+            this.Write(" value) \r\n        : base(rowKey, columnKey, value)\r\n    {\r\n    }\r\n\r\n    /// <summary>\r\n    /// 从二进制读取器反序列化\r\n    /// </summary>\r\n    public override bool Deserialize(BinaryReader reader)\r\n    {\r\n        ");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));
+            
+            #line default
+            #line hidden
+            this.Write(" rowKey;\r\n        ");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildDeserializeMethodString(kKey1).Replace(kKey1, "rowKey")));
+            
+            #line default
+            #line hidden
+            this.Write("\r\n\r\n        ");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey2)));
+            
+            #line default
+            #line hidden
+            this.Write(" columnKey;\r\n        ");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildDeserializeMethodString(kKey2).Replace(kKey2, "columnKey")));
+            
+            #line default
+            #line hidden
+            this.Write("\r\n\r\n        ");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kValue)));
+            
+            #line default
+            #line hidden
+            this.Write(" value;\r\n        ");
+            
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildDeserializeMethodString(kValue).Replace(kValue, "value")));
+            
+            #line default
+            #line hidden
+            this.Write("\r\n\r\n        SetData(rowKey, columnKey, value);\r\n        return true;\r\n    }\r\n}\r\n\r\n");
  if (!string.IsNullOrEmpty(GenerationContext.Namespace)) { 
             this.Write("}\r\n");
  } 

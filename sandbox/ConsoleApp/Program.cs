@@ -85,6 +85,9 @@ internal static class Program
             // 尝试加载生成的数据表
             try
             {
+                // 预加载所有表
+                await DataTableManager.PreloadAllAsync();
+
                 var sampleTable = await DataTableManager.LoadAsync<DTDataTableSample>();
                 if (sampleTable != null)
                 {

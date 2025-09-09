@@ -282,7 +282,7 @@ public sealed partial class DRDataTableSplitSample : DataRowBase
             var __enumStr = reader.ReadString();
             if (!string.IsNullOrEmpty(__enumStr) && !Enum.TryParse(__enumStr, out __enumVal))
             {
-                throw new ArgumentException();
+                throw new ArgumentException($"Failed to parse enum ConsoleApp.ColorT: '{__enumStr}'");
             }
             Color = __enumVal;
         }
@@ -354,7 +354,7 @@ public sealed partial class DRDataTableSplitSample : DataRowBase
                     var __enumStr = reader.ReadString();
                     if (!string.IsNullOrEmpty(__enumStr) && !Enum.TryParse(__enumStr, out __enumVal))
                     {
-                        throw new ArgumentException();
+                        throw new ArgumentException($"Failed to parse enum ColorT: '{__enumStr}'");
                     }
                     key1 = __enumVal;
                 }
@@ -374,7 +374,7 @@ public sealed partial class DRDataTableSplitSample : DataRowBase
                     var __enumStr = reader.ReadString();
                     if (!string.IsNullOrEmpty(__enumStr) && !Enum.TryParse(__enumStr, out __enumVal))
                     {
-                        throw new ArgumentException();
+                        throw new ArgumentException($"Failed to parse enum ColorT: '{__enumStr}'");
                     }
                     key1 = __enumVal;
                 }

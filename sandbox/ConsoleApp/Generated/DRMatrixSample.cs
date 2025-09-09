@@ -112,6 +112,60 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
     }
 
     #endregion
+
+    #region MatrixDataRow Support
+
+    /// <summary>
+    /// 创建数据行实例
+    /// </summary>
+    protected override MatrixDataRowBase<short, long, bool> CreateDataRowInstance()
+    {
+        return new DRMatrixSample();
+    }
+
+    #endregion
+}
+
+/// <summary>
+/// MatrixSample 的数据行类 - 包含RowKey、ColumnKey和Value
+/// </summary>
+public sealed class DRMatrixSample : MatrixDataRowBase<short, long, bool>
+{
+    /// <summary>
+    /// 构造函数
+    /// </summary>
+    public DRMatrixSample() : base()
+    {
+    }
+
+    /// <summary>
+    /// 构造函数
+    /// </summary>
+    /// <param name="rowKey">行键</param>
+    /// <param name="columnKey">列键</param>
+    /// <param name="value">值</param>
+    public DRMatrixSample(short rowKey, long columnKey, bool value) 
+        : base(rowKey, columnKey, value)
+    {
+    }
+
+    /// <summary>
+    /// 从二进制读取器反序列化
+    /// </summary>
+    public override bool Deserialize(BinaryReader reader)
+    {
+        short rowKey;
+        rowKey = reader.ReadInt16();
+
+        long columnKey;
+        columnKey = reader.Read7BitEncodedInt64();
+
+        bool value;
+        value = reader.ReadBoolean();
+
+        SetData(rowKey, columnKey, value);
+        return true;
+    }
 }
 
 }

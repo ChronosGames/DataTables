@@ -56,7 +56,7 @@ public sealed partial class DataTableProcessor
                 + $"{Tabs(depth + 1)}var __enumStr = reader.ReadString();\n"
                 + $"{Tabs(depth + 1)}if (!string.IsNullOrEmpty(__enumStr) && !Enum.TryParse(__enumStr, out __enumVal))\n"
                 + $"{Tabs(depth + 1)}{{\n"
-                + $"{Tabs(depth + 2)}throw new ArgumentException();\n"
+                + $"{Tabs(depth + 2)}throw new ArgumentException($\"Failed to parse enum {m_TypeString}: '{{__enumStr}}'\");\n"
                 + $"{Tabs(depth + 1)}}}\n"
                 + $"{Tabs(depth + 1)}{propertyName} = __enumVal;\n"
                 + $"{Tabs(depth)}}}";

@@ -118,6 +118,60 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
     }
 
     #endregion
+
+    #region MatrixDataRow Support
+
+    /// <summary>
+    /// 创建数据行实例
+    /// </summary>
+    protected override MatrixDataRowBase<<#= BuildTypeString(kKey1) #>, <#= BuildTypeString(kKey2) #>, <#= BuildTypeString(kValue) #>> CreateDataRowInstance()
+    {
+        return new DR<#= GenerationContext.ClassName #>();
+    }
+
+    #endregion
+}
+
+/// <summary>
+/// <#= GenerationContext.ClassName #> 的数据行类 - 包含RowKey、ColumnKey和Value
+/// </summary>
+public sealed class DR<#= GenerationContext.ClassName #> : MatrixDataRowBase<<#= BuildTypeString(kKey1) #>, <#= BuildTypeString(kKey2) #>, <#= BuildTypeString(kValue) #>>
+{
+    /// <summary>
+    /// 构造函数
+    /// </summary>
+    public DR<#= GenerationContext.ClassName #>() : base()
+    {
+    }
+
+    /// <summary>
+    /// 构造函数
+    /// </summary>
+    /// <param name="rowKey">行键</param>
+    /// <param name="columnKey">列键</param>
+    /// <param name="value">值</param>
+    public DR<#= GenerationContext.ClassName #>(<#= BuildTypeString(kKey1) #> rowKey, <#= BuildTypeString(kKey2) #> columnKey, <#= BuildTypeString(kValue) #> value) 
+        : base(rowKey, columnKey, value)
+    {
+    }
+
+    /// <summary>
+    /// 从二进制读取器反序列化
+    /// </summary>
+    public override bool Deserialize(BinaryReader reader)
+    {
+        <#= BuildTypeString(kKey1) #> rowKey;
+        <#= BuildDeserializeMethodString(kKey1).Replace(kKey1, "rowKey") #>
+
+        <#= BuildTypeString(kKey2) #> columnKey;
+        <#= BuildDeserializeMethodString(kKey2).Replace(kKey2, "columnKey") #>
+
+        <#= BuildTypeString(kValue) #> value;
+        <#= BuildDeserializeMethodString(kValue).Replace(kValue, "value") #>
+
+        SetData(rowKey, columnKey, value);
+        return true;
+    }
 }
 
 <# if (!string.IsNullOrEmpty(GenerationContext.Namespace)) { #>

@@ -548,19 +548,52 @@ namespace DataTables
             // 尝试使用高性能工厂模式
             var dataTable = CreateDataTableInstance(typeNamePair, readCount);
 
-            for (int i = 0; i < readCount; i++)
+            // 检查是否为矩阵表 (DataMatrixBase)
+            if (IsMatrixTable(typeNamePair.Type))
             {
-                var dataRow = CreateDataRowInstance(typeNamePair);
-                if (!dataRow.Deserialize(br))
+                // 矩阵表使用自己的ParseDataRow方法直接解析
+                for (int i = 0; i < readCount; i++)
                 {
-                    throw new Exception($"Can not parse data table '{typeNamePair}' at index '{i}'.");
+                    if (!dataTable.ParseDataRow(i, br))
+                    {
+                        throw new Exception($"Can not parse matrix table '{typeNamePair}' at index '{i}'.");
+                    }
                 }
+            }
+            else
+            {
+                // 传统表格使用行对象
+                for (int i = 0; i < readCount; i++)
+                {
+                    var dataRow = CreateDataRowInstance(typeNamePair);
+                    if (!dataRow.Deserialize(br))
+                    {
+                        throw new Exception($"Can not parse data table '{typeNamePair}' at index '{i}'.");
+                    }
 
-                // 添加数据行到表中
-                AddDataRowToTable(dataTable, i, dataRow);
+                    // 添加数据行到表中
+                    AddDataRowToTable(dataTable, i, dataRow);
+                }
             }
 
             return dataTable;
+        }
+
+        /// <summary>
+        /// 检查类型是否为矩阵表 (DataMatrixBase)
+        /// </summary>
+        private static bool IsMatrixTable(Type tableType)
+        {
+            var baseType = tableType.BaseType;
+            while (baseType != null)
+            {
+                if (baseType.IsGenericType && baseType.GetGenericTypeDefinition().Name == "DataMatrixBase`3")
+                {
+                    return true;
+                }
+                baseType = baseType.BaseType;
+            }
+            return false;
         }
 
         /// <summary>

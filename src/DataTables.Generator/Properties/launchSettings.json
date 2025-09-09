@@ -2,7 +2,7 @@
   "profiles": {
     "DataTables.Generator": {
       "commandName": "Project",
-      "commandLineArgs": "-i [\\\"..\\\\..\\\\..\\\\..\\\\..\\\\sandbox\\\\ConsoleApp\\\"] -patterns \"*.xlsx\" -co \"$(SolutionDir)sandbox\\ConsoleApp\\Generated\" -do \"$(SolutionDir)sandbox\\ConsoleApp\\DataTables\" -t C -p DR -n ConsoleApp"
+      "commandLineArgs": "-i [\\\"..\\\\..\\\\sandbox\\\\ConsoleApp\\\"] -patterns \"*.xlsx\" -co \"$(SolutionDir)sandbox\\ConsoleApp\\Generated\" -do \"$(SolutionDir)sandbox\\ConsoleApp\\DataTables\" -t C -p DR -n ConsoleApp -f"
     }
   }
 }

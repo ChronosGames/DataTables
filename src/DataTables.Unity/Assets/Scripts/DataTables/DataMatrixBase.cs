@@ -162,5 +162,80 @@ namespace DataTables
                 }
             }
         }
+
+        /// <summary>
+        /// 获取所有数据行 - Matrix表的DataRow形式访问
+        /// </summary>
+        /// <returns></returns>
+        public virtual IEnumerable<MatrixDataRowBase<TKey1, TKey2, TValue>> GetAllDataRows()
+        {
+            for (int i = 0; i < m_Keies1.Length; i++)
+            {
+                var dataRow = CreateDataRowInstance();
+                dataRow.SetData(m_Keies1[i], m_Keies2[i], m_Values[i]);
+                yield return dataRow;
+            }
+        }
+
+        /// <summary>
+        /// 根据索引获取数据行
+        /// </summary>
+        /// <param name="index">索引</param>
+        /// <returns></returns>
+        public virtual MatrixDataRowBase<TKey1, TKey2, TValue>? GetDataRowByIndex(int index)
+        {
+            if (index < 0 || index >= Count)
+                return null;
+
+            var dataRow = CreateDataRowInstance();
+            dataRow.SetData(m_Keies1[index], m_Keies2[index], m_Values[index]);
+            return dataRow;
+        }
+
+        /// <summary>
+        /// 查找匹配条件的第一个数据行
+        /// </summary>
+        /// <param name="predicate">查找条件</param>
+        /// <returns></returns>
+        public virtual MatrixDataRowBase<TKey1, TKey2, TValue>? FindDataRow(Func<TKey1, TKey2, TValue, bool> predicate)
+        {
+            for (int i = 0; i < m_Keies1.Length; i++)
+            {
+                if (predicate(m_Keies1[i], m_Keies2[i], m_Values[i]))
+                {
+                    var dataRow = CreateDataRowInstance();
+                    dataRow.SetData(m_Keies1[i], m_Keies2[i], m_Values[i]);
+                    return dataRow;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 查找所有匹配条件的数据行
+        /// </summary>
+        /// <param name="predicate">查找条件</param>
+        /// <returns></returns>
+        public virtual IEnumerable<MatrixDataRowBase<TKey1, TKey2, TValue>> FindDataRows(Func<TKey1, TKey2, TValue, bool> predicate)
+        {
+            for (int i = 0; i < m_Keies1.Length; i++)
+            {
+                if (predicate(m_Keies1[i], m_Keies2[i], m_Values[i]))
+                {
+                    var dataRow = CreateDataRowInstance();
+                    dataRow.SetData(m_Keies1[i], m_Keies2[i], m_Values[i]);
+                    yield return dataRow;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 创建数据行实例 - 由子类实现以提供具体的DataRow类型
+        /// </summary>
+        /// <returns></returns>
+        protected virtual MatrixDataRowBase<TKey1, TKey2, TValue> CreateDataRowInstance()
+        {
+            throw new NotImplementedException("Subclass must implement CreateDataRowInstance() method to provide specific MatrixDataRow type.");
+        }
     }
 }

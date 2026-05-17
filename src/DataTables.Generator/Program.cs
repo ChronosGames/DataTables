@@ -22,6 +22,7 @@ public class MyCommands
     /// <param name="prefixClassName">-p, Prefix of class names.</param>
     /// <param name="filterColumnTags">-t, Tags of filter columns.</param>
     /// <param name="forceOverwrite">-f, Overwrite generated files if the content is unchanged.</param>
+    /// <param name="sheetNameMarker">-sp, Only export sheets whose name starts with this marker; the marker is stripped from the generated class name. E.g. "DTGen" makes sheet "DTGenHeroConfig" export as class "HeroConfig" while other sheets are skipped.</param>
     [Command("")]
     public async Task ExportAll(
         string[] inputDirectories,
@@ -33,6 +34,7 @@ public class MyCommands
         string prefixClassName = "",
         string filterColumnTags = "",
         bool forceOverwrite = false,
+        string sheetNameMarker = "",
         // ParseOptions
         bool strictNameValidation = true,
         bool validateFormulaConsistency = true,
@@ -66,7 +68,8 @@ public class MyCommands
                 forceOverwrite,
                 Console.WriteLine,
                 options,
-                string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput);
+                string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput,
+                sheetNameMarker: sheetNameMarker);
         }
         catch (Exception e)
         {
@@ -88,6 +91,7 @@ public class MyCommands
     /// <param name="usingNamespace">-n, Namespace of generated files.</param>
     /// <param name="prefixClassName">-p, Prefix of class names.</param>
     /// <param name="filterColumnTags">-t, Tags of filter columns.</param>
+    /// <param name="sheetNameMarker">-sp, Only export sheets whose name starts with this marker; the marker is stripped from the generated class name.</param>
     [Command("data")]
     public async Task ExportOne(
         string[] inputDirectories,
@@ -97,6 +101,7 @@ public class MyCommands
         string usingNamespace = "",
         string prefixClassName = "",
         string filterColumnTags = "",
+        string sheetNameMarker = "",
         // ParseOptions
         bool strictNameValidation = true,
         bool validateFormulaConsistency = true,
@@ -133,7 +138,8 @@ public class MyCommands
                 true,
                 Console.WriteLine,
                 options,
-                string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput);
+                string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput,
+                sheetNameMarker: sheetNameMarker);
         }
         catch (Exception e)
         {

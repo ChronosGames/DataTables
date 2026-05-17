@@ -22,7 +22,7 @@ public class MyCommands
     /// <param name="prefixClassName">-p, Prefix of class names.</param>
     /// <param name="filterColumnTags">-t, Tags of filter columns.</param>
     /// <param name="forceOverwrite">-f, Overwrite generated files if the content is unchanged.</param>
-    /// <param name="sheetNameMarker">-sp, Only export sheets whose name starts with this marker; the marker is stripped from the generated class name. E.g. "DTGen" makes sheet "DTGenHeroConfig" export as class "HeroConfig" while other sheets are skipped.</param>
+    /// <param name="sheetNameMarker">-sp, Only export sheets whose first row / first cell (A1) value starts with this marker. Sheet names and generated class names are not modified. E.g. "DTGen" makes only sheets with A1="DTGen" be exported; sheets without the marker are silently skipped.</param>
     [Command("")]
     public async Task ExportAll(
         string[] inputDirectories,
@@ -91,7 +91,7 @@ public class MyCommands
     /// <param name="usingNamespace">-n, Namespace of generated files.</param>
     /// <param name="prefixClassName">-p, Prefix of class names.</param>
     /// <param name="filterColumnTags">-t, Tags of filter columns.</param>
-    /// <param name="sheetNameMarker">-sp, Only export sheets whose name starts with this marker; the marker is stripped from the generated class name.</param>
+    /// <param name="sheetNameMarker">-sp, Only export sheets whose first row / first cell (A1) value starts with this marker. Sheet names and generated class names are not modified.</param>
     [Command("data")]
     public async Task ExportOne(
         string[] inputDirectories,

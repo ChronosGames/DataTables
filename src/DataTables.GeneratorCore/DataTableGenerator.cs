@@ -56,7 +56,13 @@ public sealed class DataTableGenerator
                         continue;
                     }
 
-                    if (!(fileName.EndsWith(".xlsx", StringComparison.Ordinal) || fileName.EndsWith(".xlsb", StringComparison.Ordinal) || fileName.EndsWith(".xls", StringComparison.Ordinal) || fileName.EndsWith(".csv", StringComparison.Ordinal)))
+                    // 支持的 Excel/CSV 扩展名：
+                    //   .xlsx — OOXML（Excel 2007+）
+                    //   .xlsm — OOXML 启用宏（结构与 xlsx 相同，仅多出 vbaProject.bin，NPOI XSSFWorkbook 完全兼容）
+                    //   .xlsb — Excel 二进制工作簿
+                    //   .xls  — 旧版 BIFF
+                    //   .csv  — 逗号分隔
+                    if (!(fileName.EndsWith(".xlsx", StringComparison.Ordinal) || fileName.EndsWith(".xlsm", StringComparison.Ordinal) || fileName.EndsWith(".xlsb", StringComparison.Ordinal) || fileName.EndsWith(".xls", StringComparison.Ordinal) || fileName.EndsWith(".csv", StringComparison.Ordinal)))
                     {
                         continue;
                     }

@@ -17,12 +17,11 @@ public class MyCommands
     /// <param name="searchPattern">-patterns, Input file wildcard.</param>
     /// <param name="codeOutputDir">-co, Code output file directory.</param>
     /// <param name="dataOutputDir">-do, Data output file directory.</param>
-    /// <param name="importNamespaces">-ins, Import namespaces of generated files, split with char '&' for multiple namespaces.</param>
+    /// <param name="importNamespaces">-ins, Import namespaces of generated files, split with char '&amp;' for multiple namespaces.</param>
     /// <param name="usingNamespace">-n, Namespace of generated files.</param>
     /// <param name="prefixClassName">-p, Prefix of class names.</param>
     /// <param name="filterColumnTags">-t, Tags of filter columns.</param>
     /// <param name="forceOverwrite">-f, Overwrite generated files if the content is unchanged.</param>
-    /// <param name="sheetNameMarker">-sp, Only export sheets whose first row / first cell (A1) value starts with this marker. Sheet names and generated class names are not modified. E.g. "DTGen" makes only sheets with A1="DTGen" be exported; sheets without the marker are silently skipped.</param>
     [Command("")]
     public async Task ExportAll(
         string[] inputDirectories,
@@ -34,7 +33,6 @@ public class MyCommands
         string prefixClassName = "",
         string filterColumnTags = "",
         bool forceOverwrite = false,
-        string sheetNameMarker = "",
         // ParseOptions
         bool strictNameValidation = true,
         bool validateFormulaConsistency = true,
@@ -68,8 +66,7 @@ public class MyCommands
                 forceOverwrite,
                 Console.WriteLine,
                 options,
-                string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput,
-                sheetNameMarker: sheetNameMarker);
+                string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput);
         }
         catch (Exception e)
         {
@@ -87,11 +84,10 @@ public class MyCommands
     /// <param name="inputDirectories">-i, Input file directory(search recursive).</param>
     /// <param name="searchPattern">-patterns, Input file wildcard.</param>
     /// <param name="dataOutputDir">-do, Data output file directory.</param>
-    /// <param name="importNamespaces">-ins, Import namespaces of generated files, split with char '&' for multiple namespaces.</param>
+    /// <param name="importNamespaces">-ins, Import namespaces of generated files, split with char '&amp;' for multiple namespaces.</param>
     /// <param name="usingNamespace">-n, Namespace of generated files.</param>
     /// <param name="prefixClassName">-p, Prefix of class names.</param>
     /// <param name="filterColumnTags">-t, Tags of filter columns.</param>
-    /// <param name="sheetNameMarker">-sp, Only export sheets whose first row / first cell (A1) value starts with this marker. Sheet names and generated class names are not modified.</param>
     [Command("data")]
     public async Task ExportOne(
         string[] inputDirectories,
@@ -101,7 +97,6 @@ public class MyCommands
         string usingNamespace = "",
         string prefixClassName = "",
         string filterColumnTags = "",
-        string sheetNameMarker = "",
         // ParseOptions
         bool strictNameValidation = true,
         bool validateFormulaConsistency = true,
@@ -138,8 +133,7 @@ public class MyCommands
                 true,
                 Console.WriteLine,
                 options,
-                string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput,
-                sheetNameMarker: sheetNameMarker);
+                string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput);
         }
         catch (Exception e)
         {

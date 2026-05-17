@@ -21,9 +21,9 @@ public sealed class DataTableGenerator
     }
 
     /// <param name="sheetNameMarker">
-    /// 若非空，只处理名称以此前缀开头的 Sheet，且生成类名时自动去除该前缀。
-    /// 例如传入 "DTGen"，则 Sheet "DTGenHeroConfig" 被处理，生成类名 "HeroConfig"；
-    /// 不以 "DTGen" 开头的 Sheet 直接跳过。
+    /// 若非空，只处理**第一行第一个单元格**的值以此标记开头的 Sheet；其余 Sheet 静默跳过。
+    /// Sheet 名称与生成类名均保持不变。
+    /// 例如传入 "DTGen"，则第一行 A1 值为 "DTGen" 的 Sheet 被处理，其他 Sheet 跳过。
     /// </param>
     public async Task GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string dataRowClassPrefix, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger, ParseOptions? options = null, string? diagnosticsJsonOutput = null, string sheetNameMarker = "")
     {
@@ -209,20 +209,13 @@ public sealed class DataTableGenerator
                         continue;
                     }
 
-                    // 若指定了 sheetNameMarker，去除前缀后用作类名，避免生成 "DTGenHeroConfig" 这样的冗余名称
-                    var sheetName = sheet.SheetName.Trim();
-                    if (!string.IsNullOrEmpty(sheetNameMarker) && sheetName.StartsWith(sheetNameMarker, StringComparison.Ordinal))
-                    {
-                        sheetName = sheetName[sheetNameMarker.Length..].TrimStart('_', '-', ' ');
-                    }
-
                     var context = new GenerationContext
                     {
                         FileName = Path.GetFileNameWithoutExtension(filePath),
                         Namespace = usingNamespace,
                         DataRowClassPrefix = prefixClassName,
                         UsingStrings = usingStrings,
-                        SheetName = sheetName,
+                        SheetName = sheet.SheetName.Trim(),
                     };
 
                     logger.Debug("Generate Excel File: [{0}]({1})", filePath.Trim('\\'), context.SheetName);
@@ -275,10 +268,10 @@ public sealed class DataTableGenerator
 
     /// <summary>
     /// 检验是否处理该 Sheet。
-    /// 规则：
+    /// 规则（按优先级）：
     ///  1. sheet 为 null → 跳过
     ///  2. Sheet 名称以 '#' 开头 → 跳过（注释 Sheet）
-    ///  3. 若指定了 sheetNameMarker，Sheet 名称不以其开头 → 跳过
+    ///  3. 若指定了 sheetNameMarker，第一行第一个单元格的值不以其开头 → 跳过
     /// </summary>
     private static bool ValidSheet(ISheet? sheet, string sheetNameMarker = "")
     {
@@ -287,16 +280,26 @@ public sealed class DataTableGenerator
             return false;
         }
 
-        var trimmedName = sheet.SheetName.TrimStart();
-
-        if (trimmedName.StartsWith('#'))
+        if (sheet.SheetName.TrimStart().StartsWith('#'))
         {
             return false;
         }
 
-        if (!string.IsNullOrEmpty(sheetNameMarker) && !trimmedName.StartsWith(sheetNameMarker, StringComparison.Ordinal))
+        if (!string.IsNullOrEmpty(sheetNameMarker))
         {
-            return false;
+            // 读取第一行第一个单元格（A1），检查其值是否以标记开头
+            var firstRow = sheet.GetRow(sheet.FirstRowNum);
+            if (firstRow == null)
+            {
+                return false;
+            }
+
+            var firstCell = firstRow.GetCell(firstRow.FirstCellNum);
+            var cellValue = firstCell?.ToString()?.Trim() ?? string.Empty;
+            if (!cellValue.StartsWith(sheetNameMarker, StringComparison.Ordinal))
+            {
+                return false;
+            }
         }
 
         return true;

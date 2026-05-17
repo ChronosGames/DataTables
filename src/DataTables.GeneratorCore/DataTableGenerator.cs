@@ -20,12 +20,7 @@ public sealed class DataTableGenerator
         m_Locks = new();
     }
 
-    /// <param name="sheetNameMarker">
-    /// 若非空，只处理**第一行第一个单元格**的值以此标记开头的 Sheet；其余 Sheet 静默跳过。
-    /// Sheet 名称与生成类名均保持不变。
-    /// 例如传入 "DTGen"，则第一行 A1 值为 "DTGen" 的 Sheet 被处理，其他 Sheet 跳过。
-    /// </param>
-    public async Task GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string dataRowClassPrefix, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger, ParseOptions? options = null, string? diagnosticsJsonOutput = null, string sheetNameMarker = "")
+    public async Task GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string dataRowClassPrefix, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger, ParseOptions? options = null, string? diagnosticsJsonOutput = null)
     {
         // By default, ExcelDataReader throws a NotSupportedException "No data is available for encoding 1252." on .NET Core.
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -113,7 +108,6 @@ public sealed class DataTableGenerator
             prefixClassName: dataRowClassPrefix,
             usingStrings: usingStrings,
             filterColumnTags: filterColumnTags,
-            sheetNameMarker: sheetNameMarker,
             options: parseOptions,
             collectDiagnostic: d => allDiagnostics.Add(d),
             collectMetrics: m => allMetrics.Add(m),
@@ -182,7 +176,7 @@ public sealed class DataTableGenerator
         Environment.ExitCode = list.Any(x => x.Failed) ? 1 : 0;
     }
 
-    private async Task GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string dataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log, ParseOptions options, Action<Diagnostic> collectDiagnostic, Action<DiagnosticsMetrics> collectMetrics, string sheetNameMarker = "")
+    private async Task GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string dataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log, ParseOptions options, Action<Diagnostic> collectDiagnostic, Action<DiagnosticsMetrics> collectMetrics)
     {
         using (var logger = new ILogger(log))
         {
@@ -204,7 +198,7 @@ public sealed class DataTableGenerator
                 for (int i = 0; i < xssWorkbook.NumberOfSheets; i++)
                 {
                     var sheet = xssWorkbook.GetSheetAt(i);
-                    if (!ValidSheet(sheet, sheetNameMarker))
+                    if (!ValidSheet(sheet))
                     {
                         continue;
                     }
@@ -226,8 +220,7 @@ public sealed class DataTableGenerator
                     var genSw = System.Diagnostics.Stopwatch.StartNew();
                     try
                     {
-                        // 初始化GenerateContext
-                        // 仍使用 NPOI sheet；解析器内部已使用抽象层
+                        // 初始化GenerateContext；若 A1 未声明 DTGen= 则内部静默返回
                         processor.CreateGenerationContext(sheet);
                         if (!processor.ValidateGenerationContext())
                         {
@@ -268,12 +261,14 @@ public sealed class DataTableGenerator
 
     /// <summary>
     /// 检验是否处理该 Sheet。
-    /// 规则（按优先级）：
+    /// 规则：
     ///  1. sheet 为 null → 跳过
     ///  2. Sheet 名称以 '#' 开头 → 跳过（注释 Sheet）
-    ///  3. 若指定了 sheetNameMarker，第一行第一个单元格的值不以其开头 → 跳过
+    ///
+    /// 注意：A1 是否声明 DTGen= 的检查在 DataTableProcessor.CreateGenerationContext 内部完成，
+    /// 未声明时会静默返回，不会抛出 FormatException。
     /// </summary>
-    private static bool ValidSheet(ISheet? sheet, string sheetNameMarker = "")
+    private static bool ValidSheet(ISheet? sheet)
     {
         if (sheet == null)
         {
@@ -283,23 +278,6 @@ public sealed class DataTableGenerator
         if (sheet.SheetName.TrimStart().StartsWith('#'))
         {
             return false;
-        }
-
-        if (!string.IsNullOrEmpty(sheetNameMarker))
-        {
-            // 读取第一行第一个单元格（A1），检查其值是否以标记开头
-            var firstRow = sheet.GetRow(sheet.FirstRowNum);
-            if (firstRow == null)
-            {
-                return false;
-            }
-
-            var firstCell = firstRow.GetCell(firstRow.FirstCellNum);
-            var cellValue = firstCell?.ToString()?.Trim() ?? string.Empty;
-            if (!cellValue.StartsWith(sheetNameMarker, StringComparison.Ordinal))
-            {
-                return false;
-            }
         }
 
         return true;

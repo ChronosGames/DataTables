@@ -6,7 +6,10 @@ namespace DataTables.GeneratorCore;
 
 public sealed class RowTableParser : ITableSchemaParser
 {
-	private static readonly Regex NameRegex = new Regex(@"^[A-Za-z][A-Za-z0-9_]*$");
+	// \p{L} matches any Unicode letter (including CJK, Cyrillic, etc.)
+	// \p{N} matches any Unicode number digit
+	// This aligns with C# identifier rules which also permit Unicode letters.
+	private static readonly Regex NameRegex = new Regex(@"^[\p{L}_][\p{L}\p{N}_]*$");
 
     public int Parse(ISheetReader sheet, GenerationContext context, ParseOptions options, DiagnosticsCollector diagnostics)
 	{
@@ -60,4 +63,3 @@ public sealed class RowTableParser : ITableSchemaParser
 		return typeRow + 1;
 	}
 }
-

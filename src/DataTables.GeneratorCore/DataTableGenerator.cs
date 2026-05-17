@@ -20,7 +20,12 @@ public sealed class DataTableGenerator
         m_Locks = new();
     }
 
-    public async Task GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string dataRowClassPrefix, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger, ParseOptions? options = null, string? diagnosticsJsonOutput = null)
+    /// <param name="sheetNameMarker">
+    /// 若非空，只处理名称以此前缀开头的 Sheet，且生成类名时自动去除该前缀。
+    /// 例如传入 "DTGen"，则 Sheet "DTGenHeroConfig" 被处理，生成类名 "HeroConfig"；
+    /// 不以 "DTGen" 开头的 Sheet 直接跳过。
+    /// </param>
+    public async Task GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string dataRowClassPrefix, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger, ParseOptions? options = null, string? diagnosticsJsonOutput = null, string sheetNameMarker = "")
     {
         // By default, ExcelDataReader throws a NotSupportedException "No data is available for encoding 1252." on .NET Core.
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -108,6 +113,7 @@ public sealed class DataTableGenerator
             prefixClassName: dataRowClassPrefix,
             usingStrings: usingStrings,
             filterColumnTags: filterColumnTags,
+            sheetNameMarker: sheetNameMarker,
             options: parseOptions,
             collectDiagnostic: d => allDiagnostics.Add(d),
             collectMetrics: m => allMetrics.Add(m),
@@ -176,7 +182,7 @@ public sealed class DataTableGenerator
         Environment.ExitCode = list.Any(x => x.Failed) ? 1 : 0;
     }
 
-    private async Task GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string dataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log, ParseOptions options, Action<Diagnostic> collectDiagnostic, Action<DiagnosticsMetrics> collectMetrics)
+    private async Task GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string dataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log, ParseOptions options, Action<Diagnostic> collectDiagnostic, Action<DiagnosticsMetrics> collectMetrics, string sheetNameMarker = "")
     {
         using (var logger = new ILogger(log))
         {
@@ -198,9 +204,16 @@ public sealed class DataTableGenerator
                 for (int i = 0; i < xssWorkbook.NumberOfSheets; i++)
                 {
                     var sheet = xssWorkbook.GetSheetAt(i);
-                    if (!ValidSheet(sheet))
+                    if (!ValidSheet(sheet, sheetNameMarker))
                     {
                         continue;
+                    }
+
+                    // 若指定了 sheetNameMarker，去除前缀后用作类名，避免生成 "DTGenHeroConfig" 这样的冗余名称
+                    var sheetName = sheet.SheetName.Trim();
+                    if (!string.IsNullOrEmpty(sheetNameMarker) && sheetName.StartsWith(sheetNameMarker, StringComparison.Ordinal))
+                    {
+                        sheetName = sheetName[sheetNameMarker.Length..].TrimStart('_', '-', ' ');
                     }
 
                     var context = new GenerationContext
@@ -209,7 +222,7 @@ public sealed class DataTableGenerator
                         Namespace = usingNamespace,
                         DataRowClassPrefix = prefixClassName,
                         UsingStrings = usingStrings,
-                        SheetName = sheet.SheetName.Trim(),
+                        SheetName = sheetName,
                     };
 
                     logger.Debug("Generate Excel File: [{0}]({1})", filePath.Trim('\\'), context.SheetName);
@@ -260,15 +273,28 @@ public sealed class DataTableGenerator
         }
     }
 
-    // 检验是否过滤该Sheet
-    private static bool ValidSheet(ISheet? sheet)
+    /// <summary>
+    /// 检验是否处理该 Sheet。
+    /// 规则：
+    ///  1. sheet 为 null → 跳过
+    ///  2. Sheet 名称以 '#' 开头 → 跳过（注释 Sheet）
+    ///  3. 若指定了 sheetNameMarker，Sheet 名称不以其开头 → 跳过
+    /// </summary>
+    private static bool ValidSheet(ISheet? sheet, string sheetNameMarker = "")
     {
         if (sheet == null)
         {
             return false;
         }
 
-        if (sheet.SheetName.TrimStart().StartsWith('#'))
+        var trimmedName = sheet.SheetName.TrimStart();
+
+        if (trimmedName.StartsWith('#'))
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrEmpty(sheetNameMarker) && !trimmedName.StartsWith(sheetNameMarker, StringComparison.Ordinal))
         {
             return false;
         }

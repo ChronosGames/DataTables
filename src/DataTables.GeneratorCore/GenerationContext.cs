@@ -18,7 +18,13 @@ public class GenerationContext
 
     public string DataRowClassPrefix { get; set; } = string.Empty;
 
-    public string DataSetType { get; set; } = "table";
+    /// <summary>
+    /// 表结构类型：table / matrix / column。
+    /// 默认为空字符串；仅在 A1 单元格中声明了 DTGen= 时才会被赋值。
+    /// CreateGenerationContext 解析完 A1 后会检查此值是否为空，若为空则认为该 Sheet
+    /// 不是 DataTables 格式并跳过后续解析。
+    /// </summary>
+    public string DataSetType { get; set; } = string.Empty;
 
     public string Title { get; set; } = string.Empty;
 
@@ -252,4 +258,3 @@ public class XField(int index)
     /// </summary>
     public bool IsTagFiltered { get; set; }
 }
-

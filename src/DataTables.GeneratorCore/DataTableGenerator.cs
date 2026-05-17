@@ -220,8 +220,7 @@ public sealed class DataTableGenerator
                     var genSw = System.Diagnostics.Stopwatch.StartNew();
                     try
                     {
-                        // 初始化GenerateContext
-                        // 仍使用 NPOI sheet；解析器内部已使用抽象层
+                        // 初始化GenerateContext；若 A1 未声明 DTGen= 则内部静默返回
                         processor.CreateGenerationContext(sheet);
                         if (!processor.ValidateGenerationContext())
                         {
@@ -260,7 +259,15 @@ public sealed class DataTableGenerator
         }
     }
 
-    // 检验是否过滤该Sheet
+    /// <summary>
+    /// 检验是否处理该 Sheet。
+    /// 规则：
+    ///  1. sheet 为 null → 跳过
+    ///  2. Sheet 名称以 '#' 开头 → 跳过（注释 Sheet）
+    ///
+    /// 注意：A1 是否声明 DTGen= 的检查在 DataTableProcessor.CreateGenerationContext 内部完成，
+    /// 未声明时会静默返回，不会抛出 FormatException。
+    /// </summary>
     private static bool ValidSheet(ISheet? sheet)
     {
         if (sheet == null)

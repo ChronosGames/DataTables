@@ -66,6 +66,12 @@ public sealed partial class DataTableProcessor : IDisposable
         var headerRow = sheet.GetRow(headerRowIndex);
         ParseSheetInfoRow(GetCellString(headerRow.GetCell(headerRow.FirstCellNum)));
 
+        // A1 未声明 DTGen=，该 Sheet 不是 DataTables 格式，静默跳过
+        if (string.IsNullOrEmpty(m_Context.DataSetType))
+        {
+            return;
+        }
+
         // 按模式选择解析器
         ITableSchemaParser parser = m_Context.DataSetType == "matrix"
             ? new MatrixTableParser()

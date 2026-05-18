@@ -128,6 +128,14 @@ public class ArrayDataProcessorTests
     }
 
     [Fact]
+    public void StringArray_PipeTakesPriorityWhenBothSeparatorsPresent()
+    {
+        // 同时存在 '|' 与 '#' 时，'|' 优先，'#' 作为元素内容的一部分被保留
+        var bytes = WriteValue("array<string>", "a#1|b#2|c#3");
+        ReadStringArray(bytes).Should().Equal("a#1", "b#2", "c#3");
+    }
+
+    [Fact]
     public void IntArray_PipeTakesPriorityOverHash()
     {
         // 当两种分隔符同时存在时，'|' 优先，'#' 作为普通字符（这里 '#' 不会出现在 int 元素中，使用纯 pipe 数据验证优先级）

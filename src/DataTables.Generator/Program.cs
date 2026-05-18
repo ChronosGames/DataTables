@@ -22,6 +22,8 @@ public class MyCommands
     /// <param name="prefixClassName">-p, Prefix of class names.</param>
     /// <param name="filterColumnTags">-t, Tags of filter columns.</param>
     /// <param name="forceOverwrite">-f, Overwrite generated files if the content is unchanged.</param>
+    /// <param name="skipCellMarker">-skipCellMarker, Skip cell marker text.</param>
+    /// <param name="arrayNestedSeparators">-arrayNestedSeparators, Separators per array nesting depth for plain-text arrays (e.g. "#|-" means depth1='#', depth2='|', depth3='-'). Empty keeps legacy behavior (prefer '|' else '#').</param>
     [Command("")]
     public async Task ExportAll(
         string[] inputDirectories,
@@ -40,6 +42,7 @@ public class MyCommands
         string columnCommentMarkerText = "#列注释标志",
         string rowCommentMarkerText = "#行注释标志",
         string skipCellMarker = "#",
+        string arrayNestedSeparators = "",
         string diagnosticsJsonOutput = "")
     {
         var sw = Stopwatch.StartNew();
@@ -58,6 +61,7 @@ public class MyCommands
                 ColumnCommentMarkerText = columnCommentMarkerText,
                 RowCommentMarkerText = rowCommentMarkerText,
                 SkipCellMarker = skipCellMarker,
+                ArrayNestedSeparators = arrayNestedSeparators ?? string.Empty,
             };
 
             await new DataTableGenerator().GenerateFile(inputDirectories, searchPattern, codeOutputDir, dataOutputDir, usingNamespace, prefixClassName,
@@ -104,6 +108,7 @@ public class MyCommands
         string columnCommentMarkerText = "#列注释标志",
         string rowCommentMarkerText = "#行注释标志",
         string skipCellMarker = "#",
+        string arrayNestedSeparators = "",
         string diagnosticsJsonOutput = "")
     {
         var oldEncoding = Console.OutputEncoding;
@@ -125,6 +130,7 @@ public class MyCommands
                 ColumnCommentMarkerText = columnCommentMarkerText,
                 RowCommentMarkerText = rowCommentMarkerText,
                 SkipCellMarker = skipCellMarker,
+                ArrayNestedSeparators = arrayNestedSeparators ?? string.Empty,
             };
 
             await new DataTableGenerator().GenerateFile(inputDirectories, searchPattern, string.Empty, dataOutputDir, usingNamespace, prefixClassName,

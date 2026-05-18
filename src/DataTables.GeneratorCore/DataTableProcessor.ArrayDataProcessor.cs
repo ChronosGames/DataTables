@@ -29,6 +29,20 @@ public sealed partial class DataTableProcessor
             m_LanguageKeyword = $"{keyProcessor.LanguageKeyword}[]";
         }
 
+        /// <summary>
+        /// 嵌套数组纯文本分隔符序列：第 N 个字符表示第 N 层数组的分隔符。
+        /// 为 <c>null</c> 或空时退回到兼容模式（优先 '|'，否则 '#'）。
+        /// 由 <see cref="DataTableProcessor"/> 在构造时根据 <see cref="ParseOptions.ArrayNestedSeparators"/> 设置。
+        /// </summary>
+        internal static string? NestedSeparators;
+
+        /// <summary>
+        /// 当前正在写入的数组嵌套深度（0 表示最外层）。使用 <see cref="ThreadStaticAttribute"/>
+        /// 以避免并发生成场景下不同线程互相干扰。
+        /// </summary>
+        [ThreadStatic]
+        private static int s_CurrentDepth;
+
         public override string[] GetTypeStrings()
         {
             return new string[]
@@ -79,8 +93,10 @@ public sealed partial class DataTableProcessor
         }
 
         /// <summary>
-        /// 以分隔符（'#' 或 '|'）解析纯文本格式数组并写入流。
-        /// 优先使用 '|'，若不存在则使用 '#'；都不存在时将整个文本视为单元素数组。
+        /// 以分隔符解析纯文本格式数组并写入流。
+        /// 若已通过 <see cref="NestedSeparators"/> 配置每层分隔符，则严格按当前嵌套深度对应的字符切分，
+        /// 解决嵌套数组中外/内层混用 '|' 与 '#' 时无法统一建模的歧义问题。
+        /// 否则退回兼容模式：优先使用 '|'，若不存在再使用 '#'，都不存在时视为单元素数组。
         /// </summary>
         private void WriteDelimitedToStream(BinaryWriter binaryWriter, string value)
         {
@@ -93,28 +109,70 @@ public sealed partial class DataTableProcessor
             }
 
             char separator;
-            var pipeIndex = text.IndexOf('|');
-            var hashIndex = text.IndexOf('#');
-            if (pipeIndex >= 0)
+            var separators = NestedSeparators;
+            if (!string.IsNullOrEmpty(separators))
             {
-                separator = '|';
-            }
-            else if (hashIndex >= 0)
-            {
-                separator = '#';
+                // 配置了项目级别的嵌套分隔符：按当前深度选取；越界时复用最后一个字符
+                var idx = s_CurrentDepth < separators!.Length ? s_CurrentDepth : separators.Length - 1;
+                separator = separators[idx];
+
+                // 若当前层不包含对应分隔符则视为单元素数组，直接交给元素处理器
+                if (text.IndexOf(separator) < 0)
+                {
+                    binaryWriter.Write7BitEncodedInt32(1);
+                    WriteElement(binaryWriter, text);
+                    return;
+                }
             }
             else
             {
-                // 单元素：直接写入
-                binaryWriter.Write7BitEncodedInt32(1);
-                DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).WriteToStream(binaryWriter, text);
-                return;
+                // 兼容模式：优先 '|'，否则 '#'
+                var pipeIndex = text.IndexOf('|');
+                var hashIndex = text.IndexOf('#');
+                if (pipeIndex >= 0)
+                {
+                    separator = '|';
+                }
+                else if (hashIndex >= 0)
+                {
+                    separator = '#';
+                }
+                else
+                {
+                    // 单元素：直接写入
+                    binaryWriter.Write7BitEncodedInt32(1);
+                    DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).WriteToStream(binaryWriter, text);
+                    return;
+                }
             }
 
             var parts = text.Split(separator);
             binaryWriter.Write7BitEncodedInt32(parts.Length);
-            var processor = DataProcessorUtility.GetDataProcessor(m_KeyTypeStr);
             foreach (var part in parts)
+            {
+                WriteElement(binaryWriter, part);
+            }
+        }
+
+        /// <summary>
+        /// 写入数组中的单个元素；若元素本身是嵌套数组，则递增深度计数以便其按下一层分隔符切分。
+        /// </summary>
+        private void WriteElement(BinaryWriter binaryWriter, string part)
+        {
+            var processor = DataProcessorUtility.GetDataProcessor(m_KeyTypeStr);
+            if (processor is ArrayDataProcessor)
+            {
+                s_CurrentDepth++;
+                try
+                {
+                    processor.WriteToStream(binaryWriter, part);
+                }
+                finally
+                {
+                    s_CurrentDepth--;
+                }
+            }
+            else
             {
                 processor.WriteToStream(binaryWriter, part);
             }

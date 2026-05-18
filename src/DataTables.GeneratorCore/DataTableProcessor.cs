@@ -35,6 +35,7 @@ public sealed partial class DataTableProcessor : IDisposable
         m_Diagnostics = new DiagnosticsCollector();
 
         m_FirstDataRowIndex = -1;
+        ApplyArraySeparatorOptions(m_Options);
     }
 
     public DiagnosticsCollector Diagnostics => m_Diagnostics;
@@ -50,6 +51,18 @@ public sealed partial class DataTableProcessor : IDisposable
         m_Diagnostics = diagnostics ?? new DiagnosticsCollector();
 
         m_FirstDataRowIndex = -1;
+        ApplyArraySeparatorOptions(m_Options);
+    }
+
+    /// <summary>
+    /// 将 <see cref="ParseOptions.ArrayNestedSeparators"/> 应用到 <see cref="ArrayDataProcessor"/>，
+    /// 以便后续的数组写入流程按项目级别的分隔符配置工作。
+    /// </summary>
+    private static void ApplyArraySeparatorOptions(ParseOptions options)
+    {
+        ArrayDataProcessor.NestedSeparators = string.IsNullOrEmpty(options.ArrayNestedSeparators)
+            ? null
+            : options.ArrayNestedSeparators;
     }
 
     public void CreateGenerationContext(ISheet sheet)

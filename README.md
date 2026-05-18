@@ -539,11 +539,17 @@ dotnet dtgen \
   --columnCommentMarkerText "#列注释标志" \
   --rowCommentMarkerText "#行注释标志" \
   --skipCellMarker "#" \
+  --arrayNestedSeparators "" \
   -t "CLIENT && !SERVER" \
   --diagnosticsJsonOutput diagnostics.json
 
 # 关闭公式评估，快速导出
 dotnet dtgen -i ./Tables -co ./Generated -do ./Data --formulaPolicy Off
+
+# 自定义嵌套数组的分隔字符（解决 "id#count|id#count" 与单条目 "801000#2" 行为不一致问题）
+# 字符位置 = 数组嵌套深度（从 1 开始）；为空时维持旧行为（优先 '|' 否则 '#'）
+dotnet dtgen -i ./Tables -co ./Generated -do ./Data \
+  --arrayNestedSeparators "|#-"   # 第 1 层 '|'，第 2 层 '#'，第 3 层 '-'
 ```
 
 #### 标签过滤语法（TFE Lite）

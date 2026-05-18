@@ -93,11 +93,13 @@ public sealed partial class DataTableProcessor
             }
 
             char separator;
-            if (text.IndexOf('|') >= 0)
+            var pipeIndex = text.IndexOf('|');
+            var hashIndex = text.IndexOf('#');
+            if (pipeIndex >= 0)
             {
                 separator = '|';
             }
-            else if (text.IndexOf('#') >= 0)
+            else if (hashIndex >= 0)
             {
                 separator = '#';
             }

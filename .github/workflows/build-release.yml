@@ -62,7 +62,6 @@ jobs:
         env:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
           UNITY_PACKAGE_VERSION: ${{ inputs.tag }}
         with:
           projectPath: src/DataTables.Unity

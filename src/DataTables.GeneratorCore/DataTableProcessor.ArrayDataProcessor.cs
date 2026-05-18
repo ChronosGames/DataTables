@@ -48,6 +48,15 @@ public sealed partial class DataTableProcessor
                 value = "[]";
             }
 
+            var trimmed = value.TrimStart();
+            // 支持以 '#' 或 '|' 分隔的纯文本数组格式，例如 "1#2#3" 或 "a|b|c"
+            // 当输入不是以 '[' 开头时，按纯文本格式解析
+            if (trimmed.Length == 0 || trimmed[0] != '[')
+            {
+                WriteDelimitedToStream(binaryWriter, value);
+                return;
+            }
+
             var arr = JsonUtility.Deserialize<ArrayList>(value);
             if (arr == null)
             {
@@ -66,6 +75,46 @@ public sealed partial class DataTableProcessor
                 {
                     DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).WriteToStream(binaryWriter, JsonUtility.Serialize(item));
                 }
+            }
+        }
+
+        /// <summary>
+        /// 以分隔符（'#' 或 '|'）解析纯文本格式数组并写入流。
+        /// 优先使用 '|'，若不存在则使用 '#'；都不存在时将整个文本视为单元素数组。
+        /// </summary>
+        private void WriteDelimitedToStream(BinaryWriter binaryWriter, string value)
+        {
+            // 去除首尾空白；保留内部空白以避免破坏字符串元素内容
+            var text = value.Trim();
+            if (text.Length == 0)
+            {
+                binaryWriter.Write7BitEncodedInt32(0);
+                return;
+            }
+
+            char separator;
+            if (text.IndexOf('|') >= 0)
+            {
+                separator = '|';
+            }
+            else if (text.IndexOf('#') >= 0)
+            {
+                separator = '#';
+            }
+            else
+            {
+                // 单元素：直接写入
+                binaryWriter.Write7BitEncodedInt32(1);
+                DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).WriteToStream(binaryWriter, text);
+                return;
+            }
+
+            var parts = text.Split(separator);
+            binaryWriter.Write7BitEncodedInt32(parts.Length);
+            var processor = DataProcessorUtility.GetDataProcessor(m_KeyTypeStr);
+            foreach (var part in parts)
+            {
+                processor.WriteToStream(binaryWriter, part);
             }
         }
 

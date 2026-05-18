@@ -488,7 +488,7 @@ public static int Count => DataTableManager.GetCached<DTScene>()?.Count ?? 0;
 | 类型 | 说明 | 示例 |
 |------|------|------|
 | 基础类型 | `int`, `long`, `float`, `double`, `bool`, `string` | `42`, `3.14`, `true` |
-| 数组 | `Array<T>` | `Array<int>` → `[1,2,3]` |
+| 数组 | `Array<T>` | `Array<int>` → `[1,2,3]` 或 `1#2#3` 或 `1|2|3` |
 | 枚举 | `Enum<T>` | `Enum<ColorType>` → `Red` |
 | 字典 | `Map<K,V>` | `Map<int,string>` → `{1:"a",2:"b"}` |
 | JSON | `JSON` | 复杂对象的JSON字符串 |

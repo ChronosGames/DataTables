@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        unity: ["2022.3.55f1"] # Keep CI aligned with ProjectSettings/ProjectVersion.txt
+        unity: ["2022.3.39f1"] # Keep CI on the supported Unity LTS image used by release builds
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

@@ -157,5 +157,39 @@ public class ParserTests
 		ctx.Fields[1].IsIgnore.Should().BeFalse(); // Name - 无标签，不过滤
 		ctx.Fields[2].IsTagFiltered.Should().BeTrue(); // Level@S - 有标签但不匹配，被过滤
 	}
+
+	[Fact]
+	public void Parsers_Should_Expose_DataSetType_Metadata()
+	{
+		new RowTableParser().DataSetType.Should().Be("table");
+		new MatrixTableParser().DataSetType.Should().Be("matrix");
+		new ColumnTableParser().DataSetType.Should().Be("column");
+	}
+
+	[Fact]
+	public void CreateGenerationContext_Should_Report_Unknown_DTGen_Type()
+	{
+		var wb = new XSSFWorkbook();
+		var sh = wb.CreateSheet("UnknownSheet");
+		var r0 = sh.CreateRow(0);
+		r0.CreateCell(0).SetCellValue("dtgen=kv,class=Cfg");
+
+		var ctx = new GenerationContext { FileName = "sample.xlsx", SheetName = "UnknownSheet" };
+		var diags = new DiagnosticsCollector();
+		var processor = new DataTableProcessor(ctx, null!, new ParseOptions(), diags);
+
+		processor.CreateGenerationContext(sh);
+
+		diags.Items.Should().ContainSingle();
+		var diagnostic = diags.Items[0];
+		diagnostic.Severity.Should().Be(DiagnosticSeverity.Error);
+		diagnostic.File.Should().Be("sample.xlsx");
+		diagnostic.Sheet.Should().Be("UnknownSheet");
+		diagnostic.Cell.Should().Be("A1");
+		diagnostic.Message.Should().Contain("声明值: kv");
+		diagnostic.Message.Should().Contain("支持的类型: column, matrix, table");
+		diagnostic.Message.Should().Contain("预留类型: kv, localized, partitioned, versioned, patch");
+	}
+
 }
 

@@ -5,6 +5,8 @@ namespace DataTables.GeneratorCore;
 
 public sealed class TableSchemaService : ITableSchemaService
 {
+    private static readonly ITableSchemaParserRegistry s_TableSchemaParserRegistry = TableSchemaParserRegistry.CreateDefault();
+
     private readonly GenerationContext m_Context;
     private readonly ParseOptions m_Options;
     private readonly DiagnosticsCollector m_Diagnostics;
@@ -34,9 +36,17 @@ public sealed class TableSchemaService : ITableSchemaService
             return -1;
         }
 
-        ITableSchemaParser parser = m_Context.DataSetType == "matrix"
-            ? new MatrixTableParser()
-            : m_Context.DataSetType == "column" ? new ColumnTableParser() : new RowTableParser();
+        if (!s_TableSchemaParserRegistry.TryGetParser(m_Context.DataSetType, out var parser))
+        {
+            var supportedTypes = string.Join(", ", s_TableSchemaParserRegistry.SupportedDataSetTypes);
+            var reservedTypes = string.Join(", ", s_TableSchemaParserRegistry.ReservedDataSetTypes);
+            m_Diagnostics.Error(
+                m_Context.FileName,
+                m_Context.SheetName,
+                "A1",
+                $"未知 DTGen 类型。文件: {m_Context.FileName}, Sheet: {m_Context.SheetName}, 声明值: {m_Context.DataSetType}, 支持的类型: {supportedTypes}, 预留类型: {reservedTypes}");
+            return -1;
+        }
 
         int nextIndex = parser.Parse(new NpoiSheetReader(sheet), m_Context, m_Options, m_Diagnostics);
         if (nextIndex == -1)

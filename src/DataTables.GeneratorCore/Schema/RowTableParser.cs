@@ -6,6 +6,8 @@ namespace DataTables.GeneratorCore;
 
 public sealed class RowTableParser : ITableSchemaParser
 {
+    public string DataSetType => "table";
+
 	private static readonly Regex NameRegex = new Regex(@"^[A-Za-z][A-Za-z0-9_]*$");
 
     public int Parse(ISheetReader sheet, GenerationContext context, ParseOptions options, DiagnosticsCollector diagnostics)

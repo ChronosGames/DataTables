@@ -120,7 +120,7 @@ namespace DataTables
     /// </summary>
     public static class DataTableManager
     {
-        private const int DataTableVersion = 2;
+        private static readonly ConcurrentDictionary<string, TableRegistration> s_ExplicitTableRegistrations = new(StringComparer.Ordinal);
 
         #region InternalFields
 
@@ -232,6 +232,29 @@ namespace DataTables
             s_ProfilingHook = new ProfilingHook(onPerformanceReport);
         }
 
+
+        /// <summary>
+        /// Registers generated table metadata explicitly so preheating does not depend on runtime assembly scanning.
+        /// Multiple calls merge registrations by table type and name.
+        /// </summary>
+        public static void RegisterTables(IReadOnlyList<TableRegistration> registrations)
+        {
+            if (registrations == null) throw new ArgumentNullException(nameof(registrations));
+
+            foreach (var registration in registrations)
+            {
+                s_ExplicitTableRegistrations[GetRegistrationKey(registration)] = registration;
+            }
+        }
+
+        /// <summary>
+        /// Clears explicitly registered generated table metadata. Reflection fallback remains available for compatibility.
+        /// </summary>
+        public static void ClearTableRegistrations()
+        {
+            s_ExplicitTableRegistrations.Clear();
+        }
+
         /// <summary>
         /// 注册数据表工厂 - 消除反射调用
         /// </summary>
@@ -262,15 +285,16 @@ namespace DataTables
             var memoryBefore = GC.GetTotalMemory(false);
 
             // 使用生成的扩展类导出的表清单进行并发预热
+            var tableCount = GetPreheatTableCount(priority);
             var loadedCount = await PreheatTablesAsync(priority, cancellationToken);
 
             s_Stopwatch.Stop();
             var memoryAfter = GC.GetTotalMemory(false);
 
-            var failureCount = Math.Max(0, GetPreheatTableCount(priority) - loadedCount);
+            var failureCount = Math.Max(0, tableCount - loadedCount);
             var stats = new LoadStats(
                 s_Stopwatch.ElapsedMilliseconds,
-                loadedCount,
+                tableCount,
                 memoryAfter - memoryBefore,
                 loadedCount,
                 failureCount);
@@ -638,21 +662,27 @@ namespace DataTables
             using var br = new BinaryReader(ms, Encoding.UTF8);
 
             var readSign = br.ReadString();
-            if (readSign != "DTABLE")
+            if (readSign != DataTableBinaryFormat.Signature)
             {
                 throw new Exception($"Invalid data table file format for '{typeNamePair}'.");
             }
 
             var readVersion = br.ReadInt32();
-            if (readVersion != DataTableVersion)
+            if (readVersion != DataTableBinaryFormat.Version)
             {
-                throw new Exception($"Unsupported data table version {readVersion} for '{typeNamePair}'.");
+                throw new Exception($"Unsupported data table version {readVersion} for '{typeNamePair}'. This major runtime requires binary format version {DataTableBinaryFormat.Version}; regenerate the .bytes data and generated code together.");
             }
 
+            // Structured header: Signature, FormatVersion, SchemaHash, GeneratorVersion, TableFullName, RowCount, Flags.
+            var schemaHash = br.ReadUInt64();
+            _ = br.ReadString(); // GeneratorVersion is informational for diagnostics/versioned assets.
+            var tableFullName = br.ReadString();
             var readCount = br.ReadUInt16();
+            var flags = br.ReadInt32();
 
             // 尝试使用高性能工厂模式
             var dataTable = CreateDataTableInstance(typeNamePair, readCount);
+            ValidateStructuredHeader(typeNamePair, dataTable, schemaHash, tableFullName, flags);
 
             // 检查是否为矩阵表 (DataMatrixBase)
             if (IsMatrixTable(typeNamePair.Type))
@@ -683,6 +713,25 @@ namespace DataTables
             }
 
             return dataTable;
+        }
+
+        private static void ValidateStructuredHeader(TypeNamePair typeNamePair, DataTableBase dataTable, ulong schemaHash, string tableFullName, int flags)
+        {
+            if (flags != 0)
+            {
+                throw new Exception($"Unsupported data table flags 0x{flags:X8} for '{typeNamePair}'. This runtime cannot load compressed, encrypted, or extended payloads marked by these flags.");
+            }
+
+            var expectedFullName = typeNamePair.Type.FullName ?? typeNamePair.Type.ToString();
+            if (!string.Equals(tableFullName, expectedFullName, StringComparison.Ordinal))
+            {
+                throw new Exception($"Data table header mismatch for '{typeNamePair}': .bytes table '{tableFullName}' does not match generated code table '{expectedFullName}'. Regenerate code and data together.");
+            }
+
+            if (dataTable.SchemaHash != schemaHash)
+            {
+                throw new Exception($"Data table schema mismatch for '{typeNamePair}': generated code schema hash 0x{dataTable.SchemaHash:X16} does not match .bytes data schema hash 0x{schemaHash:X16}. The generated code and .bytes data are out of sync; regenerate both from the same source table.");
+            }
         }
 
         /// <summary>
@@ -870,15 +919,36 @@ namespace DataTables
                 return 0;
             }
 
+            var loadedCount = 0;
             var tasks = registrations.Select(async registration =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var table = await registration.LoadAsync(cancellationToken);
-                return table != null ? 1 : 0;
+                if (IsRegisteredTableCached(registration))
+                {
+                    return 1;
+                }
+
+                try
+                {
+                    var table = await registration.LoadAsync(cancellationToken);
+                    return table != null ? 1 : 0;
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch
+                {
+                    return 0;
+                }
             });
 
-            var results = await Task.WhenAll(tasks);
-            return results.Sum();
+            foreach (var result in await Task.WhenAll(tasks))
+            {
+                loadedCount += result;
+            }
+
+            return loadedCount;
         }
 
         private static int GetPreheatTableCount(Priority priorities)
@@ -888,24 +958,42 @@ namespace DataTables
 
         private static IReadOnlyList<TableRegistration> GetGeneratedTableRegistrations()
         {
+            if (!s_ExplicitTableRegistrations.IsEmpty)
+            {
+                return s_ExplicitTableRegistrations.Values.ToArray();
+            }
+
             try
             {
-                var extensionType = AppDomain.CurrentDomain.GetAssemblies()
+                return AppDomain.CurrentDomain.GetAssemblies()
                     .SelectMany(a =>
                     {
                         try { return a.GetTypes(); }
                         catch { return Array.Empty<Type>(); }
                     })
-                    .FirstOrDefault(t => t.Name == "DataTableManagerExtension");
-
-                var registrationsProperty = extensionType?.GetProperty("TableRegistrations");
-                return registrationsProperty?.GetValue(null) as IReadOnlyList<TableRegistration>
-                    ?? Array.Empty<TableRegistration>();
+                    .Where(t => t.Name == "DataTableManagerExtension")
+                    .Select(t => t.GetProperty("TableRegistrations")?.GetValue(null) as IReadOnlyList<TableRegistration>)
+                    .Where(registrations => registrations != null)
+                    .SelectMany(registrations => registrations!)
+                    .GroupBy(GetRegistrationKey, StringComparer.Ordinal)
+                    .Select(group => group.Last())
+                    .ToArray();
             }
             catch
             {
                 return Array.Empty<TableRegistration>();
             }
+        }
+
+        private static string GetRegistrationKey(TableRegistration registration)
+        {
+            return (registration.TableType.AssemblyQualifiedName ?? registration.TableType.FullName ?? registration.TableType.Name) + "|" + registration.Name;
+        }
+
+        private static bool IsRegisteredTableCached(TableRegistration registration)
+        {
+            var key = new TypeNamePair(registration.TableType, registration.Name);
+            return s_DataTables.ContainsKey(key) || (s_Cache?.Contains(key) ?? false);
         }
 
         private static void RecordLoadResult(long startTimestamp, long memoryBefore, bool succeeded)

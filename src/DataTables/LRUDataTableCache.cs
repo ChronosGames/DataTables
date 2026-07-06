@@ -82,6 +82,14 @@ namespace DataTables
         }
 
         /// <summary>
+        /// Checks whether a table exists in the cache without updating LRU hit statistics.
+        /// </summary>
+        public bool Contains(TypeNamePair key)
+        {
+            return _cache.ContainsKey(key);
+        }
+
+        /// <summary>
         /// 添加数据表到缓存
         /// </summary>
         /// <typeparam name="T">数据表类型</typeparam>

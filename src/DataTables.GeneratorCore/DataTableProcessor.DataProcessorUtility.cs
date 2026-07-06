@@ -52,7 +52,6 @@ public sealed partial class DataTableProcessor
             var descriptor = DataTypeParser.Parse(type, GetSupportedTypeStrings());
             if (s_DataProcessors.TryGetValue(descriptor.NormalizedSignature, out var dataProcessor))
             {
-                dataProcessor.TypeDescriptor = descriptor;
                 return dataProcessor;
             }
 
@@ -67,7 +66,6 @@ public sealed partial class DataTableProcessor
                 _ => throw new DataTypeParseException(type ?? string.Empty, 0, "当前支持的类型之一", GetSupportedTypeStrings()),
             };
 
-            created.TypeDescriptor = descriptor;
             foreach (var ts in created.GetTypeStrings())
             {
                 s_DataProcessors.TryAdd(NormalizeCacheKey(ts), created);

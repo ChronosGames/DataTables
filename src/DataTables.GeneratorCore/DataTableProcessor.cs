@@ -12,9 +12,6 @@ namespace DataTables.GeneratorCore;
 public sealed partial class DataTableProcessor : IDisposable
 {
     private static readonly Regex NameRegex = new Regex(@"^[A-Za-z][A-Za-z0-9_]*$");
-    private const string DATA_TABLE_SIGNATURE = "DTABLE";
-    private const int DATA_TABLE_VERSION = 3;
-
     private readonly GenerationContext m_Context;
     private readonly IFormulaEvaluator m_FormulaEvaluator;
     private readonly string m_Tags;

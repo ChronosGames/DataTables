@@ -8,10 +8,6 @@ namespace DataTables.GeneratorCore;
 
 internal sealed class DataTableBinaryWriter : IDataTableBinaryWriter
 {
-    private const string DATA_TABLE_SIGNATURE = "DTABLE";
-    private const int DATA_TABLE_VERSION = 3;
-    private const int DATA_TABLE_FLAGS_NONE = 0;
-
     private readonly GenerationContext m_Context;
     private readonly Func<ISheet, BinaryWriter, int> m_WriteDataRows;
 
@@ -49,14 +45,14 @@ internal sealed class DataTableBinaryWriter : IDataTableBinaryWriter
             using var fileStream = new FileStream(outputFileName, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true);
             using var binaryWriter = new BinaryWriter(fileStream, Encoding.UTF8, leaveOpen: true);
 
-            binaryWriter.Write(DATA_TABLE_SIGNATURE);
-            binaryWriter.Write(DATA_TABLE_VERSION);
+            binaryWriter.Write(DataTableBinaryFormat.Signature);
+            binaryWriter.Write(DataTableBinaryFormat.Version);
             binaryWriter.Write(DataTableSchemaHash.Compute(m_Context));
             binaryWriter.Write(GetGeneratorVersion());
             binaryWriter.Write(m_Context.DataTableClassFullName);
             long countPosition = fileStream.Position;
             binaryWriter.Write(ushort.MinValue);
-            binaryWriter.Write(DATA_TABLE_FLAGS_NONE);
+            binaryWriter.Write(DataTableBinaryFormat.FlagsNone);
 
             int dataRowCount = m_WriteDataRows(sheet, binaryWriter);
 

@@ -164,6 +164,7 @@ public class ParserTests
 		new RowTableParser().DataSetType.Should().Be("table");
 		new MatrixTableParser().DataSetType.Should().Be("matrix");
 		new ColumnTableParser().DataSetType.Should().Be("column");
+		new KvTableParser().DataSetType.Should().Be("kv");
 	}
 
 	[Fact]
@@ -172,7 +173,7 @@ public class ParserTests
 		var wb = new XSSFWorkbook();
 		var sh = wb.CreateSheet("UnknownSheet");
 		var r0 = sh.CreateRow(0);
-		r0.CreateCell(0).SetCellValue("dtgen=kv,class=Cfg");
+		r0.CreateCell(0).SetCellValue("dtgen=unknown,class=Cfg");
 
 		var ctx = new GenerationContext { FileName = "sample.xlsx", SheetName = "UnknownSheet" };
 		var diags = new DiagnosticsCollector();
@@ -186,9 +187,9 @@ public class ParserTests
 		diagnostic.File.Should().Be("sample.xlsx");
 		diagnostic.Sheet.Should().Be("UnknownSheet");
 		diagnostic.Cell.Should().Be("A1");
-		diagnostic.Message.Should().Contain("声明值: kv");
-		diagnostic.Message.Should().Contain("支持的类型: column, matrix, table");
-		diagnostic.Message.Should().Contain("预留类型: kv, localized, tree, graph, partitioned, versioned, patch");
+		diagnostic.Message.Should().Contain("声明值: unknown");
+		diagnostic.Message.Should().Contain("支持的类型: column, kv, matrix, table");
+		diagnostic.Message.Should().Contain("预留类型: localized, tree, graph, partitioned, versioned, patch");
 	}
 
 }

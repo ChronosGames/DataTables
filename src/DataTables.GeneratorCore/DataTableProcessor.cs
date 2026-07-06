@@ -459,6 +459,7 @@ public sealed partial class DataTableProcessor : IDisposable
 
             var text = GetCellString(row.GetCell(field.Index));
             field.TypeName = text;
+            field.TypeCell = GetRowColString(row.RowNum, field.Index);
         }
     }
 
@@ -611,7 +612,7 @@ public sealed partial class DataTableProcessor : IDisposable
             {
                 if (field.IsIgnore) { continue; }
 
-                var processor = DataProcessorUtility.GetDataProcessor(field.TypeName);
+                var processor = GetDataProcessorWithDiagnostics(field);
                 try
                 {
                     processor.WriteToStream(writer, GetCellString(row.GetCell(field.Index)));
@@ -626,13 +627,28 @@ public sealed partial class DataTableProcessor : IDisposable
         }
     }
 
+
+    private DataProcessor GetDataProcessorWithDiagnostics(XField field)
+    {
+        try
+        {
+            return DataProcessorUtility.GetDataProcessor(field.TypeName);
+        }
+        catch (DataTypeParseException ex)
+        {
+            var cell = string.IsNullOrEmpty(field.TypeCell) ? string.Empty : field.TypeCell;
+            m_Diagnostics.Error(m_Context.FileName, m_Context.SheetName, cell, $"字段 '{field.Name}' 类型 '{field.TypeName}' 解析失败: {ex.Message}");
+            throw new FormatException($"类型解析失败: File='{m_Context.FileName}', Sheet='{m_Context.SheetName}', Field='{field.Name}', TypeCell='{cell}', FieldType='{field.TypeName}'. {ex.Message}", ex);
+        }
+    }
+
     private int WriteColumnBytes(BinaryWriter writer, ISheet sheet, int columnIndex)
     {
         foreach (var field in m_Context.Fields)
         {
             if (field.IsIgnore) { continue; }
 
-            var processor = DataProcessorUtility.GetDataProcessor(field.TypeName);
+            var processor = GetDataProcessorWithDiagnostics(field);
             try
             {
                 var row = sheet.GetRow(field.Index);
@@ -716,6 +732,7 @@ public sealed partial class DataTableProcessor : IDisposable
             // C:Type
             var typeText = GetCellString(row.GetCell(row.FirstCellNum + 2));
             field.TypeName = typeText;
+            field.TypeCell = GetRowColString(r, row.FirstCellNum + 2);
 
             fields.Add(field);
         }

@@ -8,6 +8,24 @@ internal static class ParserUtils
 {
 	private static readonly Regex NameRegex = new Regex(@"^[A-Za-z][A-Za-z0-9_]*$");
 
+	public static string GetCellAddress(int row, int col)
+	{
+		return $"{ConvertToColumnName(col)}{row + 1}";
+	}
+
+	private static string ConvertToColumnName(int col)
+	{
+		var dividend = col + 1;
+		var columnName = string.Empty;
+		while (dividend > 0)
+		{
+			var modulo = (dividend - 1) % 26;
+			columnName = Convert.ToChar('A' + modulo) + columnName;
+			dividend = (dividend - modulo) / 26;
+		}
+		return columnName;
+	}
+
 	public static int FindNextValidRowIndex(ISheet sheet, int startExclusive)
 	{
 		for (int i = startExclusive + 1; i <= sheet.LastRowNum; i++)
@@ -202,6 +220,7 @@ internal static class ParserUtils
 
 			var typeText = GetCellString(row.GetCell(row.FirstCellNum + 2));
 			field.TypeName = typeText;
+			field.TypeCell = GetCellAddress(r, row.FirstCellNum + 2);
 
 			fields.Add(field);
 		}

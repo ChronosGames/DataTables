@@ -234,6 +234,11 @@ public class XField(int index)
     public string TypeName { get; set; } = string.Empty;
 
     /// <summary>
+    /// 字段类型所在单元格（例如 C3），用于诊断定位。
+    /// </summary>
+    public string TypeCell { get; set; } = string.Empty;
+
+    /// <summary>
     /// 字段名
     /// </summary>
     public string Name { get; set; } = string.Empty;

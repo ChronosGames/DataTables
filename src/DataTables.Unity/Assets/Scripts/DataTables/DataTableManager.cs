@@ -62,15 +62,48 @@ namespace DataTables
     /// </summary>
     public readonly struct LoadStats
     {
-        public readonly long LoadTime;    // 加载耗时(ms)
+        public readonly long LoadTime;    // 累计加载耗时(ms)
         public readonly int TableCount;   // 表数量
         public readonly long MemoryUsed;  // 内存使用(bytes)
+        public readonly int SuccessCount; // 成功加载次数
+        public readonly int FailureCount; // 失败加载次数
 
         public LoadStats(long loadTime, int tableCount, long memoryUsed)
+            : this(loadTime, tableCount, memoryUsed, tableCount, 0)
+        {
+        }
+
+        public LoadStats(long loadTime, int tableCount, long memoryUsed, int successCount, int failureCount)
         {
             LoadTime = loadTime;
             TableCount = tableCount;
             MemoryUsed = memoryUsed;
+            SuccessCount = successCount;
+            FailureCount = failureCount;
+        }
+    }
+
+    /// <summary>
+    /// 生成的数据表注册信息，用于无反射预热。
+    /// </summary>
+    public readonly struct TableRegistration
+    {
+        public readonly Type TableType;
+        public readonly string Name;
+        public readonly Priority Priority;
+        private readonly Func<CancellationToken, ValueTask<DataTableBase?>> _loadAsync;
+
+        public TableRegistration(Type tableType, string name, Priority priority, Func<CancellationToken, ValueTask<DataTableBase?>> loadAsync)
+        {
+            TableType = tableType ?? throw new ArgumentNullException(nameof(tableType));
+            Name = name ?? string.Empty;
+            Priority = priority;
+            _loadAsync = loadAsync ?? throw new ArgumentNullException(nameof(loadAsync));
+        }
+
+        public ValueTask<DataTableBase?> LoadAsync(CancellationToken cancellationToken = default)
+        {
+            return _loadAsync(cancellationToken);
         }
     }
 
@@ -104,6 +137,10 @@ namespace DataTables
         // 配置与统计
         private static ProfilingHook? s_ProfilingHook;
         private static readonly System.Diagnostics.Stopwatch s_Stopwatch = new();
+        private static long s_TotalLoadTimeMs;
+        private static long s_TotalMemoryDeltaBytes;
+        private static int s_TotalLoadSuccessCount;
+        private static int s_TotalLoadFailureCount;
 
         #endregion
 
@@ -224,16 +261,19 @@ namespace DataTables
             s_Stopwatch.Restart();
             var memoryBefore = GC.GetTotalMemory(false);
 
-            // 使用生成的扩展类进行预热 (待实现)
+            // 使用生成的扩展类导出的表清单进行并发预热
             var loadedCount = await PreheatTablesAsync(priority, cancellationToken);
 
             s_Stopwatch.Stop();
             var memoryAfter = GC.GetTotalMemory(false);
 
+            var failureCount = Math.Max(0, GetPreheatTableCount(priority) - loadedCount);
             var stats = new LoadStats(
                 s_Stopwatch.ElapsedMilliseconds,
                 loadedCount,
-                memoryAfter - memoryBefore);
+                memoryAfter - memoryBefore,
+                loadedCount,
+                failureCount);
 
             s_ProfilingHook?.Invoke(stats);
             return stats;
@@ -261,7 +301,7 @@ namespace DataTables
             where T : DataTableBase
         {
             cancellationToken.ThrowIfCancellationRequested();
-            return await GetOrCreateDataTableAsync<T>();
+            return await GetOrCreateDataTableAsync<T>(string.Empty, cancellationToken);
         }
 
         /// <summary>
@@ -362,13 +402,14 @@ namespace DataTables
         /// <returns>统计信息</returns>
         public static LoadStats GetStats()
         {
-            var totalMemory = GC.GetTotalMemory(false);
             var loadedCount = s_DataTables.Count;
 
             return new LoadStats(
-                0, // 平均加载时间 (待实现统计)
+                Interlocked.Read(ref s_TotalLoadTimeMs),
                 loadedCount,
-                totalMemory);
+                Interlocked.Read(ref s_TotalMemoryDeltaBytes),
+                Volatile.Read(ref s_TotalLoadSuccessCount),
+                Volatile.Read(ref s_TotalLoadFailureCount));
         }
 
         /// <summary>
@@ -401,7 +442,13 @@ namespace DataTables
         /// <returns>数据表实例</returns>
         public static async ValueTask<T?> GetOrCreateDataTableAsync<T>() where T : DataTableBase
         {
-            var typeNamePair = new TypeNamePair(typeof(T), string.Empty);
+            return await GetOrCreateDataTableAsync<T>(string.Empty);
+        }
+
+        public static async ValueTask<T?> GetOrCreateDataTableAsync<T>(string name, CancellationToken cancellationToken = default) where T : DataTableBase
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var typeNamePair = new TypeNamePair(typeof(T), name ?? string.Empty);
 
             // 快速路径：优先从LRU缓存获取
             if (s_Cache != null && s_Cache.TryGet<T>(typeNamePair, out var cached))
@@ -448,7 +495,7 @@ namespace DataTables
         public static async ValueTask<T?> CreateDataTableAsync<T>(string name = "", CancellationToken cancellationToken = default) where T : DataTableBase
         {
             cancellationToken.ThrowIfCancellationRequested();
-            return await LoadAsync<T>(cancellationToken);
+            return await GetOrCreateDataTableAsync<T>(name, cancellationToken);
         }
 
         /// <summary>
@@ -490,8 +537,11 @@ namespace DataTables
                     return existingTable;
                 }
 
-                var raw = await s_DataSource!.LoadAsync(typeNamePair.ToString(), cancellationToken);
+                var loadStarted = System.Diagnostics.Stopwatch.GetTimestamp();
+                var memoryBefore = GC.GetTotalMemory(false);
+                var raw = await s_DataSource!.LoadAsync(typeNamePair.ToString(), CancellationToken.None);
                 var dataTable = LoadDataTableFromBytes(typeNamePair, raw);
+                RecordLoadResult(loadStarted, memoryBefore, true);
 
                 // 原子性添加到缓存
                 if (s_DataTables.TryAdd(typeNamePair, dataTable))
@@ -518,6 +568,7 @@ namespace DataTables
             {
                 // 清理失败的加载任务
                 s_LoadingTables.TryRemove(typeNamePair, out _);
+                RecordLoadResult(0, 0, false);
                 Log.Error($"Failed to load table {typeNamePair}: {ex.Message}", ex);
                 return null;
             }
@@ -530,7 +581,7 @@ namespace DataTables
         {
             try
             {
-                var raw = await s_DataSource!.LoadAsync(typeNamePair.ToString(), cancellationToken);
+                var raw = await s_DataSource!.LoadAsync(typeNamePair.ToString(), CancellationToken.None);
                 LoadDataTable(typeNamePair, raw, onCompleted);
             }
             catch (Exception ex)
@@ -772,82 +823,68 @@ namespace DataTables
         /// </summary>
         private static async Task<int> PreheatTablesAsync(Priority priorities, CancellationToken cancellationToken = default)
         {
-            var loadedCount = 0;
+            var registrations = GetGeneratedTableRegistrations()
+                .Where(registration => (priorities & registration.Priority) != 0)
+                .ToArray();
 
+            if (registrations.Length == 0)
+            {
+                return 0;
+            }
+
+            var tasks = registrations.Select(async registration =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var table = await registration.LoadAsync(cancellationToken);
+                return table != null ? 1 : 0;
+            });
+
+            var results = await Task.WhenAll(tasks);
+            return results.Sum();
+        }
+
+        private static int GetPreheatTableCount(Priority priorities)
+        {
+            return GetGeneratedTableRegistrations().Count(registration => (priorities & registration.Priority) != 0);
+        }
+
+        private static IReadOnlyList<TableRegistration> GetGeneratedTableRegistrations()
+        {
             try
             {
-                // 查找生成的DataTableManagerExtension类
                 var extensionType = AppDomain.CurrentDomain.GetAssemblies()
-                    .SelectMany(a => a.GetTypes())
-                    .FirstOrDefault(t => t.Name == "DataTableManagerExtension" && (t.GetMethod("PreloadByPriority") != null || t.GetMethod("Preload") != null));
-
-                if (extensionType != null)
-                {
-                    // 优先使用按优先级预加载
-                    var preloadByPriority = extensionType.GetMethod("PreloadByPriority",
-                        new[] { typeof(Priority), typeof(Action), typeof(Action<float>) });
-                    var preloadMethod = preloadByPriority ?? extensionType.GetMethod("Preload",
-                        new[] { typeof(Action), typeof(Action<float>) });
-
-                    if (preloadMethod != null)
+                    .SelectMany(a =>
                     {
-                        var tcs = new TaskCompletionSource<int>();
-                        var completed = false;
+                        try { return a.GetTypes(); }
+                        catch { return Array.Empty<Type>(); }
+                    })
+                    .FirstOrDefault(t => t.Name == "DataTableManagerExtension");
 
-                        // 支持取消操作
-                        using var registration = cancellationToken.Register(() => {
-                            if (!completed) {
-                                completed = true;
-                                tcs.SetCanceled();
-                            }
-                        });
-
-                        if (preloadByPriority != null)
-                        {
-                            preloadByPriority.Invoke(null, new object[] {
-                                priorities,
-                                new Action(() => {
-                                    if (!completed) {
-                                        completed = true;
-                                        tcs.SetResult(s_DataTables.Count);
-                                    }
-                                }),
-                                (Action<float>?)null // 进度回调（可选）
-                            });
-                        }
-                        else
-                        {
-                            preloadMethod!.Invoke(null, new object[] {
-                                new Action(() => {
-                                    if (!completed) {
-                                        completed = true;
-                                        tcs.SetResult(s_DataTables.Count);
-                                    }
-                                }),
-                                (Action<float>?)null // 进度回调（可选）
-                            });
-                        }
-
-                        loadedCount = await tcs.Task;
-                    }
-                }
-                else
-                {
-                    // 如果没有扩展类，返回当前已加载的表数量
-                    loadedCount = s_DataTables.Count;
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                throw; // 重新抛出取消异常
+                var registrationsProperty = extensionType?.GetProperty("TableRegistrations");
+                return registrationsProperty?.GetValue(null) as IReadOnlyList<TableRegistration>
+                    ?? Array.Empty<TableRegistration>();
             }
             catch
             {
-                // 静默失败，返回当前已加载的表数量
-                loadedCount = s_DataTables.Count;
+                return Array.Empty<TableRegistration>();
             }
+        }
 
-            return loadedCount;
+        private static void RecordLoadResult(long startTimestamp, long memoryBefore, bool succeeded)
+        {
+            if (succeeded)
+            {
+                var elapsedMs = startTimestamp == 0
+                    ? 0
+                    : (long)((System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / System.Diagnostics.Stopwatch.Frequency);
+                Interlocked.Add(ref s_TotalLoadTimeMs, elapsedMs);
+                Interlocked.Add(ref s_TotalMemoryDeltaBytes, GC.GetTotalMemory(false) - memoryBefore);
+                Interlocked.Increment(ref s_TotalLoadSuccessCount);
+            }
+            else
+            {
+                Interlocked.Increment(ref s_TotalLoadFailureCount);
+            }
         }
 
         private static bool InternalHasDataTable(TypeNamePair pair)

@@ -539,7 +539,7 @@ namespace DataTables
 
                 var loadStarted = System.Diagnostics.Stopwatch.GetTimestamp();
                 var memoryBefore = GC.GetTotalMemory(false);
-                var raw = await s_DataSource!.LoadAsync(typeNamePair.ToString(), cancellationToken);
+                var raw = await s_DataSource!.LoadAsync(typeNamePair.ToString(), CancellationToken.None);
                 var dataTable = LoadDataTableFromBytes(typeNamePair, raw);
                 RecordLoadResult(loadStarted, memoryBefore, true);
 
@@ -581,7 +581,7 @@ namespace DataTables
         {
             try
             {
-                var raw = await s_DataSource!.LoadAsync(typeNamePair.ToString(), cancellationToken);
+                var raw = await s_DataSource!.LoadAsync(typeNamePair.ToString(), CancellationToken.None);
                 LoadDataTable(typeNamePair, raw, onCompleted);
             }
             catch (Exception ex)

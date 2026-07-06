@@ -465,11 +465,38 @@ namespace DataTables
             // 确保数据源已初始化
             EnsureAutoInitialized();
 
-            // 使用Task缓存模式确保单次加载
-            var loadingTask = s_LoadingTables.GetOrAdd(typeNamePair, _ => LoadDataTableInternalAsync(typeNamePair));
+            // 使用Task缓存模式确保单次加载。调用方的取消令牌只取消等待过程，
+            // 不会取消共享的底层加载；共享加载会继续完成并填充缓存，
+            // 后续调用方仍可复用同一个加载任务或已加载的数据表。
+            var loadingTask = s_LoadingTables.GetOrAdd(typeNamePair, _ => LoadDataTableInternalAsync(typeNamePair, CancellationToken.None));
 
-            var result = await loadingTask;
+            var result = await AwaitSharedLoadAsync(loadingTask, cancellationToken);
             return result as T;
+        }
+
+        private static async Task<DataTableBase?> AwaitSharedLoadAsync(Task<DataTableBase?> loadingTask, CancellationToken cancellationToken)
+        {
+            if (!cancellationToken.CanBeCanceled)
+            {
+                return await loadingTask;
+            }
+
+            if (loadingTask.IsCompleted)
+            {
+                return await loadingTask;
+            }
+
+            var cancellationSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using (cancellationToken.Register(static state =>
+                   ((TaskCompletionSource<bool>)state!).TrySetResult(true), cancellationSignal))
+            {
+                if (loadingTask != await Task.WhenAny(loadingTask, cancellationSignal.Task))
+                {
+                    throw new OperationCanceledException(cancellationToken);
+                }
+            }
+
+            return await loadingTask;
         }
 
         /// <summary>
@@ -525,7 +552,7 @@ namespace DataTables
         /// <summary>
         /// 线程安全的内部异步加载方法 - 集成LRU缓存管理
         /// </summary>
-        private static async Task<DataTableBase?> LoadDataTableInternalAsync(TypeNamePair typeNamePair)
+        private static async Task<DataTableBase?> LoadDataTableInternalAsync(TypeNamePair typeNamePair, CancellationToken cancellationToken)
         {
             try
             {
@@ -539,7 +566,7 @@ namespace DataTables
 
                 var loadStarted = System.Diagnostics.Stopwatch.GetTimestamp();
                 var memoryBefore = GC.GetTotalMemory(false);
-                var raw = await s_DataSource!.LoadAsync(typeNamePair.ToString(), CancellationToken.None);
+                var raw = await s_DataSource!.LoadAsync(typeNamePair.ToString(), cancellationToken);
                 var dataTable = LoadDataTableFromBytes(typeNamePair, raw);
                 RecordLoadResult(loadStarted, memoryBefore, true);
 
@@ -548,9 +575,6 @@ namespace DataTables
                 {
                     // 添加到LRU缓存
                     s_Cache?.Set(typeNamePair, dataTable);
-
-                    // 清理加载任务缓存
-                    s_LoadingTables.TryRemove(typeNamePair, out _);
 
                     // 触发Hook
                     TriggerHooks(dataTable);
@@ -564,13 +588,26 @@ namespace DataTables
                     return existing;
                 }
             }
+            catch (OperationCanceledException ex)
+            {
+                // 底层共享加载当前使用不可取消令牌；此分支保留给未来可取消共享加载语义，
+                // 并确保取消任务不会永久缓存，后续调用可以重新发起加载。
+                RecordLoadResult(0, 0, false);
+                Log.Error($"Canceled loading table {typeNamePair}: {ex.Message}", ex);
+                return null;
+            }
             catch (Exception ex)
             {
-                // 清理失败的加载任务
-                s_LoadingTables.TryRemove(typeNamePair, out _);
+                // 失败任务不会永久缓存，finally 会清理加载任务以允许后续重试。
                 RecordLoadResult(0, 0, false);
                 Log.Error($"Failed to load table {typeNamePair}: {ex.Message}", ex);
                 return null;
+            }
+            finally
+            {
+                // 清理成功、失败或取消的加载任务。成功结果已写入 s_DataTables/s_Cache，
+                // 失败或取消结果会在下一次调用时重新创建任务并重试。
+                s_LoadingTables.TryRemove(typeNamePair, out _);
             }
         }
 

@@ -10,6 +10,8 @@ public sealed class TableSchemaParserRegistry : ITableSchemaParserRegistry
     [
         "kv",
         "localized",
+        "tree",
+        "graph",
         "partitioned",
         "versioned",
         "patch"

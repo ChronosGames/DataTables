@@ -91,6 +91,9 @@ DataTableManager.EnableProfiling(stats =>
    - 从[Releases](https://github.com/ChronosGames/DataTables/releases)下载`DataTables.Unity.unitypackage`
 
 2. **现代化Unity使用**
+
+> **运行时源码同步约定**：`src/DataTables` 是运行时源码的唯一修改源；`src/DataTables.Unity/Assets/Scripts/DataTables` 是构建 `src/DataTables/DataTables.csproj` 后自动同步出的 Unity 镜像目录。请不要直接修改 Unity 镜像中的 `.cs` 文件。提交前可运行 `dotnet build -c Debug`，再运行 `./scripts/verify-unity-runtime-sync.sh` 和 `git diff --exit-code -- src/DataTables.Unity/Assets/Scripts/DataTables`，确保 Unity 包与主运行时一致。
+
 ```csharp
 using DataTables;
 using UnityEngine;

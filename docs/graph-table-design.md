@@ -7,7 +7,7 @@
 - 用可编辑表格表达节点和边的关系。
 - 支持有向图和无向图的基础建模。
 - 在生成期发现重复节点、非法边引用和不符合项目规则的环。
-- 生成强类型查询 API，支持按节点查询入边、出边和邻接节点。
+- 生成强类型图查询 API，支持节点集合、入边、出边、关联边、前驱、后继、两点边、路径和遍历。
 - 通过注册 parser、validator、writer 和模板实现，不在 `DataTableProcessor` 主流程中硬编码 graph 分支。
 
 ## 推荐 Excel 格式
@@ -49,21 +49,23 @@ DTGen=graph,class=LevelGraph,namespace=Game.DataTables
 推荐生成节点、边和图查询 API：
 
 ```csharp
+var nodes = DTLevelGraph.GetNodesStatic();
 var nodeId = DTLevelGraph.GetNodeStatic("Battle01");
 var outgoing = DTLevelGraph.GetOutgoingEdgesStatic("Battle01");
 var incoming = DTLevelGraph.GetIncomingEdgesStatic("Battle01");
+var incident = DTLevelGraph.GetIncidentEdgesStatic("Battle01");
+var successors = DTLevelGraph.GetSuccessorsStatic("Battle01");
+var predecessors = DTLevelGraph.GetPredecessorsStatic("Battle01");
 var neighbors = DTLevelGraph.GetNeighborsStatic("Battle01");
+var edges = DTLevelGraph.GetEdgesBetweenStatic("Start", "Battle01");
+var hasEdge = DTLevelGraph.HasEdgeStatic("Start", "Battle01");
+var hasPath = DTLevelGraph.HasPathStatic("Start", "Reward01");
+var path = DTLevelGraph.FindPathStatic("Start", "Reward01");
+var bfs = DTLevelGraph.TraverseBreadthFirstStatic("Start");
 DTLevelGraph.TryGetEdgeStatic("E001", out var edge);
 ```
 
-如果项目启用路径能力，可以额外生成工具 API：
-
-```csharp
-DTLevelGraph.HasPath("Start", "Reward01");
-DTLevelGraph.FindPath("Start", "Reward01");
-```
-
-路径 API 是否生成应由配置控制，避免为所有项目引入额外运行时成本。
+路径 API 使用广度优先搜索返回节点 id 路径；如果起点或终点不存在，或没有可达路径，则返回空列表。
 
 ## 校验规则
 
@@ -115,7 +117,7 @@ DTLevelGraph.FindPath("Start", "Reward01");
 ## 与索引和预热的关系
 
 - `EdgeId` 是 graph 表的内建唯一索引。
-- `From` 和 `To` 是内建分组索引，用于生成入边、出边和邻接节点查询。
+- `From` 和 `To` 是内建分组索引，用于生成入边、出边、关联边、前驱、后继、两点边、路径和遍历查询。
 - graph 表应参与显式表注册和 `PreheatAsync`。
 - 预热失败应暴露节点 id、边 id、端点和环路径等上下文。
 
@@ -124,7 +126,7 @@ DTLevelGraph.FindPath("Start", "Reward01");
 1. 已新增 `GraphTableParser`，基于普通行表解析边列表并注册内建索引。
 2. 已新增生成期行校验，检查 `EdgeId`、`From`、`To` 和可选 `Weight`。
 3. 已复用普通表二进制写出流程，运行时通过内建索引构建邻接查询。
-4. 已新增 graph 代码生成模板，输出边和图查询 API。
+4. 已新增 graph 代码生成模板，输出节点集合、边、邻接、前驱/后继、两点边、路径和 BFS 遍历 API。
 5. 已为 `DTGen=graph` 注册 parser 和模板。
 6. 已增加 parser 与模板测试；后续可继续补充节点 Sheet、环检测和路径 API 测试。
 

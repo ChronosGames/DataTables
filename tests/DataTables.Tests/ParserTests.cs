@@ -232,7 +232,14 @@ public class ParserTests
 
 		code.Should().Contain("public LevelGraph? GetEdge(string edgeId)");
 		code.Should().Contain("public IReadOnlyList<LevelGraph> GetOutgoingEdges(string nodeId)");
-		code.Should().Contain("public IReadOnlyList<string> GetNeighbors(string nodeId)");
+		code.Should().Contain("public IReadOnlyList<LevelGraph> GetIncidentEdges(string nodeId)");
+		code.Should().Contain("public IReadOnlyList<string> GetNodes()");
+		code.Should().Contain("public IReadOnlyList<string> GetSuccessors(string nodeId)");
+		code.Should().Contain("public IReadOnlyList<string> GetPredecessors(string nodeId)");
+		code.Should().Contain("public IReadOnlyList<LevelGraph> GetEdgesBetween(string from, string to)");
+		code.Should().Contain("public bool HasPath(string from, string to)");
+		code.Should().Contain("public IReadOnlyList<string> FindPath(string from, string to)");
+		code.Should().Contain("public IEnumerable<string> TraverseBreadthFirst(string startNodeId)");
 	}
 
 }

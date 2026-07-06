@@ -18,8 +18,8 @@ internal static class SheetInfoParser
                     case "title": context.Title = args[1].Trim(); break;
                     case "class": context.ClassName = args[1].Trim(); break;
                     case "disabletagsfilter": context.DisableTagsFilter = bool.Parse(args[1].Trim()); break;
-                    case "index": context.Indexs.Add(args[1].Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)); break;
-                    case "group": context.Groups.Add(args[1].Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)); break;
+                    case "index": context.AddIndex(args[1].Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)); break;
+                    case "group": context.AddGroup(args[1].Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)); break;
                     case "priority":
                         var raw = args[1].Trim();
                         context.Priority = raw.Equals("critical", StringComparison.OrdinalIgnoreCase) ? "Critical"

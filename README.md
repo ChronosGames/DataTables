@@ -511,31 +511,33 @@ Excel文件格式定义：
 | 4 | `int`, `string`, `Enum<SceneType>`, `string` | 字段类型 |
 | 5+ | 数据行... | 实际数据 |
 
-### 生成的现代化API
+### 索引声明与查询 API
+
+在 A1 表头中使用 `Index=` 声明唯一索引，使用 `Group=` 声明分组索引；组合索引用 `&` 固定字段顺序。生成器会在校验阶段检查字段是否存在、字段类型是否可作为字典 key、唯一索引是否重复，以及组合索引字段顺序是否稳定。
+
+```text
+DTGen=Table, Title=场景表, Class=Scene, Index=Id, Index=Type&Level, Group=Type
+```
+
+生成代码会统一提供以下查询方法：
 
 ```csharp
-// 🎯 生成的高性能静态API (使用优化后的DataTableManager)
+// 唯一索引：Index=Id
+DRScene? row = DTScene.GetById(1001);
+bool ok = DTScene.TryGetById(1001, out DRScene? found);
+bool exists = DTScene.ContainsId(1001);
 
-// 索引查询 - 使用GetCached优化
-public static DRScene? GetDataRowById(int id)
-{
-    var table = DataTableManager.GetCached<DTScene>(); // 缓存优先
-    return table?.m_Dict1.TryGetValue(id, out var result) == true ? result : null;
-}
+// 组合唯一索引：Index=Type&Level，调用参数顺序与声明顺序一致
+DRScene? typed = DTScene.GetByTypeAndLevel(SceneType.Battle, 3);
 
-// 分组查询
-public static List<DRScene>? GetDataRowsGroupByType(SceneType type)
-{
-    var table = DataTableManager.GetCached<DTScene>();
-    return table?.m_Dict2.TryGetValue(type, out var result) == true ? result : null;
-}
+// 分组索引：Group=Type
+IReadOnlyList<DRScene>? scenes = DTScene.GetManyByType(SceneType.Battle);
+bool hasGroup = DTScene.ContainsType(SceneType.Battle);
 
-// 表状态检查
-public static bool IsLoaded => DataTableManager.IsLoaded<DTScene>();
-
-// 表统计信息
-public static int Count => DataTableManager.GetCached<DTScene>()?.Count ?? 0;
+// 兼容旧 API：仍保留 GetDataRowByXxx/GetRowByXxx 与 GetDataRowsGroupByXxx/GetRowsGroupByXxx 别名。
 ```
+
+索引字典在加载过程中使用可变字典构建，加载完成后通过只读字典接口暴露给查询 API，避免运行期查询路径产生额外锁或拷贝。
 
 ### 支持的数据类型
 

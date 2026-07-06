@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using DataTables;
 using FluentAssertions;
@@ -136,6 +137,9 @@ namespace DataTables.Tests
             await Task.Delay(1);
             return CreateMockTableBytes(tableName);
         }
+
+        public ValueTask<byte[]> LoadAsync(string tableName, CancellationToken cancellationToken)
+            => LoadAsync(tableName);
 
         public ValueTask<bool> IsAvailableAsync()
         {

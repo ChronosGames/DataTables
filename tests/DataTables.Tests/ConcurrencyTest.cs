@@ -104,6 +104,9 @@ namespace DataTables.Tests
             return CreateMockTableBytes(tableName);
         }
 
+        public ValueTask<byte[]> LoadAsync(string tableName, CancellationToken cancellationToken)
+            => LoadAsync(tableName);
+
         public ValueTask<bool> IsAvailableAsync()
         {
             return ValueTask.FromResult(true);

@@ -188,7 +188,7 @@ public class ParserTests
 		diagnostic.Cell.Should().Be("A1");
 		diagnostic.Message.Should().Contain("声明值: kv");
 		diagnostic.Message.Should().Contain("支持的类型: column, matrix, table");
-		diagnostic.Message.Should().Contain("预留类型: kv, localized, partitioned, versioned, patch");
+		diagnostic.Message.Should().Contain("预留类型: kv, localized, tree, graph, partitioned, versioned, patch");
 	}
 
 }

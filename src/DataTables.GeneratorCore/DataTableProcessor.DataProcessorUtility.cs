@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace DataTables.GeneratorCore;
@@ -9,6 +11,7 @@ public sealed partial class DataTableProcessor
     private static class DataProcessorUtility
     {
         private static readonly ConcurrentDictionary<string, DataProcessor> s_DataProcessors = new ConcurrentDictionary<string, DataProcessor>(StringComparer.Ordinal);
+        private static readonly List<string> s_SupportedTypeStrings = new();
 
         static DataProcessorUtility()
         {
@@ -31,165 +34,63 @@ public sealed partial class DataTableProcessor
 
                     foreach (string typeString in dataProcessor.GetTypeStrings())
                     {
-                        s_DataProcessors.TryAdd(typeString.ToLowerInvariant(), dataProcessor);
+                        var key = NormalizeCacheKey(typeString);
+                        s_DataProcessors.TryAdd(key, dataProcessor);
+                        if (!s_SupportedTypeStrings.Contains(key, StringComparer.Ordinal))
+                        {
+                            s_SupportedTypeStrings.Add(key);
+                        }
                     }
                 }
             }
+
+            s_SupportedTypeStrings.AddRange(["array<T>", "map<K,V>", "json<T>", "enum<T>", "custom<T>"]);
         }
 
         public static DataProcessor GetDataProcessor(string type)
         {
-            if (type == null)
+            var descriptor = DataTypeParser.Parse(type, GetSupportedTypeStrings());
+            if (s_DataProcessors.TryGetValue(descriptor.NormalizedSignature, out var dataProcessor))
             {
-                type = string.Empty;
-            }
-
-            DataProcessor? dataProcessor;
-            if (s_DataProcessors.TryGetValue(type.ToLowerInvariant(), out dataProcessor))
-            {
+                dataProcessor.TypeDescriptor = descriptor;
                 return dataProcessor;
             }
-            else if (type.StartsWith("enum", StringComparison.InvariantCultureIgnoreCase))
+
+            var name = descriptor.Name.ToLowerInvariant();
+            DataProcessor created = name switch
             {
-                var str1 = FindGenericString(type);
-                if (s_DataProcessors.TryGetValue($"enum<{str1}>", out var abc))
-                {
-                    return abc;
-                }
-                else
-                {
-                    abc = new EnumProcessor(str1);
-                    foreach (var ts in abc.GetTypeStrings())
-                    {
-                        s_DataProcessors.TryAdd(ts, abc);
-                    }
-                    return abc;
-                }
-            }
-            else if (type.StartsWith("array", StringComparison.InvariantCultureIgnoreCase))
+                "enum" => new EnumProcessor(descriptor.Arguments[0].Name),
+                "array" => new ArrayDataProcessor(GetDataProcessor(descriptor.Arguments[0].NormalizedSignature)),
+                "map" => new MapDataProcessor(GetDataProcessor(descriptor.Arguments[0].NormalizedSignature), GetDataProcessor(descriptor.Arguments[1].NormalizedSignature)),
+                "json" => new JSONProcessor(descriptor.Arguments[0].Name),
+                "custom" => new CustomizeProcessor(descriptor.Arguments[0].Name),
+                _ => throw new DataTypeParseException(type ?? string.Empty, 0, "当前支持的类型之一", GetSupportedTypeStrings()),
+            };
+
+            created.TypeDescriptor = descriptor;
+            foreach (var ts in created.GetTypeStrings())
             {
-                var str1 = FindGenericString(type);
-
-                if (s_DataProcessors.TryGetValue($"array<{str1}>", out var abc))
-                {
-                    return abc;
-                }
-                else
-                {
-                    var keyProcessor = GetDataProcessor(str1);
-
-                    abc = new ArrayDataProcessor(keyProcessor);
-                    foreach (var ts in abc.GetTypeStrings())
-                    {
-                        if (s_DataProcessors.ContainsKey(ts))
-                        {
-                            continue;
-                        }
-
-                        s_DataProcessors.TryAdd(ts, abc);
-                    }
-                    return abc;
-                }
+                s_DataProcessors.TryAdd(NormalizeCacheKey(ts), created);
             }
-            else if (type.StartsWith("map", StringComparison.InvariantCultureIgnoreCase))
-            {
-                var str1 = FindGenericString(type);
-
-                var index = FindSplitCharIndex(str1);
-                if (index == -1)
-                {
-                    throw new Exception(string.Format("Not supported data processor type '{0}'.", type));
-                }
-
-                var keyTypeStr = str1.Substring(0, index).Trim();
-                var valueTypeStr = str1.Substring(index + 1).Trim();
-
-                if (s_DataProcessors.TryGetValue($"map<{keyTypeStr},{valueTypeStr}>", out var abc))
-                {
-                    return abc;
-                }
-                else
-                {
-                    var keyProcessor = GetDataProcessor(keyTypeStr);
-                    var valueProcessor = GetDataProcessor(valueTypeStr);
-
-                    abc = new MapDataProcessor(keyProcessor, valueProcessor);
-                    foreach (var ts in abc.GetTypeStrings())
-                    {
-                        s_DataProcessors.TryAdd(ts, abc);
-                    }
-                    return abc;
-                }
-            }
-            else if (type.StartsWith("json", StringComparison.InvariantCultureIgnoreCase))
-            {
-                var str1 = FindGenericString(type);
-
-                if (s_DataProcessors.TryGetValue($"json<{str1}>", out var abc))
-                {
-                    return abc;
-                }
-                else
-                {
-                    abc = new JSONProcessor(str1);
-                    foreach (var ts in abc.GetTypeStrings())
-                    {
-                        s_DataProcessors.TryAdd(ts, abc);
-                    }
-                    return abc;
-                }
-            }
-            else if (type.StartsWith("custom", StringComparison.InvariantCultureIgnoreCase))
-            {
-                var str1 = FindGenericString(type);
-
-                if (s_DataProcessors.TryGetValue($"custom<{str1}>", out var abc))
-                {
-                    return abc;
-                }
-                else
-                {
-                    abc = new CustomizeProcessor(str1);
-                    foreach (var ts in abc.GetTypeStrings())
-                    {
-                        s_DataProcessors.TryAdd(ts, abc);
-                    }
-                    return abc;
-                }
-            }
-
-            throw new Exception(string.Format("Not supported data processor type '{0}'.", type));
+            s_DataProcessors.TryAdd(descriptor.NormalizedSignature, created);
+            return created;
         }
 
-        public static string FindGenericString(string type)
+        public static IReadOnlyList<string> GetSupportedTypeStrings()
         {
-            return type.Substring(type.IndexOf('<') + 1, type.LastIndexOf('>') - type.IndexOf('<') - 1).Trim();
+            return s_SupportedTypeStrings.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
         }
 
-        private static int FindSplitCharIndex(string str1)
+        private static string NormalizeCacheKey(string type)
         {
-            var index = -1;
-            var depth = 0;
-            for (int i = 0; i < str1.Length; i++)
+            try
             {
-                if (str1[i] == '<')
-                {
-                    depth++;
-                    continue;
-                }
-                else if (str1[i] == '>')
-                {
-                    depth--;
-                    continue;
-                }
-                else if (str1[i] == ',' && depth == 0)
-                {
-                    index = i;
-                    break;
-                }
+                return DataTypeParser.NormalizeSignature(type, Array.Empty<string>());
             }
-
-            return index;
+            catch (DataTypeParseException)
+            {
+                return (type ?? string.Empty).Trim().ToLowerInvariant();
+            }
         }
     }
 }

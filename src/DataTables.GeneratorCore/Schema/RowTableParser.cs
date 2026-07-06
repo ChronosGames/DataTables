@@ -55,6 +55,7 @@ public sealed class RowTableParser : ITableSchemaParser
 		{
 			if (field.IsIgnore) continue;
 			field.TypeName = (typeRowObj.GetCell(field.Index)?.GetString() ?? string.Empty).Trim();
+            field.TypeCell = ParserUtils.GetCellAddress(typeRow, field.Index);
 		}
 
 		return typeRow + 1;

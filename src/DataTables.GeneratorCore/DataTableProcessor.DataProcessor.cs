@@ -21,6 +21,12 @@ public sealed partial class DataTableProcessor
             get;
         }
 
+        public DataTypeDescriptor? TypeDescriptor
+        {
+            get;
+            internal set;
+        }
+
         protected string Tabs(int depth)
         {
             return new string(' ', 4 * (depth + 2));

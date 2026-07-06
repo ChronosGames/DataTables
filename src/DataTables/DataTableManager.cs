@@ -728,6 +728,7 @@ namespace DataTables
                 }
 
                 dataTable = LoadDataTableFromBytes(typeNamePair, raw);
+                dataTable.OnLoadCompleted();
                 s_DataTables[typeNamePair] = dataTable;
 
                 // 添加到LRU缓存

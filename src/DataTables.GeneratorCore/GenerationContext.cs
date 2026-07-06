@@ -48,11 +48,20 @@ public class GenerationContext
     /// </summary>
     public XField[] Fields { get; set; } = [];
 
-    /// <summary>按特定字段进行单体索引列表</summary>
+    /// <summary>按特定字段进行唯一索引列表（兼容旧模板/调用点）。</summary>
     public readonly List<string[]> Indexs = [];
 
-    /// <summary>按特定字段进行分组索引列表</summary>
+    /// <summary>按特定字段进行分组索引列表（兼容旧模板/调用点）。</summary>
     public readonly List<string[]> Groups = [];
+
+    /// <summary>明确的唯一索引元数据。</summary>
+    public readonly List<IndexDefinition> IndexDefinitions = [];
+
+    /// <summary>明确的分组索引元数据。</summary>
+    public readonly List<GroupIndexDefinition> GroupIndexDefinitions = [];
+
+    /// <summary>唯一约束元数据；当前由 index= 声明隐式产生。</summary>
+    public readonly List<UniqueConstraint> UniqueConstraints = [];
 
     /// <summary>子表的名称</summary>
     public string Child = string.Empty;
@@ -88,6 +97,45 @@ public class GenerationContext
     /// 导出时是否跳过
     /// </summary>
     public bool Skiped;
+
+
+    public void AddIndex(string[] fields)
+    {
+        var normalized = NormalizeFieldList(fields);
+        Indexs.Add(normalized);
+        IndexDefinitions.Add(new IndexDefinition(normalized));
+        UniqueConstraints.Add(new UniqueConstraint(normalized));
+    }
+
+    public void AddGroup(string[] fields)
+    {
+        var normalized = NormalizeFieldList(fields);
+        Groups.Add(normalized);
+        GroupIndexDefinitions.Add(new GroupIndexDefinition(normalized));
+    }
+
+    public void RefreshIndexDefinitionsFromLegacyLists()
+    {
+        IndexDefinitions.Clear();
+        UniqueConstraints.Clear();
+        foreach (var fields in Indexs)
+        {
+            var normalized = NormalizeFieldList(fields);
+            IndexDefinitions.Add(new IndexDefinition(normalized));
+            UniqueConstraints.Add(new UniqueConstraint(normalized));
+        }
+
+        GroupIndexDefinitions.Clear();
+        foreach (var fields in Groups)
+        {
+            GroupIndexDefinitions.Add(new GroupIndexDefinition(NormalizeFieldList(fields)));
+        }
+    }
+
+    private static string[] NormalizeFieldList(string[] fields)
+    {
+        return fields.Select(x => (x ?? string.Empty).Trim()).Where(x => x.Length > 0).ToArray();
+    }
 
     public XField? GetField(string field)
     {
@@ -191,6 +239,10 @@ public class GenerationContext
         return sb.ToString();
     }
 
+    public string BuildReadOnlyIndexDictDefine(string[] fields) => BuildIndexDictDefine(fields).Replace("Dictionary<", "IReadOnlyDictionary<");
+
+    public string BuildReadOnlyGroupDictDefine(string[] fields) => BuildGroupDictDefine(fields).Replace("Dictionary<", "IReadOnlyDictionary<").Replace(", List<", ", IReadOnlyList<");
+
     public string BuildGroupDictDefine(string[] fields)
     {
         StringBuilder sb = new StringBuilder();
@@ -215,6 +267,17 @@ public class GenerationContext
         return sb.ToString();
     }
 }
+
+public abstract record IndexDefinitionBase(string[] Fields)
+{
+    public string NameSuffix => string.Join("And", Fields);
+}
+
+public sealed record IndexDefinition(string[] Fields) : IndexDefinitionBase(Fields);
+
+public sealed record GroupIndexDefinition(string[] Fields) : IndexDefinitionBase(Fields);
+
+public sealed record UniqueConstraint(string[] Fields);
 
 public class XField(int index)
 {

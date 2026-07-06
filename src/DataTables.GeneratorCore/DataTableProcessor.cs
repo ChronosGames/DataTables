@@ -308,14 +308,14 @@ public sealed partial class DataTableProcessor : IDisposable
                     {
                         var fields = args[1]
                             .Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                        m_Context.Indexs.Add(fields);
+                        m_Context.AddIndex(fields);
                         break;
                     }
                     case "group":
                     {
                         var fields = args[1]
                             .Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                        m_Context.Groups.Add(fields);
+                        m_Context.AddGroup(fields);
                         break;
                     }
                     case "priority":

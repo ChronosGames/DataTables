@@ -9,7 +9,8 @@ namespace DataTables.GeneratorCore;
 internal sealed class DataTableBinaryWriter : IDataTableBinaryWriter
 {
     private const string DATA_TABLE_SIGNATURE = "DTABLE";
-    private const int DATA_TABLE_VERSION = 2;
+    private const int DATA_TABLE_VERSION = 3;
+    private const int DATA_TABLE_FLAGS_NONE = 0;
 
     private readonly GenerationContext m_Context;
     private readonly Func<ISheet, BinaryWriter, int> m_WriteDataRows;
@@ -50,12 +51,15 @@ internal sealed class DataTableBinaryWriter : IDataTableBinaryWriter
 
             binaryWriter.Write(DATA_TABLE_SIGNATURE);
             binaryWriter.Write(DATA_TABLE_VERSION);
+            binaryWriter.Write(DataTableSchemaHash.Compute(m_Context));
+            binaryWriter.Write(GetGeneratorVersion());
+            binaryWriter.Write(m_Context.DataTableClassFullName);
+            long countPosition = fileStream.Position;
             binaryWriter.Write(ushort.MinValue);
+            binaryWriter.Write(DATA_TABLE_FLAGS_NONE);
 
             int dataRowCount = m_WriteDataRows(sheet, binaryWriter);
 
-            byte[] signatureBytes = Encoding.UTF8.GetBytes(DATA_TABLE_SIGNATURE);
-            long countPosition = DataTableProcessor.GetCompactIntSize(signatureBytes.Length) + signatureBytes.Length + sizeof(int);
             fileStream.Seek(countPosition, SeekOrigin.Begin);
             binaryWriter.Write((ushort)dataRowCount);
 
@@ -68,5 +72,10 @@ internal sealed class DataTableBinaryWriter : IDataTableBinaryWriter
             m_Context.Failed = true;
             if (File.Exists(outputFileName)) File.Delete(outputFileName);
         }
+    }
+
+    private static string GetGeneratorVersion()
+    {
+        return typeof(DataTableBinaryWriter).Assembly.GetName().Version?.ToString() ?? string.Empty;
     }
 }

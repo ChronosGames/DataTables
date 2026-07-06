@@ -58,6 +58,7 @@ namespace DataTables.Tests
 
             // Cleanup
             DataTableManager.DisableMemoryManagement();
+            DataTableManager.ClearTableRegistrations();
         }
 
         /// <summary>
@@ -115,6 +116,36 @@ namespace DataTables.Tests
             // Assert
             stats.TableCount.Should().BeGreaterOrEqualTo(0, "应该有统计信息");
             stats.LoadTime.Should().BeGreaterOrEqualTo(0, "加载时间应该有效");
+        }
+
+
+        [Fact]
+        public async Task ExplicitTableRegistrations_ShouldDrivePreheatWithoutReflection()
+        {
+            // Arrange
+            ResetDataTableManager();
+            var loadCount = 0;
+            DataTableManager.RegisterTables(new[]
+            {
+                new TableRegistration(
+                    typeof(MockDataTable),
+                    string.Empty,
+                    Priority.Critical,
+                    _ =>
+                    {
+                        loadCount++;
+                        return ValueTask.FromResult<DataTableBase?>(new MockDataTable(string.Empty, 0));
+                    })
+            });
+
+            // Act
+            var stats = await DataTableManager.PreheatAsync(Priority.Critical);
+
+            // Assert
+            stats.TableCount.Should().Be(1);
+            stats.SuccessCount.Should().Be(1);
+            stats.FailureCount.Should().Be(0);
+            loadCount.Should().Be(1);
         }
 
         /// <summary>
@@ -192,6 +223,7 @@ namespace DataTables.Tests
             DataTableManager.ClearCache();
             DataTableManager.ClearHooks();
             DataTableManager.DisableMemoryManagement();
+            DataTableManager.ClearTableRegistrations();
         }
     }
 

@@ -117,7 +117,7 @@ foreach (var pair in DataTables)
         }
     }
 }
-            this.Write("    };\r\n\r\n    /// <summary>\r\n    /// 预加载所有数据表。\r\n    /// </summary>\r\n    /// <param name=\"onCompleted\">全部数据表预加载完成时回调。</param>\r\n    /// <param name=\"onProgress\">单步加载完成时回调。</param>\r\n    public static void Preload(Action? onCompleted = default, Action<float>? onProgress = default)\r\n    {\r\n        const int total = ");
+            this.Write("    };\r\n\r\n    /// <summary>\r\n    /// Registers this generated table set with DataTableManager for reflection-free preheating.\r\n    /// </summary>\r\n    public static void Register()\r\n    {\r\n        DataTableManager.RegisterTables(TableRegistrations);\r\n    }\r\n\r\n    /// <summary>\r\n    /// 预加载所有数据表。\r\n    /// </summary>\r\n    /// <param name=\"onCompleted\">全部数据表预加载完成时回调。</param>\r\n    /// <param name=\"onProgress\">单步加载完成时回调。</param>\r\n    public static void Preload(Action? onCompleted = default, Action<float>? onProgress = default)\r\n    {\r\n        const int total = ");
             
             this.Write(this.ToStringHelper.ToStringWithCulture(DataTables.Sum(pair => pair.Value.Any() ? pair.Value.Count() : 1)));
             

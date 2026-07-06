@@ -57,6 +57,14 @@ public static class DataTableManagerExtension
 #>    };
 
     /// <summary>
+    /// Registers this generated table set with DataTableManager for reflection-free preheating.
+    /// </summary>
+    public static void Register()
+    {
+        DataTableManager.RegisterTables(TableRegistrations);
+    }
+
+    /// <summary>
     /// 预加载所有数据表。
     /// </summary>
     /// <param name="onCompleted">全部数据表预加载完成时回调。</param>

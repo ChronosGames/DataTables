@@ -78,12 +78,13 @@ namespace DataTables
     /// </summary>
     public sealed class DataSourceManifestEntry
     {
-        public DataSourceManifestEntry(string name, long? length = null, string? version = null, string? hash = null)
+        public DataSourceManifestEntry(string name, long? length = null, string? version = null, string? hash = null, string? sourceName = null)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Length = length;
             Version = version;
             Hash = hash;
+            SourceName = sourceName;
         }
 
         public string Name { get; }
@@ -93,6 +94,11 @@ namespace DataTables
         public string? Version { get; }
 
         public string? Hash { get; }
+
+        /// <summary>
+        /// 提供该条目的数据源名称，用于 fallback/manifest 诊断。
+        /// </summary>
+        public string? SourceName { get; }
     }
 
     /// <summary>

@@ -27,6 +27,11 @@ namespace DataTables
         public string FullName => Type.ToString();
 
         /// <summary>
+        /// 获取生成代码期望的数据表结构哈希；旧生成代码返回 0。
+        /// </summary>
+        public virtual ulong SchemaHash => 0UL;
+
+        /// <summary>
         /// 获取数据表行的类型。
         /// </summary>
         public abstract Type Type

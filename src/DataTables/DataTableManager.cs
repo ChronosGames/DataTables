@@ -120,7 +120,8 @@ namespace DataTables
     /// </summary>
     public static class DataTableManager
     {
-        private const int DataTableVersion = 2;
+        private const int DataTableVersion = 3;
+        private const int LegacyDataTableVersion = 2;
 
         #region InternalFields
 
@@ -607,15 +608,38 @@ namespace DataTables
             }
 
             var readVersion = br.ReadInt32();
-            if (readVersion != DataTableVersion)
+            if (readVersion > DataTableVersion)
             {
-                throw new Exception($"Unsupported data table version {readVersion} for '{typeNamePair}'.");
+                throw new Exception($"Unsupported data table version {readVersion} for '{typeNamePair}'. Current runtime supports up to {DataTableVersion}.");
             }
 
-            var readCount = br.ReadUInt16();
+            ulong schemaHash = 0UL;
+            string tableFullName = typeNamePair.Type.FullName ?? typeNamePair.Type.ToString();
+            int flags = 0;
+            ushort readCount;
+
+            if (readVersion <= LegacyDataTableVersion)
+            {
+                // Legacy format (v1/v2): Signature, FormatVersion, RowCount, followed by row payload.
+                readCount = br.ReadUInt16();
+            }
+            else
+            {
+                // Structured header (v3+): Signature, FormatVersion, SchemaHash, GeneratorVersion, TableFullName, RowCount, Flags.
+                schemaHash = br.ReadUInt64();
+                var generatorVersion = br.ReadString();
+                tableFullName = br.ReadString();
+                readCount = br.ReadUInt16();
+                flags = br.ReadInt32();
+            }
 
             // 尝试使用高性能工厂模式
             var dataTable = CreateDataTableInstance(typeNamePair, readCount);
+
+            if (readVersion > LegacyDataTableVersion)
+            {
+                ValidateStructuredHeader(typeNamePair, dataTable, schemaHash, tableFullName, flags);
+            }
 
             // 检查是否为矩阵表 (DataMatrixBase)
             if (IsMatrixTable(typeNamePair.Type))
@@ -646,6 +670,25 @@ namespace DataTables
             }
 
             return dataTable;
+        }
+
+        private static void ValidateStructuredHeader(TypeNamePair typeNamePair, DataTableBase dataTable, ulong schemaHash, string tableFullName, int flags)
+        {
+            if (flags != 0)
+            {
+                throw new Exception($"Unsupported data table flags 0x{flags:X8} for '{typeNamePair}'. This runtime cannot load compressed, encrypted, or extended payloads marked by these flags.");
+            }
+
+            var expectedFullName = typeNamePair.Type.FullName ?? typeNamePair.Type.ToString();
+            if (!string.Equals(tableFullName, expectedFullName, StringComparison.Ordinal))
+            {
+                throw new Exception($"Data table header mismatch for '{typeNamePair}': .bytes table '{tableFullName}' does not match generated code table '{expectedFullName}'. Regenerate code and data together.");
+            }
+
+            if (dataTable.SchemaHash != 0UL && dataTable.SchemaHash != schemaHash)
+            {
+                throw new Exception($"Data table schema mismatch for '{typeNamePair}': generated code schema hash 0x{dataTable.SchemaHash:X16} does not match .bytes data schema hash 0x{schemaHash:X16}. The generated code and .bytes data are out of sync; regenerate both from the same source table.");
+            }
         }
 
         /// <summary>

@@ -733,3 +733,24 @@ This library is under the MIT License.
 - 📢 向其他开发者推荐
 
 **感谢使用 DataTables！享受现代化高性能的开发体验！** 🚀
+
+## Binary format upgrade and compatibility
+
+Starting with binary format version 3, generated `.bytes` files use a structured header before the row payload:
+
+1. `Signature` (`DTABLE`)
+2. `FormatVersion`
+3. `SchemaHash`
+4. `GeneratorVersion`
+5. `TableFullName`
+6. `RowCount`
+7. `Flags`
+
+The schema hash is calculated during generation from the effective exported schema: table type, table full name, and each non-ignored field's name, type, and order. Runtime loading validates the `.bytes` schema hash against the hash embedded in the generated table class, so a mismatch clearly indicates that the generated C# code and binary data were not produced from the same table schema.
+
+Compatibility window:
+
+* Format versions `1` and `2` remain readable through the legacy path (`Signature`, `FormatVersion`, `RowCount`, then row payload) and do not perform schema-hash validation.
+* Format version `3` and later use the structured header and require schema validation.
+* Runtimes reject files with a format version newer than the maximum version they support. When upgrading format versions, regenerate both the C# table code and `.bytes` assets together, deploy the new runtime first, and keep legacy readers only for the documented compatibility window.
+* `Flags` is reserved for payload features such as compression, encryption, or an embedded default-value table. Unknown non-zero flags are rejected by the runtime until explicit support is added.

@@ -31,6 +31,8 @@ public partial class DataTableTemplate
         if (!string.IsNullOrEmpty(Namespace)) { WL($"namespace {Namespace}"); WL("{"); }
         WL($"public sealed partial class {GenerationContext.DataTableClassName} : DataTable<{GenerationContext.DataRowClassName}>");
         WL("{");
+        WL($"    public override ulong SchemaHash => {DataTableSchemaHash.Compute(GenerationContext)}UL;");
+        WL();
         var dictIndex = 1;
         foreach (var index in GenerationContext.IndexDefinitions)
         {

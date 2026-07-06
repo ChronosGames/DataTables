@@ -8,6 +8,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using DataTables;
 
 #nullable enable
@@ -34,6 +36,25 @@ public static class DataTableManagerExtension
    }
 } #>
     };
+
+    public static IReadOnlyList<TableRegistration> TableRegistrations { get; } = new TableRegistration[]
+    {
+<# foreach (var pair in DataTables)
+{
+    var priority = TablePriorities != null && TablePriorities.TryGetValue(pair.Key, out var configuredPriority) ? configuredPriority : "Normal";
+    if (!pair.Value.Any())
+    {
+        #>        new TableRegistration(typeof(<#=pair.Key#>), string.Empty, Priority.<#= priority #>, async cancellationToken => await DataTableManager.CreateDataTableAsync<<#=pair.Key#>>(string.Empty, cancellationToken)),<#=Environment.NewLine#><#
+    }
+    else
+    {
+        foreach (var name in pair.Value)
+        {
+            #>        new TableRegistration(typeof(<#=pair.Key#>), "<#=name#>", Priority.<#= priority #>, async cancellationToken => await DataTableManager.CreateDataTableAsync<<#=pair.Key#>>("<#=name#>", cancellationToken)),<#=Environment.NewLine#><#
+        }
+    }
+}
+#>    };
 
     /// <summary>
     /// 预加载所有数据表。

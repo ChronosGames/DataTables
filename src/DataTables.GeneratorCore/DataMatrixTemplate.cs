@@ -59,7 +59,9 @@ namespace DataTables.GeneratorCore
             
             #line default
             #line hidden
-            this.Write(">\r\n{\r\n    ");
+            this.Write(">\r\n{\r\n    public override ulong SchemaHash => ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(DataTableSchemaHash.Compute(GenerationContext)));
+            this.Write("UL;\r\n\r\n    ");
             
             this.Write(this.ToStringHelper.ToStringWithCulture(string.IsNullOrEmpty(GenerationContext.MatrixDefaultValue) ? string.Empty : "protected override " + BuildTypeString(kValue) + " DefaultValue => " + BuildTypeValueString(kValue, GenerationContext.MatrixDefaultValue) + ";" + Environment.NewLine));
             

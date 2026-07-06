@@ -175,6 +175,51 @@ DataTableManager.EnableProfiling(stats =>
 });
 ```
 
+### 可组合数据源配置示例
+
+#### 本地包 / StreamingAssets
+
+```csharp
+// 兼容原有 API：本地 .bytes 文件仍可直接使用
+DataTableManager.UseFileSystem("./DataTables");
+
+// Unity 项目可预留 StreamingAssets 入口
+DataTableManager.UseDataSource(
+    new CachedDataSource(
+        new StreamingAssetsDataSource(Application.streamingAssetsPath + "/DataTables")));
+```
+
+#### 远程 CDN
+
+```csharp
+// 兼容原有网络 API
+DataTableManager.UseNetwork("https://cdn.game.com/data");
+
+// 可按需叠加版本、压缩、加密与内存缓存装饰器
+IDataSource cdnSource = new CachedDataSource(
+    new CompressedDataSource(
+        new VersionedDataSource(
+            new NetworkDataSource("https://cdn.game.com/data"),
+            "v42")));
+
+DataTableManager.UseDataSource(cdnSource);
+```
+
+#### 热更新 / 回退链路
+
+```csharp
+// 优先读取热更新 CDN，失败或不存在时回退到随包数据
+var hotUpdate = new VersionedDataSource(
+    new NetworkDataSource("https://cdn.game.com/hotfix"),
+    "2026.07.06");
+
+var builtin = new StreamingAssetsDataSource(Application.streamingAssetsPath + "/DataTables");
+
+DataTableManager.UseCompositeSource(hotUpdate, builtin);
+
+// Addressables 可继承 AddressablesDataSourceBase 后接入项目内的 Addressables.LoadAssetAsync<TextAsset>()。
+```
+
 ---
 
 ## ⚡ 性能优化

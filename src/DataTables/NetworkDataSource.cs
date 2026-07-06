@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DataTables
@@ -19,10 +20,20 @@ namespace DataTables
 
         public DataSourceType SourceType => DataSourceType.Network;
 
-        public async ValueTask<byte[]> LoadAsync(string tableName)
+        public ValueTask<byte[]> LoadAsync(string tableName) => LoadAsync(tableName, CancellationToken.None);
+
+        public async ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken)
         {
-            var url = $"{_baseUrl}/{tableName}.bytes";
-            return await _httpClient.GetByteArrayAsync(url);
+            var url = $"{_baseUrl}/{name}.bytes";
+            return await _httpClient.GetByteArrayAsync(url, cancellationToken);
+        }
+
+        public async ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken)
+        {
+            var url = $"{_baseUrl}/{name}.bytes";
+            using var request = new HttpRequestMessage(HttpMethod.Head, url);
+            var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            return response.IsSuccessStatusCode;
         }
 
         public async ValueTask<bool> IsAvailableAsync()

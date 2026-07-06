@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DataTables
@@ -11,23 +13,54 @@ namespace DataTables
     {
         private readonly string _dataDirectory;
 
-        public DataSourceType SourceType => DataSourceType.FileSystem;
+        public virtual DataSourceType SourceType => DataSourceType.FileSystem;
 
         public FileSystemDataSource(string dataDirectory)
         {
             _dataDirectory = dataDirectory ?? throw new ArgumentNullException(nameof(dataDirectory));
         }
 
-        public async ValueTask<byte[]> LoadAsync(string tableName)
+        public ValueTask<byte[]> LoadAsync(string tableName) => LoadAsync(tableName, CancellationToken.None);
+
+        public async ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken)
         {
-            var filePath = Path.Combine(_dataDirectory, $"{tableName}.bytes");
+            var filePath = GetFilePath(name);
 
             if (!File.Exists(filePath))
             {
                 throw new FileNotFoundException($"数据表文件不存在: {filePath}");
             }
 
-            return await File.ReadAllBytesAsync(filePath);
+            return await File.ReadAllBytesAsync(filePath, cancellationToken);
+        }
+
+        public ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken)
+        {
+#if NET5_0_OR_GREATER
+            return ValueTask.FromResult(File.Exists(GetFilePath(name)));
+#else
+            return new ValueTask<bool>(File.Exists(GetFilePath(name)));
+#endif
+        }
+
+        public ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken)
+        {
+            if (!Directory.Exists(_dataDirectory))
+            {
+                return new ValueTask<DataSourceManifest>(DataSourceManifest.Empty);
+            }
+
+            var entries = Directory.EnumerateFiles(_dataDirectory, "*.bytes", SearchOption.AllDirectories)
+                .Select(path =>
+                {
+                    var relative = Path.GetRelativePath(_dataDirectory, path);
+                    var name = Path.ChangeExtension(relative, null).Replace(Path.DirectorySeparatorChar, '/');
+                    var info = new FileInfo(path);
+                    return new DataSourceManifestEntry(name, info.Length);
+                })
+                .ToArray();
+
+            return new ValueTask<DataSourceManifest>(new DataSourceManifest(entries));
         }
 
         public ValueTask<bool> IsAvailableAsync()
@@ -38,5 +71,7 @@ namespace DataTables
             return new ValueTask<bool>(Directory.Exists(_dataDirectory));
 #endif
         }
+
+        private string GetFilePath(string name) => Path.Combine(_dataDirectory, $"{name}.bytes");
     }
 }

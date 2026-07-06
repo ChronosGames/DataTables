@@ -147,7 +147,25 @@ namespace DataTables
         /// <param name="dataSource">自定义数据源实现</param>
         public static void UseCustomSource(IDataSource dataSource)
         {
-            s_DataSource = dataSource ?? throw new ArgumentNullException(nameof(dataSource));
+            UseDataSource(dataSource);
+        }
+
+        /// <summary>
+        /// 使用指定数据源。
+        /// </summary>
+        /// <param name="source">数据源实现。</param>
+        public static void UseDataSource(IDataSource source)
+        {
+            s_DataSource = source ?? throw new ArgumentNullException(nameof(source));
+        }
+
+        /// <summary>
+        /// 使用多个数据源组成的回退数据源。
+        /// </summary>
+        /// <param name="sources">按优先级排序的数据源列表。</param>
+        public static void UseCompositeSource(params IDataSource[] sources)
+        {
+            s_DataSource = new FallbackDataSource(sources);
         }
 
         /// <summary>
@@ -472,7 +490,7 @@ namespace DataTables
                     return existingTable;
                 }
 
-                var raw = await s_DataSource!.LoadAsync(typeNamePair.ToString());
+                var raw = await s_DataSource!.LoadAsync(typeNamePair.ToString(), cancellationToken);
                 var dataTable = LoadDataTableFromBytes(typeNamePair, raw);
 
                 // 原子性添加到缓存
@@ -512,7 +530,7 @@ namespace DataTables
         {
             try
             {
-                var raw = await s_DataSource!.LoadAsync(typeNamePair.ToString());
+                var raw = await s_DataSource!.LoadAsync(typeNamePair.ToString(), cancellationToken);
                 LoadDataTable(typeNamePair, raw, onCompleted);
             }
             catch (Exception ex)

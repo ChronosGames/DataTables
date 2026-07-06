@@ -26,6 +26,7 @@ internal sealed class CodeTemplateRendererRegistry
             new DataMatrixCodeTemplateRenderer(),
             new DataTableCodeTemplateRenderer("column"),
             new KvTableCodeTemplateRenderer(),
+            new TreeTableCodeTemplateRenderer(),
         ]);
     }
 

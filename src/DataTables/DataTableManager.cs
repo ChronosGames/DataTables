@@ -67,6 +67,10 @@ namespace DataTables
         public readonly long MemoryUsed;  // 内存使用(bytes)
         public readonly int SuccessCount; // 成功加载次数
         public readonly int FailureCount; // 失败加载次数
+        public readonly int CacheHitCount; // 预热时已在缓存中的表数量
+        public readonly int LoadedCount;   // 预热时本次真实加载成功数量
+        public readonly int CanceledCount; // 预热时被取消的表数量
+        public readonly int UnregisteredCount; // 预热时未注册任何表的数量标记（0 或 1）
 
         public LoadStats(long loadTime, int tableCount, long memoryUsed)
             : this(loadTime, tableCount, memoryUsed, tableCount, 0)
@@ -74,12 +78,30 @@ namespace DataTables
         }
 
         public LoadStats(long loadTime, int tableCount, long memoryUsed, int successCount, int failureCount)
+            : this(loadTime, tableCount, memoryUsed, successCount, failureCount, 0, successCount, 0, tableCount == 0 ? 1 : 0)
+        {
+        }
+
+        public LoadStats(
+            long loadTime,
+            int tableCount,
+            long memoryUsed,
+            int successCount,
+            int failureCount,
+            int cacheHitCount,
+            int loadedCount,
+            int canceledCount,
+            int unregisteredCount)
         {
             LoadTime = loadTime;
             TableCount = tableCount;
             MemoryUsed = memoryUsed;
             SuccessCount = successCount;
             FailureCount = failureCount;
+            CacheHitCount = cacheHitCount;
+            LoadedCount = loadedCount;
+            CanceledCount = canceledCount;
+            UnregisteredCount = unregisteredCount;
         }
     }
 
@@ -285,19 +307,21 @@ namespace DataTables
             var memoryBefore = GC.GetTotalMemory(false);
 
             // 使用生成的扩展类导出的表清单进行并发预热
-            var tableCount = GetPreheatTableCount(priority);
-            var loadedCount = await PreheatTablesAsync(priority, cancellationToken);
+            var preheatStats = await PreheatTablesAsync(priority, cancellationToken);
 
             s_Stopwatch.Stop();
             var memoryAfter = GC.GetTotalMemory(false);
 
-            var failureCount = Math.Max(0, tableCount - loadedCount);
             var stats = new LoadStats(
                 s_Stopwatch.ElapsedMilliseconds,
-                tableCount,
+                preheatStats.TableCount,
                 memoryAfter - memoryBefore,
-                loadedCount,
-                failureCount);
+                preheatStats.SuccessCount,
+                preheatStats.FailureCount,
+                preheatStats.CacheHitCount,
+                preheatStats.LoadedCount,
+                preheatStats.CanceledCount,
+                preheatStats.UnregisteredCount);
 
             s_ProfilingHook?.Invoke(stats);
             return stats;
@@ -908,7 +932,43 @@ namespace DataTables
         /// <summary>
         /// 预热指定优先级的表 - 异步版本
         /// </summary>
-        private static async Task<int> PreheatTablesAsync(Priority priorities, CancellationToken cancellationToken = default)
+        private readonly struct PreheatResult
+        {
+            public PreheatResult(bool cacheHit, bool loaded, bool canceled)
+            {
+                CacheHit = cacheHit;
+                Loaded = loaded;
+                Canceled = canceled;
+            }
+
+            public bool CacheHit { get; }
+            public bool Loaded { get; }
+            public bool Canceled { get; }
+            public bool Success => CacheHit || Loaded;
+        }
+
+        private readonly struct PreheatSummary
+        {
+            public PreheatSummary(int tableCount, int cacheHitCount, int loadedCount, int failureCount, int canceledCount, int unregisteredCount)
+            {
+                TableCount = tableCount;
+                CacheHitCount = cacheHitCount;
+                LoadedCount = loadedCount;
+                FailureCount = failureCount;
+                CanceledCount = canceledCount;
+                UnregisteredCount = unregisteredCount;
+            }
+
+            public int TableCount { get; }
+            public int CacheHitCount { get; }
+            public int LoadedCount { get; }
+            public int FailureCount { get; }
+            public int CanceledCount { get; }
+            public int UnregisteredCount { get; }
+            public int SuccessCount => CacheHitCount + LoadedCount;
+        }
+
+        private static async Task<PreheatSummary> PreheatTablesAsync(Priority priorities, CancellationToken cancellationToken = default)
         {
             var registrations = GetGeneratedTableRegistrations()
                 .Where(registration => (priorities & registration.Priority) != 0)
@@ -916,44 +976,39 @@ namespace DataTables
 
             if (registrations.Length == 0)
             {
-                return 0;
+                return new PreheatSummary(0, 0, 0, 0, 0, 1);
             }
 
-            var loadedCount = 0;
             var tasks = registrations.Select(async registration =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (IsRegisteredTableCached(registration))
                 {
-                    return 1;
+                    return new PreheatResult(cacheHit: true, loaded: false, canceled: false);
                 }
 
                 try
                 {
                     var table = await registration.LoadAsync(cancellationToken);
-                    return table != null ? 1 : 0;
+                    return new PreheatResult(cacheHit: false, loaded: table != null, canceled: false);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
-                    throw;
+                    return new PreheatResult(cacheHit: false, loaded: false, canceled: true);
                 }
                 catch
                 {
-                    return 0;
+                    return new PreheatResult(cacheHit: false, loaded: false, canceled: false);
                 }
             });
 
-            foreach (var result in await Task.WhenAll(tasks))
-            {
-                loadedCount += result;
-            }
+            var results = await Task.WhenAll(tasks);
+            var cacheHitCount = results.Count(result => result.CacheHit);
+            var loadedCount = results.Count(result => result.Loaded);
+            var canceledCount = results.Count(result => result.Canceled);
+            var failureCount = results.Length - cacheHitCount - loadedCount - canceledCount;
 
-            return loadedCount;
-        }
-
-        private static int GetPreheatTableCount(Priority priorities)
-        {
-            return GetGeneratedTableRegistrations().Count(registration => (priorities & registration.Priority) != 0);
+            return new PreheatSummary(results.Length, cacheHitCount, loadedCount, failureCount, canceledCount, 0);
         }
 
         private static IReadOnlyList<TableRegistration> GetGeneratedTableRegistrations()

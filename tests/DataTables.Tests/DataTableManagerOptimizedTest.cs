@@ -148,6 +148,54 @@ namespace DataTables.Tests
             loadCount.Should().Be(1);
         }
 
+
+        [Fact]
+        public async Task PreheatAsync_ShouldReportCacheHitsLoadedFailuresAndUnregisteredSeparately()
+        {
+            // Arrange
+            ResetDataTableManager();
+            DataTableManager.UseCustomSource(new FastMockDataSource());
+            await DataTableManager.LoadAsync<MockDataTable>();
+
+            DataTableManager.RegisterTables(new[]
+            {
+                new TableRegistration(typeof(MockDataTable), string.Empty, Priority.Critical, _ =>
+                    ValueTask.FromResult<DataTableBase?>(new MockDataTable(string.Empty, 0))),
+                new TableRegistration(typeof(MockDataTable), "loaded", Priority.Critical, _ =>
+                    ValueTask.FromResult<DataTableBase?>(new MockDataTable("loaded", 0))),
+                new TableRegistration(typeof(MockDataTable), "missing", Priority.Critical, _ =>
+                    ValueTask.FromResult<DataTableBase?>(null))
+            });
+
+            // Act
+            var stats = await DataTableManager.PreheatAsync(Priority.Critical);
+
+            // Assert
+            stats.TableCount.Should().Be(3);
+            stats.CacheHitCount.Should().Be(1);
+            stats.LoadedCount.Should().Be(1);
+            stats.FailureCount.Should().Be(1);
+            stats.CanceledCount.Should().Be(0);
+            stats.UnregisteredCount.Should().Be(0);
+            stats.SuccessCount.Should().Be(2);
+        }
+
+        [Fact]
+        public async Task PreheatAsync_ShouldReportNoRegistrationsWithoutFailure()
+        {
+            // Arrange
+            ResetDataTableManager();
+
+            // Act
+            var stats = await DataTableManager.PreheatAsync(Priority.Critical);
+
+            // Assert
+            stats.TableCount.Should().Be(0);
+            stats.SuccessCount.Should().Be(0);
+            stats.FailureCount.Should().Be(0);
+            stats.UnregisteredCount.Should().Be(1);
+        }
+
         /// <summary>
         /// 测试性能监控
         /// </summary>

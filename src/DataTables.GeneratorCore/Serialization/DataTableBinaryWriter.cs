@@ -6,7 +6,7 @@ using NPOI.SS.UserModel;
 
 namespace DataTables.GeneratorCore;
 
-public sealed class DataTableBinaryWriter : IDataTableBinaryWriter
+internal sealed class DataTableBinaryWriter : IDataTableBinaryWriter
 {
     private const string DATA_TABLE_SIGNATURE = "DTABLE";
     private const int DATA_TABLE_VERSION = 2;

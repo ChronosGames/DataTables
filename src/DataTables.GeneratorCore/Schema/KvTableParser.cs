@@ -54,7 +54,7 @@ public sealed class KvTableParser : ITableSchemaParser
             if (string.IsNullOrEmpty(value)) throw new FormatException($"kv Value 不能为空: {ParserUtils.GetCellAddress(r, valueCol)}");
 
             // 生成期先解析类型，非法类型会在此处暴露。
-            DataProcessorUtility.GetDataProcessor(type);
+            DataTableProcessor.GetLanguageKeyword(new XField(typeCol) { TypeName = type });
 
             fields.Add(new XField(valueCol)
             {

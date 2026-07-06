@@ -9,6 +9,7 @@ public sealed class TableSchemaParserRegistry : ITableSchemaParserRegistry
     private static readonly string[] s_ReservedDataSetTypes =
     [
         "localized",
+        "tree",
         "graph",
         "partitioned",
         "versioned",

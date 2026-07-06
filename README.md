@@ -42,6 +42,7 @@
   - [🏆 性能基准](#-%E6%80%A7%E8%83%BD%E5%9F%BA%E5%87%86)
   - [📜 License](#-license)
   - [🌟 支持项目](#-%E6%94%AF%E6%8C%81%E9%A1%B9%E7%9B%AE)
+  - [Binary format upgrade and compatibility](#binary-format-upgrade-and-compatibility)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 

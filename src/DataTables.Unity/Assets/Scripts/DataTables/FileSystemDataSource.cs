@@ -24,6 +24,7 @@ namespace DataTables
 
         public async ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var filePath = GetFilePath(name);
 
             if (!File.Exists(filePath))

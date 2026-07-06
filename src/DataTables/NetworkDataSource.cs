@@ -25,7 +25,9 @@ namespace DataTables
         public async ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken)
         {
             var url = $"{_baseUrl}/{name}.bytes";
-            return await _httpClient.GetByteArrayAsync(url, cancellationToken);
+            using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadAsByteArrayAsync();
         }
 
         public async ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken)

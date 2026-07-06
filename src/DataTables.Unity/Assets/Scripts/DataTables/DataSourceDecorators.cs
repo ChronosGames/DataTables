@@ -110,6 +110,8 @@ namespace DataTables
     {
         private readonly IReadOnlyList<IDataSource> _sources;
 
+        public string? LastHitSource { get; private set; }
+
         public FallbackDataSource(params IDataSource[] sources) : this((IEnumerable<IDataSource>)sources)
         {
         }
@@ -130,25 +132,31 @@ namespace DataTables
         public async ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken)
         {
             Exception? lastError = null;
+            var failures = new List<string>();
             foreach (var source in _sources)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
+                    var sourceName = GetSourceName(source);
                     if (!await source.ExistsAsync(name, cancellationToken))
                     {
+                        failures.Add($"{sourceName}: not found");
                         continue;
                     }
 
-                    return await source.LoadAsync(name, cancellationToken);
+                    var bytes = await source.LoadAsync(name, cancellationToken);
+                    LastHitSource = sourceName;
+                    return bytes;
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     lastError = ex;
+                    failures.Add($"{GetSourceName(source)}: {ex.Message}");
                 }
             }
 
-            throw new FileNotFoundException($"所有数据源都无法加载: {name}", lastError);
+            throw new FileNotFoundException($"所有数据源都无法加载: {name}. 尝试结果: {string.Join("; ", failures)}", lastError);
         }
 
         public async ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken)
@@ -172,11 +180,22 @@ namespace DataTables
                 var manifest = await source.GetManifestAsync(cancellationToken);
                 foreach (var entry in manifest.Entries)
                 {
-                    entries.TryAdd(entry.Name, entry);
+                    entries.TryAdd(entry.Name, new DataSourceManifestEntry(entry.Name, entry.Length, entry.Version ?? manifest.Version, entry.Hash, GetSourceName(source)));
                 }
             }
 
             return new DataSourceManifest(entries.Values.ToArray());
+        }
+
+        private static string GetSourceName(IDataSource source)
+        {
+            var displayName = source.ToString();
+            if (string.IsNullOrWhiteSpace(displayName) || displayName == source.GetType().FullName)
+            {
+                displayName = source.GetType().Name;
+            }
+
+            return $"{source.SourceType}:{displayName}";
         }
 
         public async ValueTask<bool> IsAvailableAsync()
@@ -197,11 +216,13 @@ namespace DataTables
     {
         private readonly string _version;
         private readonly Func<string, string, string> _nameResolver;
+        private readonly Func<DataSourceManifestEntry, string, DataSourceManifestEntry?> _manifestEntryMapper;
 
-        public VersionedDataSource(IDataSource inner, string version, Func<string, string, string>? nameResolver = null) : base(inner)
+        public VersionedDataSource(IDataSource inner, string version, Func<string, string, string>? nameResolver = null, Func<DataSourceManifestEntry, string, DataSourceManifestEntry?>? manifestEntryMapper = null) : base(inner)
         {
             _version = version ?? throw new ArgumentNullException(nameof(version));
             _nameResolver = nameResolver ?? ((name, version) => $"{version}/{name}");
+            _manifestEntryMapper = manifestEntryMapper ?? MapDefaultVersionedEntry;
         }
 
         public override ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken) => Inner.LoadAsync(_nameResolver(name, _version), cancellationToken);
@@ -211,7 +232,28 @@ namespace DataTables
         public override async ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken)
         {
             var manifest = await Inner.GetManifestAsync(cancellationToken);
-            return new DataSourceManifest(manifest.Entries, _version);
+            var entries = manifest.Entries
+                .Select(entry => _manifestEntryMapper(entry, _version))
+                .Where(entry => entry != null)
+                .Select(entry => entry!)
+                .ToArray();
+            return new DataSourceManifest(entries, _version);
+        }
+
+        private static DataSourceManifestEntry? MapDefaultVersionedEntry(DataSourceManifestEntry entry, string version)
+        {
+            var prefix = version.TrimEnd('/') + "/";
+            if (!entry.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            return new DataSourceManifestEntry(
+                entry.Name.Substring(prefix.Length),
+                entry.Length,
+                entry.Version ?? version,
+                entry.Hash,
+                entry.SourceName);
         }
     }
 }

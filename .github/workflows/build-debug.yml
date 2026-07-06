@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ChronosGames/Actions/.github/actions/setup-dotnet@main
       - run: dotnet build -c Debug
+      - run: ./scripts/verify-unity-runtime-sync.sh
+      - run: git diff --exit-code -- src/DataTables.Unity/Assets/Scripts/DataTables
       - run: dotnet test -c Debug --no-build
 
   build-unity:

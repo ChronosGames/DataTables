@@ -73,7 +73,7 @@ DTGameConfig.EnablePvp
 
 ### `graph`
 
-`graph` 计划用于节点与边组成的图结构配置，例如关卡拓扑、科技依赖、传送网络和状态机。完整原型设计见 [graph 表类型设计](graph-table-design.md)。
+`graph` 已支持单 Sheet 边列表格式，用于节点与边组成的图结构配置，例如关卡拓扑、科技依赖、传送网络和状态机。必需字段为 `EdgeId`、`From` 和 `To`，生成器会内建 `EdgeId` 唯一索引以及 `From` / `To` 分组索引，并生成 `GetEdge`、`TryGetEdge`、`GetOutgoingEdges`、`GetIncomingEdges`、`GetNeighbors` 和节点存在性查询 API。完整说明见 [graph 表类型设计](graph-table-design.md)。
 
 ### 其他预留名称
 

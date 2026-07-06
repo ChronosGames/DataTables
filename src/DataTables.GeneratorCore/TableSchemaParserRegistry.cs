@@ -10,7 +10,6 @@ public sealed class TableSchemaParserRegistry : ITableSchemaParserRegistry
     [
         "localized",
         "tree",
-        "graph",
         "partitioned",
         "versioned",
         "patch"
@@ -36,7 +35,8 @@ public sealed class TableSchemaParserRegistry : ITableSchemaParserRegistry
             new MatrixTableParser(),
             new ColumnTableParser(),
             new KvTableParser(),
-            new TreeTableParser()
+            new TreeTableParser(),
+            new GraphTableParser()
         ]);
     }
 

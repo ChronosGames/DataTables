@@ -83,6 +83,40 @@ namespace DataTables.GeneratorCore
 
    }
 } 
+            this.Write("    };\r\n\r\n    public static IReadOnlyList<TableRegistration> TableRegistrations { get; } = new TableRegistration[]\r\n    {\r\n");
+foreach (var pair in DataTables)
+{
+    var priority = TablePriorities != null && TablePriorities.TryGetValue(pair.Key, out var configuredPriority) ? configuredPriority : "Normal";
+    if (!pair.Value.Any())
+    {
+            this.Write("        new TableRegistration(typeof(");
+            this.Write(this.ToStringHelper.ToStringWithCulture(pair.Key));
+            this.Write("), string.Empty, Priority.");
+            this.Write(this.ToStringHelper.ToStringWithCulture(priority));
+            this.Write(", async cancellationToken => await DataTableManager.CreateDataTableAsync<");
+            this.Write(this.ToStringHelper.ToStringWithCulture(pair.Key));
+            this.Write(">(string.Empty, cancellationToken)),");
+            this.Write(this.ToStringHelper.ToStringWithCulture(Environment.NewLine));
+    }
+    else
+    {
+        foreach (var name in pair.Value)
+        {
+            this.Write("        new TableRegistration(typeof(");
+            this.Write(this.ToStringHelper.ToStringWithCulture(pair.Key));
+            this.Write("), \"");
+            this.Write(this.ToStringHelper.ToStringWithCulture(name));
+            this.Write("\", Priority.");
+            this.Write(this.ToStringHelper.ToStringWithCulture(priority));
+            this.Write(", async cancellationToken => await DataTableManager.CreateDataTableAsync<");
+            this.Write(this.ToStringHelper.ToStringWithCulture(pair.Key));
+            this.Write(">(\"");
+            this.Write(this.ToStringHelper.ToStringWithCulture(name));
+            this.Write("\", cancellationToken)),");
+            this.Write(this.ToStringHelper.ToStringWithCulture(Environment.NewLine));
+        }
+    }
+}
             this.Write("    };\r\n\r\n    /// <summary>\r\n    /// 预加载所有数据表。\r\n    /// </summary>\r\n    /// <param name=\"onCompleted\">全部数据表预加载完成时回调。</param>\r\n    /// <param name=\"onProgress\">单步加载完成时回调。</param>\r\n    public static void Preload(Action? onCompleted = default, Action<float>? onProgress = default)\r\n    {\r\n        const int total = ");
             
             this.Write(this.ToStringHelper.ToStringWithCulture(DataTables.Sum(pair => pair.Value.Any() ? pair.Value.Count() : 1)));

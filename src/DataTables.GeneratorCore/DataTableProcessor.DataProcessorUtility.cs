@@ -8,7 +8,7 @@ namespace DataTables.GeneratorCore;
 
 public sealed partial class DataTableProcessor
 {
-    private static class DataProcessorUtility
+    internal static class DataProcessorUtility
     {
         private static readonly ConcurrentDictionary<string, DataProcessor> s_DataProcessors = new ConcurrentDictionary<string, DataProcessor>(StringComparer.Ordinal);
         private static readonly List<string> s_SupportedTypeStrings = new();

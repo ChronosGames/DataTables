@@ -152,8 +152,12 @@ namespace DataTables.Tests
             using var bw = new System.IO.BinaryWriter(ms);
 
             bw.Write("DTABLE");  // 签名
-            bw.Write(2);         // 版本
+            bw.Write(3);         // 版本
+            bw.Write(1UL);       // SchemaHash
+            bw.Write("test");   // GeneratorVersion
+            bw.Write(tableName); // TableFullName
             bw.Write(ushort.MinValue); // 数据行数
+            bw.Write(0);         // Flags
 
             return ms.ToArray();
         }

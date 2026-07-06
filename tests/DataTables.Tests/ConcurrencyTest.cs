@@ -118,8 +118,12 @@ namespace DataTables.Tests
             using var bw = new System.IO.BinaryWriter(ms);
 
             bw.Write("DTABLE");  // 签名
-            bw.Write(2);         // 版本
+            bw.Write(3);         // 版本
+            bw.Write(1UL);       // SchemaHash
+            bw.Write("test");   // GeneratorVersion
+            bw.Write(tableName); // TableFullName
             bw.Write(ushort.MinValue); // 数据行数
+            bw.Write(0);         // Flags
 
             return ms.ToArray();
         }
@@ -127,16 +131,22 @@ namespace DataTables.Tests
 
     public class MockDataTable : DataTable<MockDataRow>
     {
+        public override ulong SchemaHash => 1UL;
+
         public MockDataTable(string name, int capacity) : base(name, capacity) { }
     }
 
     public class MockDataTable2 : DataTable<MockDataRow>
     {
+        public override ulong SchemaHash => 1UL;
+
         public MockDataTable2(string name, int capacity) : base(name, capacity) { }
     }
 
     public class MockDataTable3 : DataTable<MockDataRow>
     {
+        public override ulong SchemaHash => 1UL;
+
         public MockDataTable3(string name, int capacity) : base(name, capacity) { }
     }
 

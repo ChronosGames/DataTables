@@ -89,8 +89,17 @@ namespace DataTables.Tests
             // 读取版本
             int version = br.ReadInt32();
             version.Should().BeGreaterThan(0);
-            // 读取行数 7-bit 编码
+            // 读取结构化 header
+            ulong schemaHash = br.ReadUInt64();
+            string generatorVersion = br.ReadString();
+            string tableFullName = br.ReadString();
             int rowCount = br.ReadUInt16();
+            int flags = br.ReadInt32();
+
+            schemaHash.Should().NotBe(0UL);
+            generatorVersion.Should().NotBeNull();
+            tableFullName.Should().Be("DataTables.Tests.Generated.DTItemConfig");
+            flags.Should().Be(0);
             // 示例中：三条数据（1001/1002/1003）
             rowCount.Should().Be(3);
         }

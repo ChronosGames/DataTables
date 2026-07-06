@@ -8,7 +8,6 @@ public sealed class TableSchemaParserRegistry : ITableSchemaParserRegistry
 {
     private static readonly string[] s_ReservedDataSetTypes =
     [
-        "kv",
         "localized",
         "tree",
         "graph",
@@ -35,7 +34,8 @@ public sealed class TableSchemaParserRegistry : ITableSchemaParserRegistry
         [
             new RowTableParser(),
             new MatrixTableParser(),
-            new ColumnTableParser()
+            new ColumnTableParser(),
+            new KvTableParser()
         ]);
     }
 

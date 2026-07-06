@@ -298,6 +298,9 @@ public sealed partial class DataTableProcessor : IDisposable
                     case "class":
                         m_Context.ClassName = args[1].Trim();
                         break;
+                    case "namespace":
+                        m_Context.Namespace = args[1].Trim();
+                        break;
                     case "disabletagsfilter":
                         m_Context.DisableTagsFilter = bool.Parse(args[1].Trim());
                         break;
@@ -468,6 +471,24 @@ public sealed partial class DataTableProcessor : IDisposable
     private int WriteDataRows(ISheet sheet, BinaryWriter writer)
     {
         int dataRowCount = 0;
+
+        if (m_Context.DataSetType == "kv")
+        {
+            foreach (var field in m_Context.Fields.Where(x => !x.IsIgnore))
+            {
+                var processor = GetDataProcessorWithDiagnostics(field);
+                try
+                {
+                    processor.WriteToStream(writer, field.Note);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception($"解析 kv 配置 {field.Name} 的值时出错: {field.Note}", e);
+                }
+            }
+
+            return 1;
+        }
 
         if (m_Context.DataSetType == "column")
         {

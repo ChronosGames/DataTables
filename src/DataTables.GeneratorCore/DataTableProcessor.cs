@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using NPOI.SS.UserModel;
@@ -468,9 +469,94 @@ public sealed partial class DataTableProcessor : IDisposable
         new DataTableBinaryWriter(m_Context, WriteDataRows).GenerateDataFile(filePath, outputDir, forceOverwrite, sheet, logger);
     }
 
+    private void ValidateTreeRows(ISheet sheet)
+    {
+        var idField = m_Context.GetField("Id") ?? throw new InvalidOperationException("DTGen=tree 缺少 Id 字段");
+        var parentField = m_Context.GetField("ParentId") ?? throw new InvalidOperationException("DTGen=tree 缺少 ParentId 字段");
+        var orderField = m_Context.GetField("Order");
+        var nodes = new Dictionary<string, (string ParentId, int Row)>(StringComparer.Ordinal);
+
+        for (int i = m_FirstDataRowIndex; i <= sheet.LastRowNum; i++)
+        {
+            var row = sheet.GetRow(i);
+            if (!IgnoreDataRow(row))
+            {
+                continue;
+            }
+
+            var id = GetCellString(row!.GetCell(idField.Index));
+            var parentId = GetCellString(row.GetCell(parentField.Index));
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                throw new FormatException($"DTGen=tree Id 为空: row={i + 1}, cell={GetRowColString(i, idField.Index)}");
+            }
+
+            if (!nodes.TryAdd(id, (parentId, i)))
+            {
+                throw new FormatException($"DTGen=tree Id 重复: nodeId={id}, row={i + 1}, cell={GetRowColString(i, idField.Index)}");
+            }
+
+            if (orderField != null)
+            {
+                var orderText = GetCellString(row.GetCell(orderField.Index));
+                if (!string.IsNullOrWhiteSpace(orderText) && !decimal.TryParse(orderText, out _))
+                {
+                    throw new FormatException($"DTGen=tree Order 不是合法数字: nodeId={id}, row={i + 1}, cell={GetRowColString(i, orderField.Index)}, value={orderText}");
+                }
+            }
+        }
+
+        foreach (var (id, node) in nodes)
+        {
+            if (string.IsNullOrEmpty(node.ParentId))
+            {
+                continue;
+            }
+
+            if (!nodes.ContainsKey(node.ParentId))
+            {
+                throw new FormatException($"DTGen=tree ParentId 引用不存在: nodeId={id}, parentId={node.ParentId}, row={node.Row + 1}");
+            }
+        }
+
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+        var visiting = new HashSet<string>(StringComparer.Ordinal);
+        var path = new List<string>();
+        foreach (var id in nodes.Keys)
+        {
+            Visit(id);
+        }
+
+        void Visit(string id)
+        {
+            if (visited.Contains(id)) return;
+            if (!visiting.Add(id))
+            {
+                var start = path.IndexOf(id);
+                var cycle = start >= 0 ? path.Skip(start).Concat(new[] { id }) : new[] { id, id };
+                throw new FormatException($"DTGen=tree 检测到循环引用: {string.Join(" -> ", cycle)}");
+            }
+
+            path.Add(id);
+            var parentId = nodes[id].ParentId;
+            if (!string.IsNullOrEmpty(parentId) && nodes.ContainsKey(parentId))
+            {
+                Visit(parentId);
+            }
+            path.RemoveAt(path.Count - 1);
+            visiting.Remove(id);
+            visited.Add(id);
+        }
+    }
+
     private int WriteDataRows(ISheet sheet, BinaryWriter writer)
     {
         int dataRowCount = 0;
+
+        if (m_Context.DataSetType == "tree")
+        {
+            ValidateTreeRows(sheet);
+        }
 
         if (m_Context.DataSetType == "kv")
         {

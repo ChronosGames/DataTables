@@ -9,7 +9,6 @@ public sealed class TableSchemaParserRegistry : ITableSchemaParserRegistry
     private static readonly string[] s_ReservedDataSetTypes =
     [
         "localized",
-        "tree",
         "graph",
         "partitioned",
         "versioned",
@@ -35,7 +34,8 @@ public sealed class TableSchemaParserRegistry : ITableSchemaParserRegistry
             new RowTableParser(),
             new MatrixTableParser(),
             new ColumnTableParser(),
-            new KvTableParser()
+            new KvTableParser(),
+            new TreeTableParser()
         ]);
     }
 

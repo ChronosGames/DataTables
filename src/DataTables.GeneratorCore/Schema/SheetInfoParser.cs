@@ -17,6 +17,7 @@ internal static class SheetInfoParser
                     case "dtgen": context.DataSetType = args[1].Trim().ToLower(); break;
                     case "title": context.Title = args[1].Trim(); break;
                     case "class": context.ClassName = args[1].Trim(); break;
+                    case "namespace": context.Namespace = args[1].Trim(); break;
                     case "disabletagsfilter": context.DisableTagsFilter = bool.Parse(args[1].Trim()); break;
                     case "index": context.AddIndex(args[1].Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)); break;
                     case "group": context.AddGroup(args[1].Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)); break;

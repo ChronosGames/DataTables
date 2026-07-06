@@ -13,6 +13,8 @@ namespace DataTables.GeneratorCore;
 
 public sealed class DataTableGenerator
 {
+    private static readonly CodeTemplateRendererRegistry s_CodeTemplateRendererRegistry = CodeTemplateRendererRegistry.CreateDefault();
+
     private readonly ConcurrentDictionary<string, object> m_Locks;
 
     public DataTableGenerator()
@@ -285,17 +287,12 @@ public sealed class DataTableGenerator
 
     void GenerateCodeFile(GenerationContext context, string outputDir, bool forceOverwrite, ILogger logger)
     {
-        // 生成代码文件
-        if (context.DataSetType == "matrix")
+        if (!s_CodeTemplateRendererRegistry.TryGetRenderer(context.DataSetType, out var renderer))
         {
-            var dataRowTemplate = new DataMatrixTemplate(context);
-            logger.Debug(WriteToFile(outputDir, context.DataRowClassName + ".cs", dataRowTemplate.TransformText(), forceOverwrite));
+            throw new InvalidOperationException($"未注册 DTGen={context.DataSetType} 的代码生成模板。");
         }
-        else
-        {
-            var dataRowTemplate = new DataTableTemplate(context);
-            logger.Debug(WriteToFile(outputDir, context.DataRowClassName + ".cs", dataRowTemplate.TransformText(), forceOverwrite));
-        }
+
+        logger.Debug(WriteToFile(outputDir, context.DataRowClassName + ".cs", renderer.TransformText(context), forceOverwrite));
     }
 
     static string NormalizeNewLines(string content)

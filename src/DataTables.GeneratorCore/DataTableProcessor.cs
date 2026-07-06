@@ -549,6 +549,56 @@ public sealed partial class DataTableProcessor : IDisposable
         }
     }
 
+    private void ValidateGraphRows(ISheet sheet)
+    {
+        var edgeIdField = m_Context.GetField("EdgeId") ?? throw new InvalidOperationException("DTGen=graph 缺少 EdgeId 字段");
+        var fromField = m_Context.GetField("From") ?? throw new InvalidOperationException("DTGen=graph 缺少 From 字段");
+        var toField = m_Context.GetField("To") ?? throw new InvalidOperationException("DTGen=graph 缺少 To 字段");
+        var weightField = m_Context.GetField("Weight");
+        var edgeIds = new HashSet<string>(StringComparer.Ordinal);
+
+        for (int i = m_FirstDataRowIndex; i <= sheet.LastRowNum; i++)
+        {
+            var row = sheet.GetRow(i);
+            if (!IgnoreDataRow(row))
+            {
+                continue;
+            }
+
+            var edgeId = GetCellString(row!.GetCell(edgeIdField.Index));
+            var from = GetCellString(row.GetCell(fromField.Index));
+            var to = GetCellString(row.GetCell(toField.Index));
+            if (string.IsNullOrWhiteSpace(edgeId))
+            {
+                throw new FormatException($"DTGen=graph EdgeId 为空: row={i + 1}, cell={GetRowColString(i, edgeIdField.Index)}");
+            }
+
+            if (!edgeIds.Add(edgeId))
+            {
+                throw new FormatException($"DTGen=graph EdgeId 重复: edgeId={edgeId}, row={i + 1}, cell={GetRowColString(i, edgeIdField.Index)}");
+            }
+
+            if (string.IsNullOrWhiteSpace(from))
+            {
+                throw new FormatException($"DTGen=graph From 为空: edgeId={edgeId}, row={i + 1}, cell={GetRowColString(i, fromField.Index)}");
+            }
+
+            if (string.IsNullOrWhiteSpace(to))
+            {
+                throw new FormatException($"DTGen=graph To 为空: edgeId={edgeId}, row={i + 1}, cell={GetRowColString(i, toField.Index)}");
+            }
+
+            if (weightField != null)
+            {
+                var weightText = GetCellString(row.GetCell(weightField.Index));
+                if (!string.IsNullOrWhiteSpace(weightText) && !decimal.TryParse(weightText, out _))
+                {
+                    throw new FormatException($"DTGen=graph Weight 不是合法数字: edgeId={edgeId}, row={i + 1}, cell={GetRowColString(i, weightField.Index)}, value={weightText}");
+                }
+            }
+        }
+    }
+
     private int WriteDataRows(ISheet sheet, BinaryWriter writer)
     {
         int dataRowCount = 0;
@@ -556,6 +606,11 @@ public sealed partial class DataTableProcessor : IDisposable
         if (m_Context.DataSetType == "tree")
         {
             ValidateTreeRows(sheet);
+        }
+
+        if (m_Context.DataSetType == "graph")
+        {
+            ValidateGraphRows(sheet);
         }
 
         if (m_Context.DataSetType == "kv")

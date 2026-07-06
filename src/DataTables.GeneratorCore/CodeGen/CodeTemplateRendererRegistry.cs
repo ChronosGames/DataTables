@@ -27,6 +27,7 @@ internal sealed class CodeTemplateRendererRegistry
             new DataTableCodeTemplateRenderer("column"),
             new KvTableCodeTemplateRenderer(),
             new TreeTableCodeTemplateRenderer(),
+            new GraphTableCodeTemplateRenderer(),
         ]);
     }
 

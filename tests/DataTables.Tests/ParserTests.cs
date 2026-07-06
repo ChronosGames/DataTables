@@ -165,6 +165,7 @@ public class ParserTests
 		new MatrixTableParser().DataSetType.Should().Be("matrix");
 		new ColumnTableParser().DataSetType.Should().Be("column");
 		new KvTableParser().DataSetType.Should().Be("kv");
+		new GraphTableParser().DataSetType.Should().Be("graph");
 	}
 
 	[Fact]
@@ -188,8 +189,50 @@ public class ParserTests
 		diagnostic.Sheet.Should().Be("UnknownSheet");
 		diagnostic.Cell.Should().Be("A1");
 		diagnostic.Message.Should().Contain("声明值: unknown");
-		diagnostic.Message.Should().Contain("支持的类型: column, kv, matrix, table");
-		diagnostic.Message.Should().Contain("预留类型: localized, tree, graph, partitioned, versioned, patch");
+		diagnostic.Message.Should().Contain("支持的类型: column, graph, kv, matrix, table, tree");
+		diagnostic.Message.Should().Contain("预留类型: localized, tree, partitioned, versioned, patch");
+	}
+
+	[Fact]
+	public void GraphTableParser_Should_Add_BuiltIn_Edge_Indexes()
+	{
+		var wb = new XSSFWorkbook();
+		var sh = wb.CreateSheet("Graph");
+		var r0 = sh.CreateRow(0); r0.CreateCell(0).SetCellValue("dtgen=graph,class=LevelGraph");
+		var r1 = sh.CreateRow(1); r1.CreateCell(0).SetCellValue("边Id"); r1.CreateCell(1).SetCellValue("起点"); r1.CreateCell(2).SetCellValue("终点"); r1.CreateCell(3).SetCellValue("权重");
+		var r2 = sh.CreateRow(2); r2.CreateCell(0).SetCellValue("EdgeId"); r2.CreateCell(1).SetCellValue("From"); r2.CreateCell(2).SetCellValue("To"); r2.CreateCell(3).SetCellValue("Weight");
+		var r3 = sh.CreateRow(3); r3.CreateCell(0).SetCellValue("string"); r3.CreateCell(1).SetCellValue("string"); r3.CreateCell(2).SetCellValue("string"); r3.CreateCell(3).SetCellValue("");
+
+		var ctx = new GenerationContext { SheetName = "Graph" };
+		var parser = new GraphTableParser();
+		var next = parser.Parse(new NpoiSheetReader(sh), ctx, new ParseOptions(), new DiagnosticsCollector());
+
+		next.Should().Be(4);
+		ctx.Indexs.Should().ContainSingle(x => x.SequenceEqual(new[] { "EdgeId" }));
+		ctx.Groups.Should().Contain(x => x.SequenceEqual(new[] { "From" }));
+		ctx.Groups.Should().Contain(x => x.SequenceEqual(new[] { "To" }));
+		ctx.GetField("Weight")!.TypeName.Should().Be("float");
+	}
+
+	[Fact]
+	public void GraphTableTemplate_Should_Emit_Graph_Query_Api()
+	{
+		var ctx = new GenerationContext { ClassName = "LevelGraph", DataSetType = "graph" };
+		ctx.Fields = new[]
+		{
+			new XField(0) { Name = "EdgeId", TypeName = "string" },
+			new XField(1) { Name = "From", TypeName = "string" },
+			new XField(2) { Name = "To", TypeName = "string" },
+		};
+		ctx.AddIndex(new[] { "EdgeId" });
+		ctx.AddGroup(new[] { "From" });
+		ctx.AddGroup(new[] { "To" });
+
+		var code = new GraphTableTemplate(ctx).TransformText();
+
+		code.Should().Contain("public LevelGraph? GetEdge(string edgeId)");
+		code.Should().Contain("public IReadOnlyList<LevelGraph> GetOutgoingEdges(string nodeId)");
+		code.Should().Contain("public IReadOnlyList<string> GetNeighbors(string nodeId)");
 	}
 
 }

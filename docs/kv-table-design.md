@@ -1,14 +1,14 @@
 # kv 表类型设计
 
-`kv` 是计划中的键值配置表类型，面向全局参数、功能开关、少量散列配置和不适合拆成多行记录的小型配置集合。本文档仅描述原型设计；在实现完成前，当前生成器仍应对 `DTGen=kv` 给出“预留类型”诊断，而不是生成代码或数据。
+`kv` 是已实现的键值配置表类型，面向全局参数、功能开关、少量散列配置和不适合拆成多行记录的小型配置集合。当前生成器会解析 `DTGen=kv`，生成强类型静态属性，并提供 `TryGetValue<T>` / `GetValue<T>` 动态读取 API。
 
 ## 目标
 
 - 用统一格式表达全局参数和功能开关，避免为少量配置创建大量只有一行的数据表。
 - 复用现有 DataTables 类型系统，支持基础类型、枚举、数组、JSON 和自定义类型。
 - 生成强类型只读属性，减少业务代码中的字符串 key 查询。
-- 在生成期发现重复 key、非法类型和非法 value，降低运行时排错成本。
-- 保持 `DataTableProcessor` 编排路径稳定，通过注册新的 parser、validator、writer 和模板扩展实现。
+- 在生成期发现重复 key、非法成员名、非法类型和不可写出的非法 value，降低运行时排错成本。
+- 保持 `DataTableProcessor` 编排路径稳定，通过已注册的 parser 和模板扩展实现。
 
 ## 推荐 Excel 格式
 
@@ -23,7 +23,7 @@
 
 推荐约定：
 
-- `Key` 必填、唯一，并且应是合法 C# 成员名；如果允许点号或短横线，生成器必须提供确定性的成员名转换规则。
+- `Key` 必填、唯一，并且必须匹配 `^[A-Za-z][A-Za-z0-9_]*$`；当前不会把点号、短横线等字符转换为成员名。
 - `Type` 必填，语法与普通字段类型保持一致。
 - `Value` 必填；如果业务确实需要空值，应通过显式 nullable 或约定默认值表达。
 - `Comment` 可选，只用于说明，不进入运行时 payload。
@@ -44,7 +44,7 @@ DTGen=kv,class=GameConfig,namespace=Game.DataTables
 
 ## 生成代码形态
 
-推荐生成只读静态属性或只读实例属性，具体取决于项目现有表访问模式。示例：
+当前实现会为每个 key 生成同名只读静态属性。示例：
 
 ```csharp
 var maxLevel = DTGameConfig.MaxLevel;
@@ -52,18 +52,19 @@ var enablePvp = DTGameConfig.EnablePvp;
 var rewards = DTGameConfig.DefaultRewards;
 ```
 
-当需要保留动态访问能力时，可以额外生成：
+当前实现还会生成动态访问 API：
 
 ```csharp
-DTGameConfig.TryGetValue("MaxLevel", out var value);
-DTGameConfig.GetValue<int>("MaxLevel");
+var table = DataTableManager.GetDataTable<DTGameConfig>();
+table?.TryGetValue("MaxLevel", out int? value);
+table?.GetValue<int>("MaxLevel");
 ```
 
 动态访问 API 只作为工具或兼容场景使用；业务代码应优先使用强类型属性。
 
 ## 类型与值解析
 
-`kv` 应复用现有 `DataTypeParser` 和各类型 `DataProcessor`：
+`kv` 复用现有字段类型解析和各类型 `DataProcessor`：
 
 - 基础类型：`int`、`long`、`float`、`double`、`bool`、`string` 等。
 - 枚举：按现有 enum 类型处理规则解析。
@@ -72,29 +73,27 @@ DTGameConfig.GetValue<int>("MaxLevel");
 - JSON：例如 `json<GameConfig>`。
 - 自定义类型：例如 `custom<MyStruct>`，由项目注册的处理器负责。
 
-生成器应在写出 `.bytes` 前完成 value 解析和校验，避免运行时首次加载时才发现格式错误。
+生成器会在解析阶段检查类型声明是否合法；具体 value 会作为内部单行数据在后续写出流程中按声明类型处理。
 
-## 校验规则
+## 当前校验规则
 
 ### 必须报错
 
 - `Key` 为空。
 - `Key` 重复。
-- `Key` 无法转换为合法生成成员名，且没有配置显式别名。
+- `Key` 不匹配 `^[A-Za-z][A-Za-z0-9_]*$`。
 - `Type` 为空或不是受支持类型。
 - `Value` 不能按 `Type` 成功解析。
-- JSON value 不是合法 JSON，或不能映射到声明的 JSON 目标类型。
 
-### 可以警告
+### 后续可增强
 
-- `Key` 命名不符合项目推荐风格。
-- `Comment` 为空。
-- `Value` 使用了兼容模式才允许的旧格式。
-- 动态访问 key 与生成属性名发生大小写或符号归一化冲突。
+- 更细粒度地报告 JSON value 与声明目标类型不匹配。
+- 支持项目自定义 key 命名风格警告。
+- 支持显式别名或符号归一化策略。
 
-## 诊断要求
+## 诊断信息
 
-诊断应使用结构化格式，并至少包含：
+当前重复 key 的错误消息会同时指出首次出现行和重复出现行。后续结构化诊断可进一步包含：
 
 - severity
 - file
@@ -106,32 +105,28 @@ DTGameConfig.GetValue<int>("MaxLevel");
 - errorCode
 - message
 
-重复 key 的错误消息应同时指出首次出现行和重复出现行，便于策划直接定位 Excel。
 
-## 二进制 payload 建议
+## 二进制 payload
 
-kv payload 可以采用确定性顺序写出：
+当前实现把 kv 字段转换为内部单行数据，复用现有表写出流程。后续如需独立 kv payload，可采用确定性顺序写出：
 
 1. 按 Excel 行顺序或按 key 排序写出条目；推荐默认保持 Excel 行顺序，便于诊断和 diff。
 2. 每个条目写出 key、类型签名和 value payload。
 3. 结构化 header 继续使用 v3 header、schema hash、generator version、table full name 和 flags。
 
-如果最终生成代码只使用强类型属性，运行时也应保留 key 到 value 的元数据，方便调试工具和兼容 API 查询。
+如果后续引入独立 kv payload，可保留 key 到 value 的元数据，方便调试工具和兼容 API 查询。
 
 ## 与索引和预热的关系
 
 - kv 表不需要普通行表索引；`Key` 本身就是唯一键。
-- kv 表应参与显式表注册和 `PreheatAsync`，以便服务端或客户端启动时提前校验配置。
-- 预热失败应暴露具体 key 和 value 解析错误，而不是只报告表加载失败。
+- kv 表可参与显式表注册和 `PreheatAsync`，以便服务端或客户端启动时提前加载配置。
+- 预热失败会暴露表加载失败；后续可增强为报告具体 key 和 value 解析错误。
 
-## 实现步骤建议
+## 后续实现建议
 
-1. 新增 `KvTableParser`，从固定列 `Key`、`Type`、`Value`、`Comment` 解析 kv schema。
-2. 新增 `KvTableValidator`，实现 key 唯一性、成员名、类型和值校验。
-3. 新增 kv serialization plan 或 writer，避免把 kv payload 写出逻辑放进 `DataTableProcessor`。
-4. 新增 kv 代码生成模板，输出强类型属性和可选动态访问 API。
-5. 为 `DTGen=kv` 注册 parser、validator、writer 和模板。
-6. 增加 kv 正常生成、重复 key、非法类型、非法 value、嵌套类型和 JSON 的测试。
+1. 新增更完整的 `KvTableValidator`，统一实现 value 解析诊断。
+2. 如有需要，新增 kv serialization plan 或 writer，避免未来把特殊 payload 写出逻辑放进 `DataTableProcessor`。
+3. 增加 kv 正常生成、重复 key、非法类型、非法 value、嵌套类型和 JSON 的测试。
 
 ## 非目标
 

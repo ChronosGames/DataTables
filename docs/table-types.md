@@ -4,6 +4,8 @@
 
 ## 已支持类型
 
+当前代码中的默认解析器注册了 `table`、`matrix`、`column`、`kv`、`tree` 和 `graph`；代码模板也为这些类型提供生成器。
+
 ### `table`
 
 面向行的数据表。每一行数据都会生成一个行对象，并且可以参与索引构建。
@@ -34,13 +36,9 @@
 - 更便于编辑器填写的小型配置表
 - 字段较多、说明列较多或本地化列较多的小表
 
-## 预留原型类型
-
-解析器注册表会有意预留部分类型名称。这样项目使用尚未实现的表类型时，可以得到明确诊断，而不是静默回退到 `table` 语义。
-
 ### `kv`
 
-`kv` 计划用于全局参数、功能开关和少量散列配置。完整原型设计见 [kv 表类型设计](kv-table-design.md)。推荐 Excel 结构如下：
+`kv` 已支持用于全局参数、功能开关和少量散列配置。完整说明见 [kv 表类型设计](kv-table-design.md)。当前实现要求 `Key`、`Type`、`Value` 三列，并可选 `Comment` 列；每条配置会生成一行内部数据，生成表类会暴露同名静态属性以及动态读取 API。推荐 Excel 结构如下：
 
 | Key | Type | Value | Comment |
 | --- | --- | --- | --- |
@@ -49,31 +47,37 @@
 | DropRates | array<int> | 1,2,3 | 示例数组值 |
 | ExtraJson | json<GameConfig> | {"foo":1} | JSON 载荷 |
 
-计划生成的强类型 API 形态：
+已生成的强类型 API 形态：
 
 ```csharp
 DTGameConfig.MaxLevel
 DTGameConfig.EnablePvp
+DataTableManager.GetDataTable<DTGameConfig>()?.GetValue<int>("MaxLevel")
+DataTableManager.GetDataTable<DTGameConfig>()?.TryGetValue("EnablePvp", out bool? enablePvp)
 ```
 
-计划校验规则：
+当前校验与生成规则：
 
-- `Key` 必须唯一，并且必须是合法的生成成员名。
-- `Type` 复用普通字段的 DataTables 类型解析器。
-- `Value` 在写出 `.bytes` 前必须使用所选类型处理器完成校验。
-- 严格模式下，重复 key 和非法 value 应报告为生成错误；兼容模式可以把部分发现降级为警告。
-
-### `localized`
-
-`localized` 计划用于多语言文本资源。详细设计见 [localized 表类型设计](localized-table-design.md)。
+- `Key` 必须唯一，并且必须匹配合法 C# 成员名格式 `^[A-Za-z][A-Za-z0-9_]*$`。
+- `Type` 必填，并会复用普通字段的 DataTables 类型解析器做类型合法性检查。
+- `Value` 必填，并作为生成出的内部单行数据参与后续写出。
+- `Comment` 可选；存在时用作生成属性的 XML 摘要。
 
 ### `tree`
 
-`tree` 计划用于树形层级配置，例如章节、任务链、技能树和菜单结构。完整原型设计见 [tree 表类型设计](tree-table-design.md)。
+`tree` 已支持用于树形层级配置，例如章节、任务链、技能树和菜单结构。完整说明见 [tree 表类型设计](tree-table-design.md)。当前实现复用普通行表格式，要求 `Id` 和 `ParentId` 字段，并会内建 `Id` 唯一索引以及 `ParentId` 分组索引；生成表类会提供根节点、子节点、父节点和深度优先遍历 API。
 
 ### `graph`
 
 `graph` 已支持单 Sheet 边列表格式，用于节点与边组成的图结构配置，例如关卡拓扑、科技依赖、传送网络和状态机。必需字段为 `EdgeId`、`From` 和 `To`，生成器会内建 `EdgeId` 唯一索引以及 `From` / `To` 分组索引，并生成节点集合、边查询、入边/出边、关联边、前驱/后继、两点边、路径、BFS 遍历和节点存在性查询 API。完整说明见 [graph 表类型设计](graph-table-design.md)。
+
+## 预留原型类型
+
+解析器注册表会有意预留部分类型名称。这样项目使用尚未实现的表类型时，可以得到明确诊断，而不是静默回退到 `table` 语义。
+
+### `localized`
+
+`localized` 计划用于多语言文本资源，目前还不是已实现的表生成器。详细设计见 [localized 表类型设计](localized-table-design.md)。
 
 ### 其他预留名称
 

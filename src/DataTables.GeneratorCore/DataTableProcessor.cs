@@ -67,41 +67,7 @@ public sealed partial class DataTableProcessor : IDisposable
 
     public void CreateGenerationContext(ISheet sheet)
     {
-        var sw = Stopwatch.StartNew();
-        // 定位首个有效行并解析表头
-        int headerRowIndex = ParserUtils.GetFirstValidRowIndex(sheet);
-        if (headerRowIndex == -1)
-        {
-            m_Diagnostics.Warn(m_Context.FileName, m_Context.SheetName, string.Empty, "未找到有效表头行");
-            return;
-        }
-
-        var headerRow = sheet.GetRow(headerRowIndex);
-        ParseSheetInfoRow(GetCellString(headerRow.GetCell(headerRow.FirstCellNum)));
-
-        // A1 未声明 DTGen=，该 Sheet 不是 DataTables 格式，静默跳过
-        if (string.IsNullOrEmpty(m_Context.DataSetType))
-        {
-            return;
-        }
-
-        // 按模式选择解析器
-        ITableSchemaParser parser = m_Context.DataSetType == "matrix"
-            ? new MatrixTableParser()
-            : m_Context.DataSetType == "column" ? new ColumnTableParser() : new RowTableParser();
-        // 使用抽象 Reader 包装 NPOI Sheet
-        int nextIndex = parser.Parse(new NpoiSheetReader(sheet), m_Context, m_Options, m_Diagnostics);
-        if (nextIndex == -1)
-        {
-            m_Diagnostics.Warn(m_Context.FileName, m_Context.SheetName, string.Empty, "表头或字段信息不完整，解析终止");
-            return;
-        }
-
-        // 不同模式的 nextIndex 语义不同；column 返回字段起始行，其余返回数据起始行
-        m_FirstDataRowIndex = m_Context.DataSetType == "column" ? nextIndex : nextIndex;
-
-        sw.Stop();
-        m_Diagnostics.GetMetrics(m_Context.FileName, m_Context.SheetName).ParseElapsedMs += sw.ElapsedMilliseconds;
+        m_FirstDataRowIndex = new TableSchemaService(m_Context, m_Options, m_Diagnostics).CreateGenerationContext(sheet);
     }
 
     private static bool ValidRow(IRow? row)
@@ -263,89 +229,7 @@ public sealed partial class DataTableProcessor : IDisposable
 
     public bool ValidateGenerationContext()
     {
-        if (string.IsNullOrEmpty(m_Context.ClassName))
-        {
-            return false;
-        }
-
-        // 是否存在有效列
-        if (m_Context.Fields.All(x => x.IsIgnore))
-        {
-            return false;
-        }
-
-        if (m_FirstDataRowIndex == -1)
-        {
-            throw new Exception("表格头部信息不全");
-        }
-
-        // 规范化并检查索引配置（大小写不敏感匹配到实际字段名）
-        var fieldMap = m_Context.Fields
-            .Where(f => !string.IsNullOrEmpty(f.Name))
-            .GroupBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
-
-        for (int idx = 0; idx < m_Context.Indexs.Count; idx++)
-        {
-            var index = m_Context.Indexs[idx];
-            for (int i = 0; i < index.Length; i++)
-            {
-                var rawName = (index[i] ?? string.Empty).Trim();
-                if (!fieldMap.TryGetValue(rawName, out var field))
-                {
-                    // 检查是否存在但被忽略的字段
-                    var ignoredField = m_Context.Fields.FirstOrDefault(f =>
-                        string.Equals(f.Name, rawName, StringComparison.OrdinalIgnoreCase) ||
-                        (!string.IsNullOrEmpty(f.Title) && string.Equals(f.Title, rawName, StringComparison.OrdinalIgnoreCase)));
-
-                    if (ignoredField != null && ignoredField.IsIgnore)
-                    {
-                        var reason = ignoredField.IsTagFiltered ? $"因标签过滤被忽略（当前过滤标签: {m_Options.FilterColumnTags}）" :
-                                   ignoredField.IsComment ? "为注释列被忽略" : "被忽略";
-                        throw new Exception($"Index配置引用了被忽略的字段: {rawName} ({reason})。请调整标签过滤参数或修改Index配置。");
-                    }
-
-                    var available = string.Join(", ", m_Context.Fields.Where(f => !string.IsNullOrEmpty(f.Name)).Select(f => f.Name));
-                    throw new Exception($"Index配置中发现不存在的字段: {rawName}. 可用字段: [{available}]");
-                }
-                if (field.IsIgnore)
-                {
-                    var reason = field.IsTagFiltered ? $"因标签过滤被忽略（当前过滤标签: {m_Options.FilterColumnTags}）" : field.IsComment ? "为注释列被忽略" : "被忽略";
-                    throw new Exception($"Index配置引用了被忽略的字段: {rawName} ({reason})。请调整标签过滤参数或修改Index配置。");
-                }
-                // 用实际字段名回填，确保后续代码生成一致
-                if (!string.Equals(index[i], field.Name, StringComparison.Ordinal))
-                {
-                    index[i] = field.Name;
-                }
-            }
-        }
-
-        // 规范化并检查分组配置（大小写不敏感匹配到实际字段名）
-        for (int g = 0; g < m_Context.Groups.Count; g++)
-        {
-            var group = m_Context.Groups[g];
-            for (int i = 0; i < group.Length; i++)
-            {
-                var rawName = (group[i] ?? string.Empty).Trim();
-                if (!fieldMap.TryGetValue(rawName, out var field))
-                {
-                    var available = string.Join(", ", m_Context.Fields.Where(f => !string.IsNullOrEmpty(f.Name)).Select(f => f.Name));
-                    throw new Exception($"Group配置中发现不存在的字段: {rawName}. 可用字段: [{available}]");
-                }
-                if (field.IsIgnore)
-                {
-                    var reason = field.IsTagFiltered ? "(因标签过滤被忽略)" : field.IsComment ? "(为注释列被忽略)" : "(被忽略)";
-                    throw new Exception($"Group配置引用了被忽略的字段: {rawName} {reason}");
-                }
-                if (!string.Equals(group[i], field.Name, StringComparison.Ordinal))
-                {
-                    group[i] = field.Name;
-                }
-            }
-        }
-
-        return true;
+        return new TableSchemaValidator(m_Context, m_Options).Validate(m_FirstDataRowIndex);
     }
 
     private void ValidateFormulaCellString(ICell cell, string value)
@@ -580,71 +464,7 @@ public sealed partial class DataTableProcessor : IDisposable
 
     internal void GenerateDataFile(string filePath, string outputDir, bool forceOverwrite, ISheet sheet, ILogger logger)
     {
-        int startTickCount = Environment.TickCount;
-        string outputFileName = Path.Combine(outputDir, m_Context.GetDataOutputFilePath());
-
-        // 判断是否存在配置表变更（以修改时间为准），若不存在则直接跳过
-        if (!forceOverwrite)
-        {
-            var processPath = Process.GetCurrentProcess().MainModule!.FileName;
-            var processLastWriteTime = File.GetLastWriteTime(processPath);
-            var excelLastWriteTime = File.GetLastWriteTime(filePath);
-
-            if (File.Exists(outputFileName))
-            {
-                var dataLastWriteTime = File.GetLastWriteTime(outputFileName);
-                if (dataLastWriteTime > excelLastWriteTime && dataLastWriteTime > processLastWriteTime)
-                {
-                    // 标记为跳过
-                    m_Context.Skiped = true;
-
-                    logger.Debug("  > Generate {0}.bytes to: {1} (skiped) - {2}ms", m_Context.DataRowClassName, outputFileName, Environment.TickCount - startTickCount);
-                    return;
-                }
-            }
-        }
-
-        try
-        {
-            using var fileStream = new FileStream(outputFileName, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true);
-            using var binaryWriter = new BinaryWriter(fileStream, Encoding.UTF8, leaveOpen: true);
-
-            // 写入数据表签名
-            binaryWriter.Write(DATA_TABLE_SIGNATURE);
-
-            // 写入数据表版本
-            binaryWriter.Write(DATA_TABLE_VERSION);
-
-            // 写入行数占位
-            binaryWriter.Write(ushort.MinValue);
-
-            // 写入数据集
-            int dataRowCount = WriteDataRows(sheet, binaryWriter);
-
-            // 重写行数 (跳过签名和版本，定位到行数位置)
-            // String写入格式: 7BitEncodedInt(length) + UTF8字节
-            byte[] signatureBytes = Encoding.UTF8.GetBytes(DATA_TABLE_SIGNATURE);
-            long countPosition = GetCompactIntSize(signatureBytes.Length) + signatureBytes.Length + sizeof(int);
-            fileStream.Seek(countPosition, SeekOrigin.Begin);
-            binaryWriter.Write((ushort)dataRowCount);
-
-            logger.Debug("  > Generate {0}.bytes to: {1}. - {2}ms", m_Context.DataRowClassName, outputFileName, Environment.TickCount - startTickCount);
-        }
-        catch (Exception exception)
-        {
-            // 记录出错日志
-            logger.Error("  > Generate {0}.bytes failure, exception is '{1}'. - {2}ms", m_Context.DataRowClassName, exception, Environment.TickCount - startTickCount);
-            Console.ResetColor();
-
-            // 记录出错的情况
-            m_Context.Failed = true;
-
-            // 删除旧文件
-            if (File.Exists(outputFileName))
-            {
-                File.Delete(outputFileName);
-            }
-        }
+        new DataTableBinaryWriter(m_Context, WriteDataRows).GenerateDataFile(filePath, outputDir, forceOverwrite, sheet, logger);
     }
 
     private int WriteDataRows(ISheet sheet, BinaryWriter writer)
@@ -955,7 +775,7 @@ public sealed partial class DataTableProcessor : IDisposable
     /// <summary>
     /// 计算7BitEncodedInt编码后的字节数
     /// </summary>
-    private static int GetCompactIntSize(int value)
+    internal static int GetCompactIntSize(int value)
     {
         if (value < 0x80) return 1;
         if (value < 0x4000) return 2;

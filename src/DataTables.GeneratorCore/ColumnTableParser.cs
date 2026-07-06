@@ -5,6 +5,8 @@ namespace DataTables.GeneratorCore;
 
 public sealed class ColumnTableParser : ITableSchemaParser
 {
+    public string DataSetType => "column";
+
     public int Parse(ISheetReader sheet, GenerationContext context, ParseOptions options, DiagnosticsCollector diagnostics)
 	{
         int header = DataTables.GeneratorCore.Reader.ReaderParserUtils.GetFirstValidRowIndex(sheet);

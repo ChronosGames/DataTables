@@ -4,6 +4,8 @@ namespace DataTables.GeneratorCore;
 
 public sealed class MatrixTableParser : ITableSchemaParser
 {
+    public string DataSetType => "matrix";
+
     public int Parse(ISheetReader sheet, GenerationContext context, ParseOptions options, DiagnosticsCollector diagnostics)
 	{
         int header = DataTables.GeneratorCore.Reader.ReaderParserUtils.GetFirstValidRowIndex(sheet);

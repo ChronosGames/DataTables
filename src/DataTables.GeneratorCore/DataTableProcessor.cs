@@ -19,6 +19,8 @@ public sealed partial class DataTableProcessor : IDisposable
     private readonly IFormulaEvaluator m_FormulaEvaluator;
     private readonly string m_Tags;
     private readonly ParseOptions m_Options;
+    private static readonly ITableSchemaParserRegistry s_TableSchemaParserRegistry = TableSchemaParserRegistry.CreateDefault();
+
     private readonly DiagnosticsCollector m_Diagnostics;
 
     /// <summary>
@@ -85,10 +87,18 @@ public sealed partial class DataTableProcessor : IDisposable
             return;
         }
 
-        // 按模式选择解析器
-        ITableSchemaParser parser = m_Context.DataSetType == "matrix"
-            ? new MatrixTableParser()
-            : m_Context.DataSetType == "column" ? new ColumnTableParser() : new RowTableParser();
+        if (!s_TableSchemaParserRegistry.TryGetParser(m_Context.DataSetType, out var parser))
+        {
+            var supportedTypes = string.Join(", ", s_TableSchemaParserRegistry.SupportedDataSetTypes);
+            var reservedTypes = string.Join(", ", s_TableSchemaParserRegistry.ReservedDataSetTypes);
+            m_Diagnostics.Error(
+                m_Context.FileName,
+                m_Context.SheetName,
+                "A1",
+                $"未知 DTGen 类型。文件: {m_Context.FileName}, Sheet: {m_Context.SheetName}, 声明值: {m_Context.DataSetType}, 支持的类型: {supportedTypes}, 预留类型: {reservedTypes}");
+            return;
+        }
+
         // 使用抽象 Reader 包装 NPOI Sheet
         int nextIndex = parser.Parse(new NpoiSheetReader(sheet), m_Context, m_Options, m_Diagnostics);
         if (nextIndex == -1)

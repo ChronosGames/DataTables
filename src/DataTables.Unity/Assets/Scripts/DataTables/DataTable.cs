@@ -309,7 +309,7 @@ namespace DataTables
 
         internal override void AddDataRow(int index, DataRowBase dataRow)
         {
-            InternalAddDataRow(index, (T)dataRow);
+            InternalAddDataRow(index, (T)(object)dataRow);
         }
 
         protected virtual void InternalAddDataRow(int index, T dataRow)

@@ -271,7 +271,40 @@ DataTableManagerExtension.Register();
 
 - 设计文档明确格式、生成代码形态、运行时查询 API。
 
-#### C4. 确认 tree 表生成 API、索引约束与数据校验规则
+#### C4. 冻结 `graph` 表生成 API、索引约束与校验规范
+
+背景设计参考：`docs/graph-table-design.md`。在进入实现前，需要先冻结 `graph` 表的生成 API、索引约束与校验规范，避免 parser、validator、template 与文档在后续实现中各自演进。
+
+需要确认的生成 API：
+
+- 节点集合查询。
+- 出边、入边、关联边查询。
+- 前驱、后继、邻居查询。
+- 两点边查询。
+- `HasEdge` / `HasPath`。
+- `FindPath`。
+- BFS 遍历。
+- `TryGetEdge` / edge id 查询。
+
+需要确认的索引约束：
+
+- `EdgeId` 为内建唯一索引。
+- `From` / `To` 为分组索引。
+- 节点集合是否始终由 `From` / `To` 自动推导。
+
+需要确认的校验规则：
+
+- `EdgeId`、`From`、`To` 不能为空。
+- `EdgeId` 不能重复。
+- `Weight` 字段如存在必须可解析为数字。
+- 是否允许自环、重边、孤立节点、无向图语义。
+
+**验收标准：**
+
+- API 命名和返回类型在实现前冻结。
+- 文档、parser、validator、template 的行为一致。
+- 后续实现不得在 `DataTableProcessor` 主流程中继续追加 graph 专用分支。
+#### C5. 确认 tree 表生成 API、索引约束与数据校验规则
 
 背景设计参考：`docs/tree-table-design.md`。
 

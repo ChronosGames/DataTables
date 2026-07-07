@@ -60,7 +60,7 @@ namespace DataTables
         /// </summary>
         /// <param name="index">将要增加的数据表行的索引值。</param>
         /// <param name="dataRow">已反序列化的数据行。</param>
-        internal abstract void AddDataRow(int index, DataRowBase dataRow);
+        internal virtual void AddDataRow(int index, DataRowBase dataRow) => throw new NotSupportedException();
 
         /// <summary>
         /// 配置表加载完成

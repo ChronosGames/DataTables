@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using DataTables;
@@ -96,6 +98,44 @@ public class DataSourcePipelineTests
         manifest.Entries.Single(entry => entry.Name == "Item").Version.Should().Be("v2.1");
     }
 
+    [Fact]
+    public async Task NetworkDataSource_IsAvailableAsync_Should_Probe_Manifest_With_Head_Then_Get_Fallback()
+    {
+        var handler = new RecordingHandler(request => request.Method == HttpMethod.Head
+            ? new HttpResponseMessage(HttpStatusCode.MethodNotAllowed)
+            : new HttpResponseMessage(HttpStatusCode.OK));
+        var source = new NetworkDataSource(
+            "https://cdn.example.com/data/",
+            "health.txt",
+            TimeSpan.FromSeconds(1),
+            new HttpClient(handler));
+
+        var available = await source.IsAvailableAsync(CancellationToken.None);
+
+        available.Should().BeTrue();
+        handler.Requests.Select(request => (request.Method, request.RequestUri!.ToString())).Should().Equal(
+            (HttpMethod.Head, "https://cdn.example.com/data/health.txt"),
+            (HttpMethod.Get, "https://cdn.example.com/data/health.txt"));
+    }
+
+    [Fact]
+    public async Task NetworkDataSource_IsAvailableAsync_Should_Respect_CancellationToken()
+    {
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+        var handler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var source = new NetworkDataSource(
+            "https://cdn.example.com/data",
+            "manifest.json",
+            TimeSpan.FromSeconds(1),
+            new HttpClient(handler));
+
+        var act = async () => await source.IsAvailableAsync(cts.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        handler.Requests.Should().BeEmpty();
+    }
+
     private sealed class StubDataSource : IDataSource
     {
         private readonly string _name;
@@ -135,5 +175,24 @@ public class DataSourcePipelineTests
         public ValueTask<bool> IsAvailableAsync() => new ValueTask<bool>(true);
 
         public override string ToString() => _name;
+    }
+
+    private sealed class RecordingHandler : HttpMessageHandler
+    {
+        private readonly Func<HttpRequestMessage, HttpResponseMessage> _responseFactory;
+
+        public RecordingHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory)
+        {
+            _responseFactory = responseFactory;
+        }
+
+        public List<HttpRequestMessage> Requests { get; } = new();
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Requests.Add(request);
+            return Task.FromResult(_responseFactory(request));
+        }
     }
 }

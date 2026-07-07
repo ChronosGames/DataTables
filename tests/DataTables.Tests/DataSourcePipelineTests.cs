@@ -44,6 +44,39 @@ public class DataSourcePipelineTests
     }
 
     [Fact]
+    public async Task HashValidatedDataSource_Should_Verify_Decoded_Payload_Before_Returning()
+    {
+        var manifest = new DataSourceManifest(new[]
+        {
+            new DataSourceManifestEntry("Config", hash: "039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81")
+        });
+        var source = new HashValidatedDataSource(new StubDataSource("cdn", true), manifest);
+
+        var bytes = await source.LoadAsync("Config", CancellationToken.None);
+
+        bytes.Should().Equal(1, 2, 3);
+    }
+
+    [Fact]
+    public async Task HashValidatedDataSource_Should_Reject_Mismatch_And_Uppercase_Hash()
+    {
+        var mismatch = new HashValidatedDataSource(
+            new StubDataSource("cdn", true),
+            new[] { new DataSourceManifestEntry("Config", hash: "139058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81") });
+        var uppercase = new HashValidatedDataSource(
+            new StubDataSource("cdn", true),
+            new[] { new DataSourceManifestEntry("Config", hash: "039058C6F2C0CB492C533B0A4D14EF77CC0F78ABCCCED5287D84A1A2011CFB81") });
+
+        var mismatchAct = async () => await mismatch.LoadAsync("Config", CancellationToken.None);
+        var uppercaseAct = async () => await uppercase.LoadAsync("Config", CancellationToken.None);
+
+        await mismatchAct.Should().ThrowAsync<InvalidDataException>()
+            .WithMessage("*Hash validation failed*");
+        await uppercaseAct.Should().ThrowAsync<InvalidDataException>()
+            .WithMessage("*hex-lowercase*");
+    }
+
+    [Fact]
     public async Task VersionedDataSource_Should_Filter_And_Map_Manifest_To_Logical_Names()
     {
         var inner = new StubDataSource(

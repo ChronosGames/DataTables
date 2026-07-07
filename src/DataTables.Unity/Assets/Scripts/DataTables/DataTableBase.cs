@@ -51,6 +51,13 @@ namespace DataTables
         public abstract bool ParseDataRow(int index, BinaryReader reader);
 
         /// <summary>
+        /// 将已反序列化的数据行添加到指定索引。
+        /// </summary>
+        /// <param name="index">将要增加的数据表行的索引值。</param>
+        /// <param name="dataRow">已反序列化的数据行。</param>
+        internal abstract void AddDataRow(int index, DataRowBase dataRow);
+
+        /// <summary>
         /// 配置表加载完成
         /// <para>可重载该方法以便自定义一些额外的操作</para>
         /// </summary>

@@ -229,27 +229,34 @@ DataTableManagerExtension.Register();
 - 策划可以直接根据错误定位 Excel 行。
 - 运行时不再是唯一发现重复索引的地方。
 
-#### C2. 新增 `kv` 表类型原型
+#### C2. Issue：完善 `kv` 表类型原型实现与测试覆盖
 
-`kv` 用于全局参数和开关配置，推荐格式：
+**标题：** 完善 kv 表类型原型实现与测试覆盖
 
-| Key | Type | Value | Comment |
-| --- | --- | --- | --- |
-| MaxLevel | int | 100 | 最大等级 |
-| EnablePvp | bool | true | 是否开启 PVP |
+**背景引用：** [`docs/kv-table-design.md`](kv-table-design.md)。
 
-生成代码可以是强类型属性：
+`kv` 面向全局参数、功能开关和少量散列配置。现有格式、生成代码形态、校验规则与非目标以上述设计文档为准，本 issue 负责把它从阶段路线图条目拆成可独立排期、实现和验收的工作项。
 
-```csharp
-DTGameConfig.MaxLevel
-DTGameConfig.EnablePvp
-```
+**实施范围：**
+
+- 补齐或独立化 `KvTableValidator`，让 key、type、value 相关错误能走清晰的 kv 校验路径，并为后续结构化诊断预留字段。
+- 明确是否需要独立的 kv serialization plan / writer；若继续复用内部单行数据写出，也需要在文档中说明边界，避免未来把特殊 payload 逻辑硬编码进 `DataTableProcessor`。
+- 增加测试覆盖：
+  - 正常生成。
+  - 重复 key。
+  - 非法类型。
+  - 非法 value。
+  - 嵌套类型。
+  - JSON value。
+- 确认生成 API 同时包含：
+  - 强类型静态属性，例如 `DTGameConfig.MaxLevel`。
+  - 动态读取 API：`TryGetValue<T>` / `GetValue<T>`。
 
 **验收标准：**
 
-- `DTGen=kv` 被注册表识别。
-- 支持基础类型、enum、array、json。
-- 文档给出 Excel 示例。
+- `DTGen=kv` 的 parser、validator、template 注册路径清晰，新增或调整代码时能从注册点追踪到解析、校验和生成模板。
+- 不在 `DataTableProcessor` 主流程新增硬编码分支；kv 只能通过 parser / validator / serialization plan 或 writer / template 等扩展点接入。
+- 文档、测试、诊断信息保持一致：`docs/kv-table-design.md` 中声明的规则需要有对应测试或明确的后续增强说明，错误消息应与文档描述一致。
 
 #### C3. 评审 `localized` 表类型职责边界与设计方案
 
@@ -272,6 +279,70 @@ DTGameConfig.EnablePvp
 - 形成明确的职责边界结论。
 - 保持 `DTGen=localized` 在实现前仍为预留类型诊断。
 - 评审通过后再创建后续 parser / validator / template 实现 issue。
+
+#### C4. 冻结 `graph` 表生成 API、索引约束与校验规范
+
+背景设计参考：`docs/graph-table-design.md`。在进入实现前，需要先冻结 `graph` 表的生成 API、索引约束与校验规范，避免 parser、validator、template 与文档在后续实现中各自演进。
+
+需要确认的生成 API：
+
+- 节点集合查询。
+- 出边、入边、关联边查询。
+- 前驱、后继、邻居查询。
+- 两点边查询。
+- `HasEdge` / `HasPath`。
+- `FindPath`。
+- BFS 遍历。
+- `TryGetEdge` / edge id 查询。
+
+需要确认的索引约束：
+
+- `EdgeId` 为内建唯一索引。
+- `From` / `To` 为分组索引。
+- 节点集合是否始终由 `From` / `To` 自动推导。
+
+需要确认的校验规则：
+
+- `EdgeId`、`From`、`To` 不能为空。
+- `EdgeId` 不能重复。
+- `Weight` 字段如存在必须可解析为数字。
+- 是否允许自环、重边、孤立节点、无向图语义。
+
+**验收标准：**
+
+- API 命名和返回类型在实现前冻结。
+- 文档、parser、validator、template 的行为一致。
+- 后续实现不得在 `DataTableProcessor` 主流程中继续追加 graph 专用分支。
+#### C5. 确认 tree 表生成 API、索引约束与数据校验规则
+
+背景设计参考：`docs/tree-table-design.md`。
+
+需要确认的生成 API：
+
+- 根节点集合。
+- `GetById` / `TryGetById`。
+- `GetChildrenStatic`。
+- `GetParentStatic`。
+- 深度优先遍历 API。
+
+需要确认的索引约束：
+
+- `Id` 为内建唯一索引。
+- `ParentId` 为分组索引。
+- 是否允许多个根节点。
+
+需要确认的数据校验规则：
+
+- `Id` 不能为空。
+- `Id` 不能重复。
+- `ParentId` 引用必须存在。
+- 必须检测循环引用。
+- `Order` 字段如存在必须可解析为数字。
+
+**验收标准：**
+
+- 文档、parser、validator、template 的行为一致。
+- 不把 tree 特殊逻辑继续堆入 `DataTableProcessor` 主流程。
 
 ### 阶段 D：文档、测试与开发体验（优先级 P1/P2）
 
@@ -303,7 +374,7 @@ docs/
 - 数据源 fallback、cache、versioned。
 - 类型解析并发与嵌套泛型。
 - 索引重复诊断。
-- `kv` 表解析与生成。
+- `kv` 表解析与生成，覆盖 C2 issue 中列出的正常生成、重复 key、非法类型、非法 value、嵌套类型和 JSON value 场景。
 
 #### D3. 示例与迁移指南
 
@@ -334,6 +405,8 @@ docs/
 
 - `kv` 表类型实现。
 - `localized` 职责边界与设计方案评审。
+- `localized` 设计文档。
+- `tree` 表生成 API、索引约束与数据校验规则稳定化。
 - 索引唯一性生成期校验。
 - 表类型扩展指南。
 
@@ -355,7 +428,7 @@ docs/
 | P1 | 预热统计细化 | 提升运行时可观测性 |
 | P1 | 数据源 manifest 版本校验 | 支撑热更新和 CDN 场景 |
 | P1 | 索引重复诊断 | 降低策划排错成本 |
-| P2 | `kv` 表类型 | 扩大配置表类型覆盖 |
+| P2 | Issue：完善 kv 表类型原型实现与测试覆盖 | 扩大配置表类型覆盖，并把实现、测试与诊断验收独立排期 |
 | P2 | `localized` 设计 | 为多语言配置打基础 |
 | P2 | 示例与文档矩阵 | 提升可用性和接入效率 |
 

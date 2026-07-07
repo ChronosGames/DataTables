@@ -109,6 +109,57 @@ namespace DataTables.Tests
             Console.WriteLine($"内存使用: {memoryUsed / 1024}KB for 3 tables");
         }
 
+        /// <summary>
+        /// 基准测试：直接行添加路径应避免反射调用产生的逐行分配。
+        /// </summary>
+        [Fact]
+        public void DirectAddDataRow_Benchmark()
+        {
+            const int rowCount = 10_000;
+            var rows = Enumerable.Range(0, rowCount).Select(_ => new MockDataRow()).ToArray();
+            var directTable = new AddDataRowBenchmarkTable("direct", rowCount);
+            var reflectionTable = new AddDataRowBenchmarkTable("reflection", rowCount);
+            var internalAddMethod = typeof(AddDataRowBenchmarkTable).GetMethod(
+                "InternalAddDataRow",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+
+            // Warm up JIT and reflection metadata paths before measuring.
+            directTable.DirectAdd(0, rows[0]);
+            internalAddMethod.Invoke(reflectionTable, new object[] { 0, rows[0] });
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            var directAllocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+            var directStopwatch = Stopwatch.StartNew();
+            for (var i = 0; i < rowCount; i++)
+            {
+                directTable.DirectAdd(i, rows[i]);
+            }
+            directStopwatch.Stop();
+            var directAllocated = GC.GetAllocatedBytesForCurrentThread() - directAllocatedBefore;
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            var reflectionAllocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+            var reflectionStopwatch = Stopwatch.StartNew();
+            for (var i = 0; i < rowCount; i++)
+            {
+                internalAddMethod.Invoke(reflectionTable, new object[] { i, rows[i] });
+            }
+            reflectionStopwatch.Stop();
+            var reflectionAllocated = GC.GetAllocatedBytesForCurrentThread() - reflectionAllocatedBefore;
+
+            directAllocated.Should().BeLessThan(reflectionAllocated);
+
+            Console.WriteLine(
+                $"行添加性能: direct={directStopwatch.ElapsedMilliseconds}ms/{directAllocated}B, " +
+                $"reflection={reflectionStopwatch.ElapsedMilliseconds}ms/{reflectionAllocated}B");
+        }
+
         private void ResetDataTableManager()
         {
             // 清理测试状态
@@ -160,6 +211,16 @@ namespace DataTables.Tests
             bw.Write(0);         // Flags
 
             return ms.ToArray();
+        }
+    }
+
+    public class AddDataRowBenchmarkTable : DataTable<MockDataRow>
+    {
+        public AddDataRowBenchmarkTable(string name, int capacity) : base(name, capacity) { }
+
+        public void DirectAdd(int index, MockDataRow dataRow)
+        {
+            InternalAddDataRow(index, dataRow);
         }
     }
 }

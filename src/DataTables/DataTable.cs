@@ -307,6 +307,11 @@ namespace DataTables
         internal override void Shutdown()
         { }
 
+        internal override void AddDataRow(int index, DataRowBase dataRow)
+        {
+            InternalAddDataRow(index, (T)(object)dataRow);
+        }
+
         protected virtual void InternalAddDataRow(int index, T dataRow)
         {
             m_DataSet[index] = dataRow;

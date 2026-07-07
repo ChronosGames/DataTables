@@ -29,6 +29,8 @@ namespace DataTables
 
         public override bool ParseDataRow(int index, BinaryReader reader) => throw new NotSupportedException();
 
+        internal override void AddDataRow(int index, DataRowBase dataRow) => throw new NotSupportedException();
+
         protected void SetDataRow(int index, TKey1 key1, TKey2 key2, TValue value)
         {
             m_Keies1[index] = key1;

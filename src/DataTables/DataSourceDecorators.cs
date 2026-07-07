@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -106,6 +107,82 @@ namespace DataTables
         }
     }
 
+
+    public sealed class HashValidatedDataSource : DataSourceDecorator
+    {
+        public const string Algorithm = "SHA-256";
+        public const string HashFormat = "hex-lowercase";
+        private const int Sha256HexLength = 64;
+
+        private readonly IReadOnlyDictionary<string, DataSourceManifestEntry> _entries;
+
+        public HashValidatedDataSource(IDataSource inner, DataSourceManifest manifest) : base(inner)
+        {
+            if (manifest == null)
+            {
+                throw new ArgumentNullException(nameof(manifest));
+            }
+
+            _entries = manifest.Entries
+                .Where(entry => !string.IsNullOrWhiteSpace(entry.Hash))
+                .ToDictionary(entry => entry.Name, StringComparer.OrdinalIgnoreCase);
+        }
+
+        public HashValidatedDataSource(IDataSource inner, IEnumerable<DataSourceManifestEntry> entries) : base(inner)
+        {
+            if (entries == null)
+            {
+                throw new ArgumentNullException(nameof(entries));
+            }
+
+            _entries = entries
+                .Where(entry => !string.IsNullOrWhiteSpace(entry.Hash))
+                .ToDictionary(entry => entry.Name, StringComparer.OrdinalIgnoreCase);
+        }
+
+        public override async ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken)
+        {
+            var bytes = await Inner.LoadAsync(name, cancellationToken);
+            if (!_entries.TryGetValue(name, out var entry))
+            {
+                return bytes;
+            }
+
+            ValidateHashFormat(entry);
+            var actual = ComputeSha256Hex(bytes);
+            if (!string.Equals(actual, entry.Hash, StringComparison.Ordinal))
+            {
+                throw new InvalidDataException($"Hash validation failed for '{name}' from '{entry.SourceName ?? Inner.ToString() ?? Inner.GetType().Name}': expected {entry.Hash}, actual {actual} ({Algorithm} {HashFormat}).");
+            }
+
+            return bytes;
+        }
+
+        private static void ValidateHashFormat(DataSourceManifestEntry entry)
+        {
+            var hash = entry.Hash!;
+            if (hash.Length != Sha256HexLength || hash.Any(ch => !IsLowerHex(ch)))
+            {
+                throw new InvalidDataException($"Manifest hash for '{entry.Name}' must be {Algorithm} {HashFormat} ({Sha256HexLength} chars). Actual: '{hash}'.");
+            }
+        }
+
+        private static bool IsLowerHex(char ch) => (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f');
+
+        private static string ComputeSha256Hex(byte[] bytes)
+        {
+            using var sha256 = SHA256.Create();
+            var hash = sha256.ComputeHash(bytes);
+            var builder = new StringBuilder(hash.Length * 2);
+            foreach (var b in hash)
+            {
+                builder.Append(b.ToString("x2"));
+            }
+
+            return builder.ToString();
+        }
+    }
+
     public sealed class FallbackDataSource : IDataSource
     {
         private readonly IReadOnlyList<IDataSource> _sources;
@@ -147,12 +224,18 @@ namespace DataTables
 
                     var bytes = await source.LoadAsync(name, cancellationToken);
                     LastHitSource = sourceName;
+                    Log.Info($"FallbackDataSource loaded '{name}' from {sourceName}.");
                     return bytes;
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
+                    var failedSourceName = GetSourceName(source);
                     lastError = ex;
-                    failures.Add($"{GetSourceName(source)}: {ex.Message}");
+                    failures.Add($"{failedSourceName}: {ex.Message}");
+                    if (ex is InvalidDataException && ex.Message.IndexOf("hash", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        Log.Warning($"FallbackDataSource hash validation failed for '{name}' from {failedSourceName}: {ex.Message}");
+                    }
                 }
             }
 

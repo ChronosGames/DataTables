@@ -93,6 +93,9 @@ namespace DataTables
 
         public string? Version { get; }
 
+        /// <summary>
+        /// 资源内容 hash。约定为解码后的 DataTables payload 的 SHA-256 小写 hex（64 字符）。
+        /// </summary>
         public string? Hash { get; }
 
         /// <summary>

@@ -732,7 +732,7 @@ namespace DataTables
                     }
 
                     // 添加数据行到表中
-                    AddDataRowToTable(dataTable, i, dataRow);
+                    dataTable.AddDataRow(i, dataRow);
                 }
             }
 
@@ -806,20 +806,6 @@ namespace DataTables
             // 回退到反射模式（保持兼容性）
             var dataRowType = typeNamePair.Type.BaseType!.GetGenericArguments()[0];
             return (DataRowBase)Activator.CreateInstance(dataRowType)!;
-        }
-
-        /// <summary>
-        /// 添加数据行到表中 - 高性能内联
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void AddDataRowToTable(DataTableBase dataTable, int index, DataRowBase dataRow)
-        {
-            // TODO: 将来使用预编译的委托（代码生成时实现）
-            // 暂时使用反射，但缓存方法信息
-            var tableType = dataTable.GetType();
-            var internalAddMethod = tableType.GetMethod("InternalAddDataRow",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            internalAddMethod?.Invoke(dataTable, new object[] { index, dataRow });
         }
 
         /// <summary>

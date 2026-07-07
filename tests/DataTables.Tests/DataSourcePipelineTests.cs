@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using DataTables;
@@ -44,6 +46,39 @@ public class DataSourcePipelineTests
     }
 
     [Fact]
+    public async Task HashValidatedDataSource_Should_Verify_Decoded_Payload_Before_Returning()
+    {
+        var manifest = new DataSourceManifest(new[]
+        {
+            new DataSourceManifestEntry("Config", hash: "039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81")
+        });
+        var source = new HashValidatedDataSource(new StubDataSource("cdn", true), manifest);
+
+        var bytes = await source.LoadAsync("Config", CancellationToken.None);
+
+        bytes.Should().Equal(1, 2, 3);
+    }
+
+    [Fact]
+    public async Task HashValidatedDataSource_Should_Reject_Mismatch_And_Uppercase_Hash()
+    {
+        var mismatch = new HashValidatedDataSource(
+            new StubDataSource("cdn", true),
+            new[] { new DataSourceManifestEntry("Config", hash: "139058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81") });
+        var uppercase = new HashValidatedDataSource(
+            new StubDataSource("cdn", true),
+            new[] { new DataSourceManifestEntry("Config", hash: "039058C6F2C0CB492C533B0A4D14EF77CC0F78ABCCCED5287D84A1A2011CFB81") });
+
+        var mismatchAct = async () => await mismatch.LoadAsync("Config", CancellationToken.None);
+        var uppercaseAct = async () => await uppercase.LoadAsync("Config", CancellationToken.None);
+
+        await mismatchAct.Should().ThrowAsync<InvalidDataException>()
+            .WithMessage("*Hash validation failed*");
+        await uppercaseAct.Should().ThrowAsync<InvalidDataException>()
+            .WithMessage("*hex-lowercase*");
+    }
+
+    [Fact]
     public async Task VersionedDataSource_Should_Filter_And_Map_Manifest_To_Logical_Names()
     {
         var inner = new StubDataSource(
@@ -61,6 +96,44 @@ public class DataSourcePipelineTests
         manifest.Entries.Single(entry => entry.Name == "Hero").Version.Should().Be("v2");
         manifest.Entries.Single(entry => entry.Name == "Hero").Hash.Should().Be("hero-hash");
         manifest.Entries.Single(entry => entry.Name == "Item").Version.Should().Be("v2.1");
+    }
+
+    [Fact]
+    public async Task NetworkDataSource_IsAvailableAsync_Should_Probe_Manifest_With_Head_Then_Get_Fallback()
+    {
+        var handler = new RecordingHandler(request => request.Method == HttpMethod.Head
+            ? new HttpResponseMessage(HttpStatusCode.MethodNotAllowed)
+            : new HttpResponseMessage(HttpStatusCode.OK));
+        var source = new NetworkDataSource(
+            "https://cdn.example.com/data/",
+            "health.txt",
+            TimeSpan.FromSeconds(1),
+            new HttpClient(handler));
+
+        var available = await source.IsAvailableAsync(CancellationToken.None);
+
+        available.Should().BeTrue();
+        handler.Requests.Select(request => (request.Method, request.RequestUri!.ToString())).Should().Equal(
+            (HttpMethod.Head, "https://cdn.example.com/data/health.txt"),
+            (HttpMethod.Get, "https://cdn.example.com/data/health.txt"));
+    }
+
+    [Fact]
+    public async Task NetworkDataSource_IsAvailableAsync_Should_Respect_CancellationToken()
+    {
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+        var handler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var source = new NetworkDataSource(
+            "https://cdn.example.com/data",
+            "manifest.json",
+            TimeSpan.FromSeconds(1),
+            new HttpClient(handler));
+
+        var act = async () => await source.IsAvailableAsync(cts.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        handler.Requests.Should().BeEmpty();
     }
 
     private sealed class StubDataSource : IDataSource
@@ -102,5 +175,24 @@ public class DataSourcePipelineTests
         public ValueTask<bool> IsAvailableAsync() => new ValueTask<bool>(true);
 
         public override string ToString() => _name;
+    }
+
+    private sealed class RecordingHandler : HttpMessageHandler
+    {
+        private readonly Func<HttpRequestMessage, HttpResponseMessage> _responseFactory;
+
+        public RecordingHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory)
+        {
+            _responseFactory = responseFactory;
+        }
+
+        public List<HttpRequestMessage> Requests { get; } = new();
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Requests.Add(request);
+            return Task.FromResult(_responseFactory(request));
+        }
     }
 }

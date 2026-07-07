@@ -63,17 +63,25 @@ dotnet add package DataTables.API
 
 2. **零心智负担使用** 🎉
 ```csharp
+using System;
+using System.Threading.Tasks;
 using DataTables;
 
-// 🌟 现代异步API - 自动初始化
-var scene = await DataTableManager.LoadAsync<DTScene>();
-var items = DataTableManager.GetCached<DTItem>(); // 缓存查询
+public class Program
+{
+    public static async Task Main()
+    {
+        // 🌟 现代异步API - 自动初始化
+        var scene = await DataTableManager.LoadAsync<DTScene>();
+        var items = DataTableManager.GetCached<DTItem>(); // 缓存查询
 
-Console.WriteLine($"场景: {scene?.Name}, 物品数量: {items?.Count ?? 0}");
+        Console.WriteLine($"场景: {scene?.Name}, 物品数量: {items?.Count ?? 0}");
 
-// 🔥 可选的性能优化
-await DataTableManager.PreheatAsync(Priority.Critical | Priority.Normal);
-Console.WriteLine("数据预热完成！");
+        // 🔥 可选的性能优化
+        await DataTableManager.PreheatAsync(Priority.Critical | Priority.Normal);
+        Console.WriteLine("数据预热完成！");
+    }
+}
 ```
 
 3. **智能配置** (可选)
@@ -95,23 +103,32 @@ DataTableManager.EnableProfiling(stats =>
 > **运行时源码同步约定**：`src/DataTables` 是运行时源码的唯一修改源；`src/DataTables.Unity/Assets/Scripts/DataTables` 是构建 `src/DataTables/DataTables.csproj` 后自动同步出的 Unity 镜像目录。请不要直接修改 Unity 镜像中的 `.cs` 文件。提交前可运行 `dotnet build -c Debug`，再运行 `./scripts/verify-unity-runtime-sync.sh` 和 `git diff --exit-code -- src/DataTables.Unity/Assets/Scripts/DataTables`，确保 Unity 包与主运行时一致。
 
 ```csharp
+using System;
 using DataTables;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    // Unity生命周期入口允许 async void；请在方法内捕获异常，避免异常丢失。
     async void Start()
     {
-        // 🌟 异步优先 - 无阻塞启动
-        var config = await DataTableManager.LoadAsync<DTGameConfig>();
-        Debug.Log($"游戏版本: {config?.Version}");
+        try
+        {
+            // 🌟 异步优先 - 无阻塞启动
+            var config = await DataTableManager.LoadAsync<DTGameConfig>();
+            Debug.Log($"游戏版本: {config?.Version}");
 
-        // 🔥 智能分层预热
-        await DataTableManager.PreheatAsync(Priority.Critical);
-        Debug.Log("关键数据预热完成，游戏可以启动！");
+            // 🔥 智能分层预热
+            await DataTableManager.PreheatAsync(Priority.Critical);
+            Debug.Log("关键数据预热完成，游戏可以启动！");
 
-        // 后台预热其他数据
-        _ = DataTableManager.PreheatAsync(Priority.Normal | Priority.Lazy);
+            // 后台预热其他数据
+            _ = DataTableManager.PreheatAsync(Priority.Normal | Priority.Lazy);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogException(ex);
+        }
     }
 }
 ```
@@ -318,37 +335,59 @@ DataTableManager.ClearHooks();
 ### 现代Unity最佳实践
 
 ```csharp
+using System;
+using System.Threading.Tasks;
 using DataTables;
 using UnityEngine;
 
 public class ModernDataTableDemo : MonoBehaviour
 {
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-    static async void InitializeDataTables()
+    static void InitializeDataTables()
     {
-        // 🚀 启动时快速初始化
-        DataTableManager.UseFileSystem(Application.streamingAssetsPath + "/DataTables");
-        DataTableManager.EnableMemoryManagement(30); // Unity环境30MB限制
-
-        // 立即加载核心表
-        await DataTableManager.LoadAsync<DTGameConfig>();
-
-        // 后台预热其他表
-        _ = DataTableManager.PreheatAsync(Priority.Normal | Priority.Lazy);
+        _ = InitializeDataTablesAsync();
     }
 
+    static async Task InitializeDataTablesAsync()
+    {
+        try
+        {
+            // 🚀 启动时快速初始化
+            DataTableManager.UseFileSystem(Application.streamingAssetsPath + "/DataTables");
+            DataTableManager.EnableMemoryManagement(30); // Unity环境30MB限制
+
+            // 立即加载核心表
+            await DataTableManager.LoadAsync<DTGameConfig>();
+
+            // 后台预热其他表
+            _ = DataTableManager.PreheatAsync(Priority.Normal | Priority.Lazy);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogException(ex);
+        }
+    }
+
+    // Unity生命周期入口允许 async void；请在方法内捕获异常，避免异常丢失。
     async void Start()
     {
-        // 🎯 场景相关数据预热
-        await DataTableManager.PreheatAsync(Priority.Critical);
-        Debug.Log("关键数据已就绪，游戏可以开始！");
-
-        // 使用数据
-        var config = DataTableManager.GetCached<DTGameConfig>();
-        if (config != null)
+        try
         {
-            var gameConfig = DTGameConfig.GetDataRowById(1);
-            Debug.Log($"游戏版本: {gameConfig?.Version}");
+            // 🎯 场景相关数据预热
+            await DataTableManager.PreheatAsync(Priority.Critical);
+            Debug.Log("关键数据已就绪，游戏可以开始！");
+
+            // 使用数据
+            var config = DataTableManager.GetCached<DTGameConfig>();
+            if (config != null)
+            {
+                var gameConfig = DTGameConfig.GetDataRowById(1);
+                Debug.Log($"游戏版本: {gameConfig?.Version}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogException(ex);
         }
     }
 
@@ -366,6 +405,8 @@ public class ModernDataTableDemo : MonoBehaviour
 ### Unity性能优化技巧
 
 ```csharp
+using System.Threading.Tasks;
+
 // 📱 移动平台优化
 
 public class MobileOptimizationDemo : MonoBehaviour
@@ -387,8 +428,8 @@ public class MobileOptimizationDemo : MonoBehaviour
         DataTableManager.ClearCache();
     }
 
-    // 场景切换时的优化策略
-    public async void LoadScene(int sceneId)
+    // 场景切换时的优化策略：非Unity生命周期方法返回Task，便于调用方await并捕获异常。
+    public async Task LoadSceneAsync(int sceneId)
     {
         var sceneConfig = DTScene.GetDataRowById(sceneId);
 

@@ -29,7 +29,9 @@ namespace DataTables
 
         public virtual ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken) => Inner.GetManifestAsync(cancellationToken);
 
-        public virtual ValueTask<bool> IsAvailableAsync() => Inner.IsAvailableAsync();
+        public virtual ValueTask<bool> IsAvailableAsync() => IsAvailableAsync(CancellationToken.None);
+
+        public virtual ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken) => Inner.IsAvailableAsync(cancellationToken);
     }
 
     public sealed class CachedDataSource : DataSourceDecorator
@@ -198,11 +200,14 @@ namespace DataTables
             return $"{source.SourceType}:{displayName}";
         }
 
-        public async ValueTask<bool> IsAvailableAsync()
+        public ValueTask<bool> IsAvailableAsync() => IsAvailableAsync(CancellationToken.None);
+
+        public async ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken)
         {
             foreach (var source in _sources)
             {
-                if (await source.IsAvailableAsync())
+                cancellationToken.ThrowIfCancellationRequested();
+                if (await source.IsAvailableAsync(cancellationToken))
                 {
                     return true;
                 }

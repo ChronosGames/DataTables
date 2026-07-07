@@ -47,7 +47,16 @@ namespace DataTables
         /// 检查数据源是否可用。
         /// </summary>
         /// <returns>是否可用。</returns>
-        ValueTask<bool> IsAvailableAsync();
+        ValueTask<bool> IsAvailableAsync()
+            => IsAvailableAsync(CancellationToken.None);
+
+        /// <summary>
+        /// 检查数据源是否可用。
+        /// </summary>
+        /// <param name="cancellationToken">取消令牌。</param>
+        /// <returns>是否可用。</returns>
+        ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken)
+            => IsAvailableAsync();
 
         /// <summary>
         /// 数据源类型。

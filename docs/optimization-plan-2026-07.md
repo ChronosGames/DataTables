@@ -251,18 +251,27 @@ DTGameConfig.EnablePvp
 - 支持基础类型、enum、array、json。
 - 文档给出 Excel 示例。
 
-#### C3. 新增 `localized` 表类型设计文档
+#### C3. 评审 `localized` 表类型职责边界与设计方案
 
-暂不急于实现，先完成设计：
+`localized` 在本阶段标记为设计评审任务，而不是 parser / validator / template 实现任务。建议创建 issue：**评审 localized 表类型职责边界与设计方案**。
 
-- key + 多语言列。
-- 语言 fallback。
-- 客户端按当前语言加载或全量加载。
-- 服务端可按语言导出。
+**背景引用：**
+
+- `docs/localized-table-design.md`。
+- `docs/table-types.md` 中关于 reserved 类型的说明。
+
+**评审重点：**
+
+- 与普通 `table` 的区别：何时必须使用 `localized`。
+- 与 `kv` 的区别：多语言资源是否允许退化成 key-value 配置。
+- Sheet 格式、语言列、fallback 规则、缺失翻译诊断规则。
+- 运行时查询 API 是否按 key、locale、fallback chain 暴露。
 
 **验收标准：**
 
-- 设计文档明确格式、生成代码形态、运行时查询 API。
+- 形成明确的职责边界结论。
+- 保持 `DTGen=localized` 在实现前仍为预留类型诊断。
+- 评审通过后再创建后续 parser / validator / template 实现 issue。
 
 ### 阶段 D：文档、测试与开发体验（优先级 P1/P2）
 
@@ -324,7 +333,7 @@ docs/
 ### Milestone 3：配置表类型扩展版
 
 - `kv` 表类型实现。
-- `localized` 设计文档。
+- `localized` 职责边界与设计方案评审。
 - 索引唯一性生成期校验。
 - 表类型扩展指南。
 

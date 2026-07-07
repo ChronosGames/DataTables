@@ -264,6 +264,37 @@ DTGameConfig.EnablePvp
 
 - 设计文档明确格式、生成代码形态、运行时查询 API。
 
+#### C4. 确认 tree 表生成 API、索引约束与数据校验规则
+
+背景设计参考：`docs/tree-table-design.md`。
+
+需要确认的生成 API：
+
+- 根节点集合。
+- `GetById` / `TryGetById`。
+- `GetChildrenStatic`。
+- `GetParentStatic`。
+- 深度优先遍历 API。
+
+需要确认的索引约束：
+
+- `Id` 为内建唯一索引。
+- `ParentId` 为分组索引。
+- 是否允许多个根节点。
+
+需要确认的数据校验规则：
+
+- `Id` 不能为空。
+- `Id` 不能重复。
+- `ParentId` 引用必须存在。
+- 必须检测循环引用。
+- `Order` 字段如存在必须可解析为数字。
+
+**验收标准：**
+
+- 文档、parser、validator、template 的行为一致。
+- 不把 tree 特殊逻辑继续堆入 `DataTableProcessor` 主流程。
+
 ### 阶段 D：文档、测试与开发体验（优先级 P1/P2）
 
 #### D1. 文档拆分
@@ -325,6 +356,7 @@ docs/
 
 - `kv` 表类型实现。
 - `localized` 设计文档。
+- `tree` 表生成 API、索引约束与数据校验规则稳定化。
 - 索引唯一性生成期校验。
 - 表类型扩展指南。
 

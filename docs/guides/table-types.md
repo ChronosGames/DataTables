@@ -38,7 +38,7 @@
 
 ### `kv`
 
-`kv` 已支持用于全局参数、功能开关和少量散列配置。完整说明见 [kv 表类型设计](kv-table-design.md)。当前实现要求 `Key`、`Type`、`Value` 三列，并可选 `Comment` 列；每条配置会生成一行内部数据，生成表类会暴露同名静态属性以及动态读取 API。推荐 Excel 结构如下：
+`kv` 已支持用于全局参数、功能开关和少量散列配置。完整说明见 [kv 表类型设计](../designs/kv-table-design.md)。当前实现要求 `Key`、`Type`、`Value` 三列，并可选 `Comment` 列；每条配置会生成一行内部数据，生成表类会暴露同名静态属性以及动态读取 API。推荐 Excel 结构如下：
 
 | Key | Type | Value | Comment |
 | --- | --- | --- | --- |
@@ -65,11 +65,11 @@ DataTableManager.GetDataTable<DTGameConfig>()?.TryGetValue("EnablePvp", out bool
 
 ### `tree`
 
-`tree` 已支持用于树形层级配置，例如章节、任务链、技能树和菜单结构。完整说明见 [tree 表类型设计](tree-table-design.md)。当前实现复用普通行表格式，要求 `Id` 和 `ParentId` 字段，并会内建 `Id` 唯一索引以及 `ParentId` 分组索引；生成表类会提供根节点、子节点、父节点和深度优先遍历 API。
+`tree` 已支持用于树形层级配置，例如章节、任务链、技能树和菜单结构。完整说明见 [tree 表类型设计](../designs/tree-table-design.md)。当前实现复用普通行表格式，要求 `Id` 和 `ParentId` 字段，并会内建 `Id` 唯一索引以及 `ParentId` 分组索引；生成表类会提供根节点、子节点、父节点和深度优先遍历 API。
 
 ### `graph`
 
-`graph` 已支持单 Sheet 边列表格式，用于节点与边组成的图结构配置，例如关卡拓扑、科技依赖、传送网络和状态机。必需字段为 `EdgeId`、`From` 和 `To`，生成器会内建 `EdgeId` 唯一索引以及 `From` / `To` 分组索引，并生成节点集合、边查询、入边/出边、关联边、前驱/后继、两点边、路径、BFS 遍历和节点存在性查询 API。完整说明见 [graph 表类型设计](graph-table-design.md)。
+`graph` 已支持单 Sheet 边列表格式，用于节点与边组成的图结构配置，例如关卡拓扑、科技依赖、传送网络和状态机。必需字段为 `EdgeId`、`From` 和 `To`，生成器会内建 `EdgeId` 唯一索引以及 `From` / `To` 分组索引，并生成节点集合、边查询、入边/出边、关联边、前驱/后继、两点边、路径、BFS 遍历和节点存在性查询 API。完整说明见 [graph 表类型设计](../designs/graph-table-design.md)。
 
 ## 预留原型类型
 
@@ -77,7 +77,7 @@ DataTableManager.GetDataTable<DTGameConfig>()?.TryGetValue("EnablePvp", out bool
 
 ### `localized`
 
-`localized` 计划用于多语言文本资源，目前还不是已实现的表生成器。详细设计见 [localized 表类型设计](localized-table-design.md)。
+`localized` 计划用于多语言文本资源，目前还不是已实现的表生成器。详细设计见 [localized 表类型设计](../designs/localized-table-design.md)。
 
 ### 其他预留名称
 

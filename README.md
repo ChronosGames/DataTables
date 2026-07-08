@@ -3,6 +3,7 @@
 ## Table of Contents
 
 - [🚀 DataTables - 现代化高性能数据表系统](#-datatables---%E7%8E%B0%E4%BB%A3%E5%8C%96%E9%AB%98%E6%80%A7%E8%83%BD%E6%95%B0%E6%8D%AE%E8%A1%A8%E7%B3%BB%E7%BB%9F)
+  - [📚 文档导航](#-文档导航)
   - [🚀 快速开始](#-%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B)
     - [.NET Core 项目](#net-core-%E9%A1%B9%E7%9B%AE)
     - [Unity项目](#unity%E9%A1%B9%E7%9B%AE)
@@ -51,6 +52,17 @@
 # 🚀 DataTables - 现代化高性能数据表系统
 
 > **异步优先数据表解决方案** - 适用于.NET Core服务端与Unity客户端
+
+## 📚 文档导航
+
+项目文档已按同类 .NET/Unity 开源项目常见实践分区维护：
+
+- [文档中心](docs/README.md)：文档结构、阅读路径与维护规范。
+- [表类型指南](docs/guides/table-types.md)：`table`、`matrix`、`column`、`kv`、`tree`、`graph` 等表类型说明。
+- [数据源管线](docs/guides/data-source-pipeline.md)：本地、远程、缓存、校验与回退链路。
+- [二进制格式 v3](docs/reference/binary-format-v3.md)：运行时 `.bytes` 文件格式与兼容策略。
+- [v3 迁移指南](docs/migration/migration-to-v3.md)：升级到 v3 的生成物与数据迁移流程。
+
 
 ## 🚀 快速开始
 

@@ -233,7 +233,7 @@ DataTableManagerExtension.Register();
 
 **标题：** 完善 kv 表类型原型实现与测试覆盖
 
-**背景引用：** [`docs/kv-table-design.md`](kv-table-design.md)。
+**背景引用：** [`docs/designs/kv-table-design.md`](../designs/kv-table-design.md)。
 
 `kv` 面向全局参数、功能开关和少量散列配置。现有格式、生成代码形态、校验规则与非目标以上述设计文档为准，本 issue 负责把它从阶段路线图条目拆成可独立排期、实现和验收的工作项。
 
@@ -256,7 +256,7 @@ DataTableManagerExtension.Register();
 
 - `DTGen=kv` 的 parser、validator、template 注册路径清晰，新增或调整代码时能从注册点追踪到解析、校验和生成模板。
 - 不在 `DataTableProcessor` 主流程新增硬编码分支；kv 只能通过 parser / validator / serialization plan 或 writer / template 等扩展点接入。
-- 文档、测试、诊断信息保持一致：`docs/kv-table-design.md` 中声明的规则需要有对应测试或明确的后续增强说明，错误消息应与文档描述一致。
+- 文档、测试、诊断信息保持一致：`docs/designs/kv-table-design.md` 中声明的规则需要有对应测试或明确的后续增强说明，错误消息应与文档描述一致。
 
 #### C3. 评审 `localized` 表类型职责边界与设计方案
 
@@ -264,8 +264,8 @@ DataTableManagerExtension.Register();
 
 **背景引用：**
 
-- `docs/localized-table-design.md`。
-- `docs/table-types.md` 中关于 reserved 类型的说明。
+- `docs/designs/localized-table-design.md`。
+- `docs/guides/table-types.md` 中关于 reserved 类型的说明。
 
 **评审重点：**
 
@@ -282,7 +282,7 @@ DataTableManagerExtension.Register();
 
 #### C4. 冻结 `graph` 表生成 API、索引约束与校验规范
 
-背景设计参考：`docs/graph-table-design.md`。在进入实现前，需要先冻结 `graph` 表的生成 API、索引约束与校验规范，避免 parser、validator、template 与文档在后续实现中各自演进。
+背景设计参考：`docs/designs/graph-table-design.md`。在进入实现前，需要先冻结 `graph` 表的生成 API、索引约束与校验规范，避免 parser、validator、template 与文档在后续实现中各自演进。
 
 需要确认的生成 API：
 
@@ -315,7 +315,7 @@ DataTableManagerExtension.Register();
 - 后续实现不得在 `DataTableProcessor` 主流程中继续追加 graph 专用分支。
 #### C5. 确认 tree 表生成 API、索引约束与数据校验规则
 
-背景设计参考：`docs/tree-table-design.md`。
+背景设计参考：`docs/designs/tree-table-design.md`。
 
 需要确认的生成 API：
 

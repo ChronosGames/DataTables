@@ -3,7 +3,7 @@
 ## Table of Contents
 
 - [🚀 DataTables - 现代化高性能数据表系统](#-datatables---%E7%8E%B0%E4%BB%A3%E5%8C%96%E9%AB%98%E6%80%A7%E8%83%BD%E6%95%B0%E6%8D%AE%E8%A1%A8%E7%B3%BB%E7%BB%9F)
-  - [📚 文档导航](#-文档导航)
+  - [📚 文档导航](#-%E6%96%87%E6%A1%A3%E5%AF%BC%E8%88%AA)
   - [🚀 快速开始](#-%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B)
     - [.NET Core 项目](#net-core-%E9%A1%B9%E7%9B%AE)
     - [Unity项目](#unity%E9%A1%B9%E7%9B%AE)

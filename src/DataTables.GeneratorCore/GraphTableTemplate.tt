@@ -1,0 +1,206 @@
+<#@ template debug="false" hostspecific="false" linePragmas="false" language="C#" inherits="DataTableTemplate" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="DataTables.GeneratorCore" #>
+<#
+    GenerationEnvironment.Clear();
+    var text = base.TransformText();
+    GenerationEnvironment.Clear();
+    var marker = "    #endregion" + Environment.NewLine + "}";
+    var idx = text.IndexOf(marker, StringComparison.Ordinal);
+    if (idx < 0)
+    {
+        idx = text.IndexOf("    #endregion\n}", StringComparison.Ordinal);
+    }
+    Write(idx < 0 ? text : text.Insert(idx, BuildGraphApi()));
+#><#+
+    public GraphTableTemplate(GenerationContext generationContext) : base(generationContext)
+    {
+    }
+
+    private string BuildGraphApi()
+    {
+        var row = GenerationContext.DataRowClassName;
+        var table = GenerationContext.DataTableClassName;
+        var sb = new StringBuilder();
+        void WL(string text = "") => sb.AppendLine(text);
+
+        WL();
+        WL("    #region Graph API");
+        WL("    private IReadOnlyList<string>? m_Nodes;");
+        WL();
+        WL("    public int EdgeCount => Count;");
+        WL("    public int NodeCount => GetNodes().Count;");
+        WL();
+        WL("    public IReadOnlyList<string> GetNodes()");
+        WL("    {");
+        WL("        if (m_Nodes != null) return m_Nodes;");
+        WL("        var result = new List<string>();");
+        WL("        var seen = new HashSet<string>(StringComparer.Ordinal);");
+        WL("        foreach (var edge in GetAllDataRows())");
+        WL("        {");
+        WL("            if (seen.Add(edge.From)) result.Add(edge.From);");
+        WL("            if (seen.Add(edge.To)) result.Add(edge.To);");
+        WL("        }");
+        WL("        m_Nodes = result;");
+        WL("        return m_Nodes;");
+        WL("    }");
+        WL();
+        WL("    [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+        WL($"    public {row}? GetEdge(string edgeId) => GetDataRowByEdgeId(edgeId);");
+        WL();
+        WL("    [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+        WL($"    public bool TryGetEdge(string edgeId, out {row}? edge)");
+        WL("    {");
+        WL("        edge = GetDataRowByEdgeId(edgeId);");
+        WL("        return edge != null;");
+        WL("    }");
+        WL();
+        WL("    [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+        WL($"    public IReadOnlyList<{row}> GetOutgoingEdges(string nodeId) => (IReadOnlyList<{row}>?)GetDataRowsGroupByFrom(nodeId) ?? Array.Empty<{row}>();");
+        WL();
+        WL("    [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+        WL($"    public IReadOnlyList<{row}> GetIncomingEdges(string nodeId) => (IReadOnlyList<{row}>?)GetDataRowsGroupByTo(nodeId) ?? Array.Empty<{row}>();");
+        WL();
+        WL($"    public IReadOnlyList<{row}> GetIncidentEdges(string nodeId)");
+        WL("    {");
+        WL($"        var result = new List<{row}>();");
+        WL("        var seen = new HashSet<string>(StringComparer.Ordinal);");
+        WL("        foreach (var edge in GetIncomingEdges(nodeId))");
+        WL("        {");
+        WL("            if (seen.Add(edge.EdgeId)) result.Add(edge);");
+        WL("        }");
+        WL("        foreach (var edge in GetOutgoingEdges(nodeId))");
+        WL("        {");
+        WL("            if (seen.Add(edge.EdgeId)) result.Add(edge);");
+        WL("        }");
+        WL("        return result;");
+        WL("    }");
+        WL();
+        WL("    public IReadOnlyList<string> GetSuccessors(string nodeId)");
+        WL("    {");
+        WL("        var result = new List<string>();");
+        WL("        var seen = new HashSet<string>(StringComparer.Ordinal);");
+        WL("        foreach (var edge in GetOutgoingEdges(nodeId))");
+        WL("        {");
+        WL("            if (seen.Add(edge.To)) result.Add(edge.To);");
+        WL("        }");
+        WL("        return result;");
+        WL("    }");
+        WL();
+        WL("    public IReadOnlyList<string> GetPredecessors(string nodeId)");
+        WL("    {");
+        WL("        var result = new List<string>();");
+        WL("        var seen = new HashSet<string>(StringComparer.Ordinal);");
+        WL("        foreach (var edge in GetIncomingEdges(nodeId))");
+        WL("        {");
+        WL("            if (seen.Add(edge.From)) result.Add(edge.From);");
+        WL("        }");
+        WL("        return result;");
+        WL("    }");
+        WL();
+        WL("    [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+        WL("    public IReadOnlyList<string> GetNeighbors(string nodeId) => GetSuccessors(nodeId);");
+        WL();
+        WL($"    public IReadOnlyList<{row}> GetEdgesBetween(string from, string to)");
+        WL("    {");
+        WL($"        var result = new List<{row}>();");
+        WL("        foreach (var edge in GetOutgoingEdges(from))");
+        WL("        {");
+        WL("            if (string.Equals(edge.To, to, StringComparison.Ordinal)) result.Add(edge);");
+        WL("        }");
+        WL("        return result;");
+        WL("    }");
+        WL();
+        WL("    public bool HasEdge(string from, string to)");
+        WL("    {");
+        WL("        foreach (var edge in GetOutgoingEdges(from))");
+        WL("        {");
+        WL("            if (string.Equals(edge.To, to, StringComparison.Ordinal)) return true;");
+        WL("        }");
+        WL("        return false;");
+        WL("    }");
+        WL();
+        WL("    public bool HasPath(string from, string to) => FindPath(from, to).Count > 0;");
+        WL();
+        WL("    public IReadOnlyList<string> FindPath(string from, string to)");
+        WL("    {");
+        WL("        if (!ContainsNode(from) || !ContainsNode(to)) return Array.Empty<string>();");
+        WL("        if (string.Equals(from, to, StringComparison.Ordinal)) return new[] { from };");
+        WL("        var queue = new Queue<string>();");
+        WL("        var visited = new HashSet<string>(StringComparer.Ordinal) { from };");
+        WL("        var previous = new Dictionary<string, string>(StringComparer.Ordinal);");
+        WL("        queue.Enqueue(from);");
+        WL("        while (queue.Count > 0)");
+        WL("        {");
+        WL("            var current = queue.Dequeue();");
+        WL("            foreach (var next in GetSuccessors(current))");
+        WL("            {");
+        WL("                if (!visited.Add(next)) continue;");
+        WL("                previous[next] = current;");
+        WL("                if (string.Equals(next, to, StringComparison.Ordinal))");
+        WL("                {");
+        WL("                    var path = new List<string> { to };");
+        WL("                    var cursor = to;");
+        WL("                    while (!string.Equals(cursor, from, StringComparison.Ordinal))");
+        WL("                    {");
+        WL("                        cursor = previous[cursor];");
+        WL("                        path.Add(cursor);");
+        WL("                    }");
+        WL("                    path.Reverse();");
+        WL("                    return path;");
+        WL("                }");
+        WL("                queue.Enqueue(next);");
+        WL("            }");
+        WL("        }");
+        WL("        return Array.Empty<string>();");
+        WL("    }");
+        WL();
+        WL("    public IEnumerable<string> TraverseBreadthFirst(string startNodeId)");
+        WL("    {");
+        WL("        if (!ContainsNode(startNodeId)) yield break;");
+        WL("        var queue = new Queue<string>();");
+        WL("        var visited = new HashSet<string>(StringComparer.Ordinal) { startNodeId };");
+        WL("        queue.Enqueue(startNodeId);");
+        WL("        while (queue.Count > 0)");
+        WL("        {");
+        WL("            var current = queue.Dequeue();");
+        WL("            yield return current;");
+        WL("            foreach (var next in GetSuccessors(current))");
+        WL("            {");
+        WL("                if (visited.Add(next)) queue.Enqueue(next);");
+        WL("            }");
+        WL("        }");
+        WL("    }");
+        WL();
+        WL("    public bool ContainsNode(string nodeId) => GetDataRowsGroupByFrom(nodeId) != null || GetDataRowsGroupByTo(nodeId) != null;");
+        WL("    public string? GetNode(string nodeId) => ContainsNode(nodeId) ? nodeId : null;");
+        WL();
+        WL($"    public static int EdgeCountStatic => DataTableManager.GetDataTableInternal<{table}>()?.EdgeCount ?? 0;");
+        WL($"    public static int NodeCountStatic => DataTableManager.GetDataTableInternal<{table}>()?.NodeCount ?? 0;");
+        WL($"    public static IReadOnlyList<string> GetNodesStatic() => DataTableManager.GetDataTableInternal<{table}>()?.GetNodes() ?? Array.Empty<string>();");
+        WL($"    public static {row}? GetEdgeStatic(string edgeId) => DataTableManager.GetDataTableInternal<{table}>()?.GetEdge(edgeId);");
+        WL($"    public static bool TryGetEdgeStatic(string edgeId, out {row}? edge)");
+        WL("    {");
+        WL($"        var table = DataTableManager.GetDataTableInternal<{table}>();");
+        WL("        edge = null;");
+        WL("        return table != null && table.TryGetEdge(edgeId, out edge);");
+        WL("    }");
+        WL($"    public static IReadOnlyList<{row}> GetOutgoingEdgesStatic(string nodeId) => DataTableManager.GetDataTableInternal<{table}>()?.GetOutgoingEdges(nodeId) ?? Array.Empty<{row}>();");
+        WL($"    public static IReadOnlyList<{row}> GetIncomingEdgesStatic(string nodeId) => DataTableManager.GetDataTableInternal<{table}>()?.GetIncomingEdges(nodeId) ?? Array.Empty<{row}>();");
+        WL($"    public static IReadOnlyList<{row}> GetIncidentEdgesStatic(string nodeId) => DataTableManager.GetDataTableInternal<{table}>()?.GetIncidentEdges(nodeId) ?? Array.Empty<{row}>();");
+        WL($"    public static IReadOnlyList<string> GetSuccessorsStatic(string nodeId) => DataTableManager.GetDataTableInternal<{table}>()?.GetSuccessors(nodeId) ?? Array.Empty<string>();");
+        WL($"    public static IReadOnlyList<string> GetPredecessorsStatic(string nodeId) => DataTableManager.GetDataTableInternal<{table}>()?.GetPredecessors(nodeId) ?? Array.Empty<string>();");
+        WL($"    public static IReadOnlyList<string> GetNeighborsStatic(string nodeId) => DataTableManager.GetDataTableInternal<{table}>()?.GetNeighbors(nodeId) ?? Array.Empty<string>();");
+        WL($"    public static IReadOnlyList<{row}> GetEdgesBetweenStatic(string from, string to) => DataTableManager.GetDataTableInternal<{table}>()?.GetEdgesBetween(from, to) ?? Array.Empty<{row}>();");
+        WL($"    public static bool HasEdgeStatic(string from, string to) => DataTableManager.GetDataTableInternal<{table}>()?.HasEdge(from, to) == true;");
+        WL($"    public static bool HasPathStatic(string from, string to) => DataTableManager.GetDataTableInternal<{table}>()?.HasPath(from, to) == true;");
+        WL($"    public static IReadOnlyList<string> FindPathStatic(string from, string to) => DataTableManager.GetDataTableInternal<{table}>()?.FindPath(from, to) ?? Array.Empty<string>();");
+        WL($"    public static IEnumerable<string> TraverseBreadthFirstStatic(string startNodeId) => DataTableManager.GetDataTableInternal<{table}>()?.TraverseBreadthFirst(startNodeId) ?? Array.Empty<string>();");
+        WL($"    public static bool ContainsNodeStatic(string nodeId) => DataTableManager.GetDataTableInternal<{table}>()?.ContainsNode(nodeId) == true;");
+        WL($"    public static string? GetNodeStatic(string nodeId) => DataTableManager.GetDataTableInternal<{table}>()?.GetNode(nodeId);");
+        WL("    #endregion");
+        return sb.ToString();
+    }
+#>

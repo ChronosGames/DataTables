@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maintain T4 Templates"
+  short_description: "Edit T4 sources and safely regenerate C# output"
+  default_prompt: "Use $maintain-t4-templates to update this T4-backed generator, regenerate its C# output, and validate the result."

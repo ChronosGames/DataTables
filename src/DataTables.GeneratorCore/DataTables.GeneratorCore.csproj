@@ -27,6 +27,21 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Update="KvTableTemplate.cs">
+      <DependentUpon>KvTableTemplate.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="GraphTableTemplate.cs">
+      <DependentUpon>GraphTableTemplate.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="TreeTableTemplate.cs">
+      <DependentUpon>TreeTableTemplate.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
@@ -41,6 +56,18 @@
     <None Update="DataMatrixTemplate.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>DataMatrixTemplate.cs</LastGenOutput>
+    </None>
+    <None Update="KvTableTemplate.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>KvTableTemplate.cs</LastGenOutput>
+    </None>
+    <None Update="GraphTableTemplate.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>GraphTableTemplate.cs</LastGenOutput>
+    </None>
+    <None Update="TreeTableTemplate.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>TreeTableTemplate.cs</LastGenOutput>
     </None>
   </ItemGroup>
 

@@ -3,6 +3,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using DataTables;
 
 #nullable enable
@@ -26,6 +28,41 @@ public static class DataTableManagerExtension
         { "ConsoleApp.DTDataTableSplitSample", Priority.Normal },
         { "ConsoleApp.DTMatrixSample", Priority.Normal },
     };
+
+    public static IReadOnlyList<TableRegistration> TableRegistrations { get; } = new TableRegistration[]
+    {
+        new TableRegistration(typeof(ConsoleApp.DTColumnTableSample), string.Empty, Priority.Normal, async (context, cancellationToken) => await context.CreateDataTableAsync<ConsoleApp.DTColumnTableSample>(string.Empty, cancellationToken)),
+        new TableRegistration(typeof(ConsoleApp.DTDataTableSample), string.Empty, Priority.Normal, async (context, cancellationToken) => await context.CreateDataTableAsync<ConsoleApp.DTDataTableSample>(string.Empty, cancellationToken)),
+        new TableRegistration(typeof(ConsoleApp.DTDataTableSplitSample), "x001", Priority.Normal, async (context, cancellationToken) => await context.CreateDataTableAsync<ConsoleApp.DTDataTableSplitSample>("x001", cancellationToken)),
+        new TableRegistration(typeof(ConsoleApp.DTDataTableSplitSample), "x002", Priority.Normal, async (context, cancellationToken) => await context.CreateDataTableAsync<ConsoleApp.DTDataTableSplitSample>("x002", cancellationToken)),
+        new TableRegistration(typeof(ConsoleApp.DTMatrixSample), string.Empty, Priority.Normal, async (context, cancellationToken) => await context.CreateDataTableAsync<ConsoleApp.DTMatrixSample>(string.Empty, cancellationToken)),
+    };
+
+    /// <summary>
+    /// Registers this generated table set with DataTableManager for reflection-free preheating.
+    /// </summary>
+    public static void Register()
+    {
+        DataTableManager.RegisterTables(TableRegistrations);
+    }
+
+    /// <summary>
+    /// Registers this generated table set with an independent DataTableContext.
+    /// </summary>
+    public static void Register(DataTableContext context)
+    {
+        if (context == null) throw new ArgumentNullException(nameof(context));
+        context.RegisterTables(TableRegistrations);
+    }
+
+    /// <summary>
+    /// Registers and preloads this generated table set in an independent context.
+    /// </summary>
+    public static ValueTask<LoadStats> PreloadAsync(DataTableContext context, Priority priorities = Priority.All, CancellationToken cancellationToken = default)
+    {
+        Register(context);
+        return context.PreheatAsync(priorities, cancellationToken);
+    }
 
     /// <summary>
     /// 预加载所有数据表。

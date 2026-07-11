@@ -20,9 +20,7 @@ namespace DataTables
             _dataDirectory = dataDirectory ?? throw new ArgumentNullException(nameof(dataDirectory));
         }
 
-        public ValueTask<byte[]> LoadAsync(string tableName) => LoadAsync(tableName, CancellationToken.None);
-
-        public async ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken)
+        public ValueTask<Stream> OpenReadAsync(string name, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var filePath = GetFilePath(name);
@@ -32,7 +30,8 @@ namespace DataTables
                 throw new FileNotFoundException($"数据表文件不存在: {filePath}");
             }
 
-            return await File.ReadAllBytesAsync(filePath, cancellationToken);
+            Stream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            return ValueTask.FromResult(stream);
         }
 
         public ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken)
@@ -64,8 +63,9 @@ namespace DataTables
             return new ValueTask<DataSourceManifest>(new DataSourceManifest(entries));
         }
 
-        public ValueTask<bool> IsAvailableAsync()
+        public ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
 #if NET5_0_OR_GREATER
             return ValueTask.FromResult(Directory.Exists(_dataDirectory));
 #else

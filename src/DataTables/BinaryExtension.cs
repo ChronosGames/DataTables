@@ -139,7 +139,7 @@ namespace DataTables
 
 #if NET7_0_OR_GREATER
             return System.Text.Json.JsonSerializer.Deserialize<T>(plain);
-#elif UNITY_EDITOR
+#elif UNITY_5_3_OR_NEWER
             return UnityEngine.JsonUtility.FromJson<T>(plain);
 #else
             throw new NotSupportedException();

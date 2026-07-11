@@ -22,9 +22,7 @@ namespace DataTables
 
         public virtual DataSourceType SourceType => Inner.SourceType;
 
-        public virtual ValueTask<byte[]> LoadAsync(string name) => LoadAsync(name, CancellationToken.None);
-
-        public abstract ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken);
+        public abstract ValueTask<Stream> OpenReadAsync(string name, CancellationToken cancellationToken);
 
         public virtual ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken) => Inner.ExistsAsync(name, cancellationToken);
 
@@ -45,17 +43,17 @@ namespace DataTables
 
         public void Clear() => _cache.Clear();
 
-        public override async ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken)
+        public override async ValueTask<Stream> OpenReadAsync(string name, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (_cache.TryGetValue(name, out var cached))
             {
-                return cached;
+                return new MemoryStream(cached, writable: false);
             }
 
             var bytes = await Inner.LoadAsync(name, cancellationToken);
             _cache[name] = bytes;
-            return bytes;
+            return new MemoryStream(bytes, writable: false);
         }
     }
 
@@ -65,47 +63,55 @@ namespace DataTables
         {
         }
 
-        public override async ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken)
+        public override async ValueTask<Stream> OpenReadAsync(string name, CancellationToken cancellationToken)
         {
-            var compressed = await Inner.LoadAsync(name, cancellationToken);
-            await using var input = new MemoryStream(compressed, writable: false);
-            await using var deflate = new DeflateStream(input, CompressionMode.Decompress);
-            await using var output = new MemoryStream();
-            await deflate.CopyToAsync(output, cancellationToken);
-            return output.ToArray();
+            var input = await Inner.OpenReadAsync(name, cancellationToken);
+            return new DeflateStream(input, CompressionMode.Decompress, leaveOpen: false);
         }
     }
 
     public sealed class EncryptedDataSource : DataSourceDecorator
     {
         private readonly Func<string, byte[], CancellationToken, ValueTask<byte[]>> _decryptAsync;
+        private readonly byte[]? _aesKey;
+        private readonly byte[]? _aesIv;
 
         public EncryptedDataSource(IDataSource inner, Func<string, byte[], CancellationToken, ValueTask<byte[]>> decryptAsync) : base(inner)
         {
             _decryptAsync = decryptAsync ?? throw new ArgumentNullException(nameof(decryptAsync));
+            _aesKey = null;
+            _aesIv = null;
         }
 
-        public EncryptedDataSource(IDataSource inner, byte[] aesKey, byte[] aesIv) : this(inner, (_, bytes, token) => DecryptAesAsync(bytes, aesKey, aesIv, token))
+        public EncryptedDataSource(IDataSource inner, byte[] aesKey, byte[] aesIv) : base(inner)
         {
+            _aesKey = (byte[])(aesKey ?? throw new ArgumentNullException(nameof(aesKey))).Clone();
+            _aesIv = (byte[])(aesIv ?? throw new ArgumentNullException(nameof(aesIv))).Clone();
+            _decryptAsync = null!;
         }
 
-        public override async ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken)
+        public override async ValueTask<Stream> OpenReadAsync(string name, CancellationToken cancellationToken)
         {
+            if (_aesKey != null)
+            {
+                var input = await Inner.OpenReadAsync(name, cancellationToken);
+                try
+                {
+                    var aes = Aes.Create();
+                    aes.Key = _aesKey;
+                    aes.IV = _aesIv!;
+                    var crypto = new CryptoStream(input, aes.CreateDecryptor(), CryptoStreamMode.Read);
+                    return new OwnedReadStream(crypto, aes);
+                }
+                catch
+                {
+                    input.Dispose();
+                    throw;
+                }
+            }
+
             var encrypted = await Inner.LoadAsync(name, cancellationToken);
-            return await _decryptAsync(name, encrypted, cancellationToken);
-        }
-
-        private static async ValueTask<byte[]> DecryptAesAsync(byte[] encrypted, byte[] key, byte[] iv, CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            using var aes = Aes.Create();
-            aes.Key = key;
-            aes.IV = iv;
-            await using var input = new MemoryStream(encrypted, writable: false);
-            await using var crypto = new CryptoStream(input, aes.CreateDecryptor(), CryptoStreamMode.Read);
-            await using var output = new MemoryStream();
-            await crypto.CopyToAsync(output, cancellationToken);
-            return output.ToArray();
+            return new MemoryStream(await _decryptAsync(name, encrypted, cancellationToken), writable: false);
         }
     }
 
@@ -142,22 +148,24 @@ namespace DataTables
                 .ToDictionary(entry => entry.Name, StringComparer.OrdinalIgnoreCase);
         }
 
-        public override async ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken)
+        public override async ValueTask<Stream> OpenReadAsync(string name, CancellationToken cancellationToken)
         {
-            var bytes = await Inner.LoadAsync(name, cancellationToken);
+            var stream = await Inner.OpenReadAsync(name, cancellationToken);
             if (!_entries.TryGetValue(name, out var entry))
             {
-                return bytes;
+                return stream;
             }
 
-            ValidateHashFormat(entry);
-            var actual = ComputeSha256Hex(bytes);
-            if (!string.Equals(actual, entry.Hash, StringComparison.Ordinal))
+            try
             {
-                throw new InvalidDataException($"Hash validation failed for '{name}' from '{entry.SourceName ?? Inner.ToString() ?? Inner.GetType().Name}': expected {entry.Hash}, actual {actual} ({Algorithm} {HashFormat}).");
+                ValidateHashFormat(entry);
+                return new HashValidatingReadStream(stream, entry.Hash!, name, entry.SourceName ?? Inner.ToString() ?? Inner.GetType().Name);
             }
-
-            return bytes;
+            catch
+            {
+                stream.Dispose();
+                throw;
+            }
         }
 
         private static void ValidateHashFormat(DataSourceManifestEntry entry)
@@ -171,18 +179,6 @@ namespace DataTables
 
         private static bool IsLowerHex(char ch) => (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f');
 
-        private static string ComputeSha256Hex(byte[] bytes)
-        {
-            using var sha256 = SHA256.Create();
-            var hash = sha256.ComputeHash(bytes);
-            var builder = new StringBuilder(hash.Length * 2);
-            foreach (var b in hash)
-            {
-                builder.Append(b.ToString("x2"));
-            }
-
-            return builder.ToString();
-        }
     }
 
     public sealed class FallbackDataSource : IDataSource
@@ -206,9 +202,7 @@ namespace DataTables
 
         public DataSourceType SourceType => DataSourceType.Composite;
 
-        public ValueTask<byte[]> LoadAsync(string name) => LoadAsync(name, CancellationToken.None);
-
-        public async ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken)
+        public async ValueTask<Stream> OpenReadAsync(string name, CancellationToken cancellationToken)
         {
             Exception? lastError = null;
             var failures = new List<string>();
@@ -224,10 +218,10 @@ namespace DataTables
                         continue;
                     }
 
-                    var bytes = await source.LoadAsync(name, cancellationToken);
+                    var stream = await source.OpenReadAsync(name, cancellationToken);
                     LastHitSource = sourceName;
                     Log.Info($"FallbackDataSource loaded '{name}' from {sourceName}.");
-                    return bytes;
+                    return stream;
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
@@ -313,7 +307,7 @@ namespace DataTables
             _manifestEntryMapper = manifestEntryMapper ?? MapDefaultVersionedEntry;
         }
 
-        public override ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken) => Inner.LoadAsync(_nameResolver(name, _version), cancellationToken);
+        public override ValueTask<Stream> OpenReadAsync(string name, CancellationToken cancellationToken) => Inner.OpenReadAsync(_nameResolver(name, _version), cancellationToken);
 
         public override ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken) => Inner.ExistsAsync(_nameResolver(name, _version), cancellationToken);
 

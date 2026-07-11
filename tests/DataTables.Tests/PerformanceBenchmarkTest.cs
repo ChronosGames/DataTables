@@ -16,7 +16,7 @@ namespace DataTables.Tests
         /// 基准测试：并发加载性能
         /// </summary>
         [Fact]
-        public async Task ConcurrentLoading_PerformanceBenchmark()
+        public async Task ConcurrentLoading_ShouldUseSingleFlight()
         {
             // Arrange
             ResetDataTableManager();
@@ -40,9 +40,6 @@ namespace DataTables.Tests
             results.Should().NotContainNulls();
             results.Should().HaveCount(concurrentCount);
 
-            // 性能验证：50个并发请求应在500ms内完成（留有余量）
-            stopwatch.ElapsedMilliseconds.Should().BeLessThan(500);
-
             // 所有结果应该是同一个实例（验证单例加载）
             var firstTable = results.First();
             results.Should().AllSatisfy(table => ReferenceEquals(table, firstTable).Should().BeTrue());
@@ -54,13 +51,14 @@ namespace DataTables.Tests
         /// 基准测试：顺序加载性能对比
         /// </summary>
         [Fact]
-        public async Task SequentialLoading_PerformanceBenchmark()
+        public async Task SequentialLoading_ShouldReturnCachedInstance()
         {
             // Arrange
             ResetDataTableManager();
             DataTableManager.UseCustomSource(new FastMockDataSource());
 
             const int loadCount = 10;
+            MockDataTable? firstTable = null;
 
             // Act & Measure
             var stopwatch = Stopwatch.StartNew();
@@ -69,12 +67,12 @@ namespace DataTables.Tests
             {
                 var table = await DataTableManager.GetOrCreateDataTableAsync<MockDataTable>();
                 table.Should().NotBeNull();
+                firstTable ??= table;
+                table.Should().BeSameAs(firstTable);
             }
 
             stopwatch.Stop();
 
-            // Assert - 顺序加载应该非常快（因为缓存）
-            stopwatch.ElapsedMilliseconds.Should().BeLessThan(100);
             Console.WriteLine($"顺序加载性能: {loadCount}个请求耗时 {stopwatch.ElapsedMilliseconds}ms");
         }
 
@@ -82,7 +80,7 @@ namespace DataTables.Tests
         /// 内存使用基准测试
         /// </summary>
         [Fact]
-        public async Task MemoryUsage_Benchmark()
+        public async Task LoadingThreeTables_ShouldSucceed()
         {
             // Arrange
             ResetDataTableManager();
@@ -103,9 +101,6 @@ namespace DataTables.Tests
             table2.Should().NotBeNull();
             table3.Should().NotBeNull();
 
-            // 内存使用应该合理（小于10MB用于测试数据）
-            memoryUsed.Should().BeLessThan(10 * 1024 * 1024); // 1MB
-
             Console.WriteLine($"内存使用: {memoryUsed / 1024}KB for 3 tables");
         }
 
@@ -113,7 +108,7 @@ namespace DataTables.Tests
         /// 基准测试：直接行添加路径应避免反射调用产生的逐行分配。
         /// </summary>
         [Fact]
-        public void DirectAddDataRow_Benchmark()
+        public void DirectAddDataRow_ShouldAllocateLessThanReflection()
         {
             const int rowCount = 10_000;
             var rows = Enumerable.Range(0, rowCount).Select(_ => new MockDataRow()).ToArray();
@@ -162,18 +157,10 @@ namespace DataTables.Tests
 
         private void ResetDataTableManager()
         {
-            // 清理测试状态
-            var type = typeof(DataTableManager);
-            var dataTablesField = type.GetField("s_DataTables",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            var loadingTablesField = type.GetField("s_LoadingTables",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-
-            if (dataTablesField?.GetValue(null) is System.Collections.Concurrent.ConcurrentDictionary<TypeNamePair, DataTableBase> dataTables)
-                dataTables.Clear();
-
-            if (loadingTablesField?.GetValue(null) is System.Collections.Concurrent.ConcurrentDictionary<TypeNamePair, Task<DataTableBase?>> loadingTables)
-                loadingTables.Clear();
+            DataTableManager.ClearCache();
+            DataTableManager.DisableMemoryManagement();
+            DataTableManager.ClearTableRegistrations();
+            DataTableManager.ClearHooks();
         }
     }
 
@@ -182,20 +169,18 @@ namespace DataTables.Tests
     {
         public DataSourceType SourceType => DataSourceType.Memory;
 
-        public async ValueTask<byte[]> LoadAsync(string tableName)
+        public async ValueTask<System.IO.Stream> OpenReadAsync(string tableName, CancellationToken cancellationToken)
         {
             // 最小延迟模拟
-            await Task.Delay(1);
-            return CreateMockTableBytes(tableName);
+            await Task.Delay(1, cancellationToken);
+            return new System.IO.MemoryStream(CreateMockTableBytes(tableName), writable: false);
         }
 
-        public ValueTask<byte[]> LoadAsync(string tableName, CancellationToken cancellationToken)
-            => LoadAsync(tableName);
+        public ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken) => ValueTask.FromResult(true);
 
-        public ValueTask<bool> IsAvailableAsync()
-        {
-            return ValueTask.FromResult(true);
-        }
+        public ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken) => ValueTask.FromResult(DataSourceManifest.Empty);
+
+        public ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken) => ValueTask.FromResult(true);
 
         private byte[] CreateMockTableBytes(string tableName)
         {

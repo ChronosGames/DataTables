@@ -199,9 +199,9 @@ public sealed partial class DataTableProcessor : IDisposable
     }
 
 
-    internal void GenerateDataFile(string filePath, string outputDir, bool forceOverwrite, ISheet sheet, ILogger logger)
+    internal void GenerateDataFile(string outputDir, string comparisonOutputDir, bool forceOverwrite, ISheet sheet, ILogger logger)
     {
-        new DataTableBinaryWriter(m_Context, WriteDataRows).GenerateDataFile(filePath, outputDir, forceOverwrite, sheet, logger);
+        new DataTableBinaryWriter(m_Context, WriteDataRows).GenerateDataFile(outputDir, comparisonOutputDir, forceOverwrite, sheet, logger);
     }
 
     internal int WriteDataRows(ISheet sheet, BinaryWriter writer)

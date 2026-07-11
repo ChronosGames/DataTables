@@ -79,7 +79,38 @@ public class DataTableTemplateTests
         AssertCompiles("GeneratedTreeIndex", new TreeTableTemplate(context).TransformText());
     }
 
-    private static void AssertCompiles(string assemblyName, string code)
+    [Fact]
+    public void MatrixValueType_Output_Should_Compile_Without_Warnings()
+    {
+        var context = new GenerationContext
+        {
+            ClassName = "FlagMatrix",
+            DataSetType = "matrix",
+            MatrixDefaultValue = "false",
+            Fields =
+            [
+                new XField(0) { Name = "_key1", TypeName = "short" },
+                new XField(1) { Name = "_key2", TypeName = "long" },
+                new XField(2) { Name = "_value", TypeName = "bool" },
+            ],
+        };
+
+        AssertCompiles("GeneratedFlagMatrix", new DataMatrixTemplate(context).TransformText(), allowWarnings: false);
+    }
+
+    [Fact]
+    public void JsonField_Output_Should_Compile_Without_Warnings()
+    {
+        var context = new GenerationContext
+        {
+            ClassName = "JsonConfig",
+            Fields = [new XField(0) { Name = "Payload", TypeName = "json<string>" }],
+        };
+
+        AssertCompiles("GeneratedJsonConfig", new DataTableTemplate(context).TransformText(), allowWarnings: false);
+    }
+
+    private static void AssertCompiles(string assemblyName, string code, bool allowWarnings = true)
     {
         var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
             .Split(Path.PathSeparator)
@@ -96,5 +127,10 @@ public class DataTableTemplateTests
         var errors = result.Diagnostics.Where(x => x.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
 
         errors.Should().BeEmpty();
+        if (!allowWarnings)
+        {
+            var warnings = result.Diagnostics.Where(x => x.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Warning);
+            warnings.Should().BeEmpty();
+        }
     }
 }

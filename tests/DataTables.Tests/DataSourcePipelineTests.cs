@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using DataTables;
@@ -14,6 +16,19 @@ namespace DataTables.Tests;
 
 public class DataSourcePipelineTests
 {
+    [Fact]
+    public void IDataSource_ShouldExposeOneCanonicalCancelableContract()
+    {
+        var methods = typeof(IDataSource).GetMethods();
+
+        methods.Where(method => method.Name == nameof(IDataSource.OpenReadAsync)).Should().ContainSingle();
+        methods.Where(method => method.Name == nameof(IDataSource.IsAvailableAsync)).Should().ContainSingle();
+        methods.Should().NotContain(method => method.Name == "LoadAsync");
+        methods.Single(method => method.Name == nameof(IDataSource.OpenReadAsync)).IsAbstract.Should().BeTrue();
+        methods.Single(method => method.Name == nameof(IDataSource.ExistsAsync)).IsAbstract.Should().BeTrue();
+        methods.Single(method => method.Name == nameof(IDataSource.IsAvailableAsync)).IsAbstract.Should().BeTrue();
+    }
+
     [Fact]
     public async Task FallbackDataSource_Should_Record_Hit_Source_And_Manifest_Source()
     {
@@ -136,6 +151,80 @@ public class DataSourcePipelineTests
         handler.Requests.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task FileSystemDataSource_ShouldExposeAFileStream()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "dt_stream_source_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        await File.WriteAllBytesAsync(Path.Combine(directory, "Config.bytes"), new byte[] { 1, 2, 3 });
+        var source = new FileSystemDataSource(directory);
+
+        await using var stream = await source.OpenReadAsync("Config", CancellationToken.None);
+
+        stream.Should().BeOfType<FileStream>();
+        stream.CanSeek.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task NetworkDataSource_StreamShouldOwnHttpResponseLifetime()
+    {
+        var payload = new TrackingMemoryStream(new byte[] { 1, 2, 3 });
+        var handler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StreamContent(payload)
+        });
+        var source = new NetworkDataSource("https://cdn.example.com/data", "manifest.json", httpClient: new HttpClient(handler));
+
+        var stream = await source.OpenReadAsync("Config", CancellationToken.None);
+        payload.Disposed.Should().BeFalse();
+        await stream.DisposeAsync();
+
+        payload.Disposed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task CachedDataSource_ShouldOpenInnerOnceAndReturnIndependentStreams()
+    {
+        var inner = new PayloadDataSource(new byte[] { 1, 2, 3 });
+        var source = new CachedDataSource(inner);
+
+        await using var first = await source.OpenReadAsync("Config", CancellationToken.None);
+        await using var second = await source.OpenReadAsync("Config", CancellationToken.None);
+        first.ReadByte().Should().Be(1);
+        second.ReadByte().Should().Be(1);
+
+        inner.OpenCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task CompressedDataSource_ShouldDecodeWhileReading()
+    {
+        var encoded = new MemoryStream();
+        await using (var compressor = new DeflateStream(encoded, CompressionLevel.Fastest, leaveOpen: true))
+        {
+            await compressor.WriteAsync(new byte[] { 1, 2, 3 });
+        }
+
+        var source = new CompressedDataSource(new PayloadDataSource(encoded.ToArray()));
+
+        (await source.LoadAsync("Config", CancellationToken.None)).Should().Equal(1, 2, 3);
+    }
+
+    [Fact]
+    public async Task EncryptedDataSource_ShouldDecodeAesWhileReading()
+    {
+        using var aes = Aes.Create();
+        var encoded = new MemoryStream();
+        await using (var encryptor = new CryptoStream(encoded, aes.CreateEncryptor(), CryptoStreamMode.Write, leaveOpen: true))
+        {
+            await encryptor.WriteAsync(new byte[] { 1, 2, 3 });
+        }
+
+        var source = new EncryptedDataSource(new PayloadDataSource(encoded.ToArray()), aes.Key, aes.IV);
+
+        (await source.LoadAsync("Config", CancellationToken.None)).Should().Equal(1, 2, 3);
+    }
+
     private sealed class StubDataSource : IDataSource
     {
         private readonly string _name;
@@ -158,21 +247,21 @@ public class DataSourcePipelineTests
 
         public DataSourceType SourceType => DataSourceType.Memory;
 
-        public ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken)
+        public ValueTask<Stream> OpenReadAsync(string name, CancellationToken cancellationToken)
         {
             if (_throwOnLoad)
             {
                 throw new InvalidOperationException($"{_name} load failed");
             }
 
-            return new ValueTask<byte[]>(new byte[] { 1, 2, 3 });
+            return new ValueTask<Stream>(new MemoryStream(new byte[] { 1, 2, 3 }, writable: false));
         }
 
         public ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken) => new ValueTask<bool>(_exists);
 
         public ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken) => new ValueTask<DataSourceManifest>(_manifest);
 
-        public ValueTask<bool> IsAvailableAsync() => new ValueTask<bool>(true);
+        public ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken) => new ValueTask<bool>(true);
 
         public override string ToString() => _name;
     }
@@ -194,5 +283,45 @@ public class DataSourcePipelineTests
             Requests.Add(request);
             return Task.FromResult(_responseFactory(request));
         }
+    }
+
+    private sealed class TrackingMemoryStream : MemoryStream
+    {
+        public TrackingMemoryStream(byte[] bytes) : base(bytes, writable: false) { }
+
+        public bool Disposed { get; private set; }
+
+        protected override void Dispose(bool disposing)
+        {
+            Disposed = true;
+            base.Dispose(disposing);
+        }
+    }
+
+    private sealed class PayloadDataSource : IDataSource
+    {
+        private readonly byte[] _payload;
+
+        public PayloadDataSource(byte[] payload)
+        {
+            _payload = payload;
+        }
+
+        public int OpenCount { get; private set; }
+
+        public DataSourceType SourceType => DataSourceType.Memory;
+
+        public ValueTask<Stream> OpenReadAsync(string name, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            OpenCount++;
+            return ValueTask.FromResult<Stream>(new MemoryStream(_payload, writable: false));
+        }
+
+        public ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken) => ValueTask.FromResult(true);
+
+        public ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken) => ValueTask.FromResult(DataSourceManifest.Empty);
+
+        public ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken) => ValueTask.FromResult(true);
     }
 }

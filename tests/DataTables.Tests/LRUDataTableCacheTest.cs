@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Xunit;
@@ -7,6 +8,16 @@ namespace DataTables.Tests
 {
     public class LRUDataTableCacheTest
     {
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        public void LRUCache_ShouldRejectNonPositiveLimits(long maxMemoryBytes)
+        {
+            Action action = () => new LRUDataTableCache(maxMemoryBytes);
+
+            action.Should().Throw<ArgumentOutOfRangeException>();
+        }
+
         /// <summary>
         /// 测试LRU缓存基本功能
         /// </summary>
@@ -154,6 +165,58 @@ namespace DataTables.Tests
             DataTableManager.DisableMemoryManagement();
         }
 
+        [Fact]
+        public async Task MemoryManager_Eviction_ShouldNotReturnTheEvictedTable()
+        {
+            ResetDataTableManager();
+            DataTableManager.UseCustomSource(new SizedMockDataSource(5000));
+            DataTableManager.EnableMemoryManagement(1);
+
+            await DataTableManager.LoadAsync<MockDataTable>();
+            var latestTable = await DataTableManager.LoadAsync<MockDataTable2>();
+
+            DataTableManager.GetCached<MockDataTable>().Should().BeNull("LRU 淘汰后不应从另一份缓存返回已关闭表");
+            DataTableManager.GetCached<MockDataTable2>().Should().BeSameAs(latestTable);
+            DataTableManager.Count.Should().Be(1);
+
+            DataTableManager.ClearCache();
+            DataTableManager.DisableMemoryManagement();
+        }
+
+        [Fact]
+        public async Task DestroyDataTable_ShouldRemoveTheMemoryManagedEntry()
+        {
+            ResetDataTableManager();
+            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.EnableMemoryManagement(10);
+            await DataTableManager.LoadAsync<MockDataTable>();
+
+            DataTableManager.DestroyDataTable<MockDataTable>().Should().BeTrue();
+
+            DataTableManager.GetCached<MockDataTable>().Should().BeNull();
+            DataTableManager.Count.Should().Be(0);
+            DataTableManager.GetCacheStats()!.Value.TotalItems.Should().Be(0);
+
+            DataTableManager.ClearCache();
+            DataTableManager.DisableMemoryManagement();
+        }
+
+        [Fact]
+        public async Task ClearCache_ShouldNotReturnMemoryManagedTables()
+        {
+            ResetDataTableManager();
+            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.EnableMemoryManagement(10);
+            await DataTableManager.LoadAsync<MockDataTable>();
+
+            DataTableManager.ClearCache();
+
+            DataTableManager.GetCached<MockDataTable>().Should().BeNull();
+            DataTableManager.Count.Should().Be(0);
+
+            DataTableManager.DisableMemoryManagement();
+        }
+
         /// <summary>
         /// 测试缓存统计信息
         /// </summary>
@@ -192,6 +255,38 @@ namespace DataTables.Tests
             // 清理测试状态 - 使用公共API来确保状态一致性
             DataTableManager.ClearCache();
             DataTableManager.DisableMemoryManagement();
+        }
+
+        private sealed class SizedMockDataSource : IDataSource
+        {
+            private readonly ushort _rowCount;
+
+            public SizedMockDataSource(ushort rowCount)
+            {
+                _rowCount = rowCount;
+            }
+
+            public DataSourceType SourceType => DataSourceType.Memory;
+
+            public ValueTask<System.IO.Stream> OpenReadAsync(string tableName, CancellationToken cancellationToken)
+            {
+                using var ms = new System.IO.MemoryStream();
+                using var bw = new System.IO.BinaryWriter(ms);
+                bw.Write("DTABLE");
+                bw.Write(3);
+                bw.Write(1UL);
+                bw.Write("test");
+                bw.Write(tableName);
+                bw.Write(_rowCount);
+                bw.Write(0);
+                return ValueTask.FromResult<System.IO.Stream>(new System.IO.MemoryStream(ms.ToArray(), writable: false));
+            }
+
+            public ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken) => ValueTask.FromResult(true);
+
+            public ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken) => ValueTask.FromResult(DataSourceManifest.Empty);
+
+            public ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken) => ValueTask.FromResult(true);
         }
     }
 }

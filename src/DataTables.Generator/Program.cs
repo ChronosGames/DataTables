@@ -48,35 +48,19 @@ public class MyCommands
         var sw = Stopwatch.StartNew();
         Console.WriteLine("Start DataTables CodeGeneration");
 
-        try
-        {
-            var options = new ParseOptions
-            {
-                FilterColumnTags = filterColumnTags,
-                StrictNameValidation = strictNameValidation,
-                ValidateFormulaConsistency = validateFormulaConsistency,
-                FormulaPolicy = formulaPolicy.Equals("off", StringComparison.OrdinalIgnoreCase) ? FormulaEvaluationPolicy.Off
-                    : formulaPolicy.Equals("forceevaluate", StringComparison.OrdinalIgnoreCase) ? FormulaEvaluationPolicy.ForceEvaluate
-                    : FormulaEvaluationPolicy.ValidateOnly,
-                ColumnCommentMarkerText = columnCommentMarkerText,
-                RowCommentMarkerText = rowCommentMarkerText,
-                SkipCellMarker = skipCellMarker,
-                ArrayNestedSeparators = arrayNestedSeparators ?? string.Empty,
-            };
+        var options = CreateParseOptions(filterColumnTags, strictNameValidation, validateFormulaConsistency, formulaPolicy, columnCommentMarkerText, rowCommentMarkerText, skipCellMarker, arrayNestedSeparators);
+        var result = await new DataTableGenerator().GenerateFile(inputDirectories, searchPattern, codeOutputDir, dataOutputDir, usingNamespace, prefixClassName,
+            importNamespaces: importNamespaces,
+            filterColumnTags: filterColumnTags,
+            forceOverwrite,
+            Console.WriteLine,
+            options,
+            string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput);
 
-            await new DataTableGenerator().GenerateFile(inputDirectories, searchPattern, codeOutputDir, dataOutputDir, usingNamespace, prefixClassName,
-                importNamespaces: importNamespaces,
-                filterColumnTags: filterColumnTags,
-                forceOverwrite,
-                Console.WriteLine,
-                options,
-                string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput);
-        }
-        catch (Exception e)
+        if (!result.Succeeded)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.WriteLine(e);
-            Console.ResetColor();
+            Environment.ExitCode = 1;
+            return;
         }
 
         Console.WriteLine("Complete DataTables Generation, elapsed: " + sw.Elapsed);
@@ -117,39 +101,40 @@ public class MyCommands
         var sw = Stopwatch.StartNew();
         Console.WriteLine("Start DataTables CodeGeneration");
 
-        try
-        {
-            var options = new ParseOptions
-            {
-                FilterColumnTags = filterColumnTags,
-                StrictNameValidation = strictNameValidation,
-                ValidateFormulaConsistency = validateFormulaConsistency,
-                FormulaPolicy = formulaPolicy.Equals("off", StringComparison.OrdinalIgnoreCase) ? FormulaEvaluationPolicy.Off
-                    : formulaPolicy.Equals("forceevaluate", StringComparison.OrdinalIgnoreCase) ? FormulaEvaluationPolicy.ForceEvaluate
-                    : FormulaEvaluationPolicy.ValidateOnly,
-                ColumnCommentMarkerText = columnCommentMarkerText,
-                RowCommentMarkerText = rowCommentMarkerText,
-                SkipCellMarker = skipCellMarker,
-                ArrayNestedSeparators = arrayNestedSeparators ?? string.Empty,
-            };
+        var options = CreateParseOptions(filterColumnTags, strictNameValidation, validateFormulaConsistency, formulaPolicy, columnCommentMarkerText, rowCommentMarkerText, skipCellMarker, arrayNestedSeparators);
+        var result = await new DataTableGenerator().GenerateFile(inputDirectories, searchPattern, string.Empty, dataOutputDir, usingNamespace, prefixClassName,
+            importNamespaces: importNamespaces,
+            filterColumnTags: filterColumnTags,
+            true,
+            Console.WriteLine,
+            options,
+            string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput);
 
-            await new DataTableGenerator().GenerateFile(inputDirectories, searchPattern, string.Empty, dataOutputDir, usingNamespace, prefixClassName,
-                importNamespaces: importNamespaces,
-                filterColumnTags: filterColumnTags,
-                true,
-                Console.WriteLine,
-                options,
-                string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput);
-        }
-        catch (Exception e)
+        if (!result.Succeeded)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.WriteLine(e);
-            Console.ResetColor();
+            Environment.ExitCode = 1;
+            return;
         }
 
         Console.WriteLine("Complete DataTables Generation, elapsed: " + sw.Elapsed);
 
         Console.OutputEncoding = oldEncoding;
+    }
+
+    private static ParseOptions CreateParseOptions(string filterColumnTags, bool strictNameValidation, bool validateFormulaConsistency, string formulaPolicy, string columnCommentMarkerText, string rowCommentMarkerText, string skipCellMarker, string arrayNestedSeparators)
+    {
+        return new ParseOptions
+        {
+            FilterColumnTags = filterColumnTags,
+            StrictNameValidation = strictNameValidation,
+            ValidateFormulaConsistency = validateFormulaConsistency,
+            FormulaPolicy = formulaPolicy.Equals("off", StringComparison.OrdinalIgnoreCase) ? FormulaEvaluationPolicy.Off
+                : formulaPolicy.Equals("forceevaluate", StringComparison.OrdinalIgnoreCase) ? FormulaEvaluationPolicy.ForceEvaluate
+                : FormulaEvaluationPolicy.ValidateOnly,
+            ColumnCommentMarkerText = columnCommentMarkerText,
+            RowCommentMarkerText = rowCommentMarkerText,
+            SkipCellMarker = skipCellMarker,
+            ArrayNestedSeparators = arrayNestedSeparators ?? string.Empty,
+        };
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using DataTables;
 
@@ -25,7 +26,7 @@ public class CustomSample
 
 internal static class Program
 {
-    private static async Task Main(string[] args)
+    private static async Task<int> Main(string[] args)
     {
         Console.WriteLine("🚀 DataTableManager 激进优化演示");
         Console.WriteLine("=====================================\n");
@@ -34,10 +35,10 @@ internal static class Program
         await ConfigurationDemo();
 
         // ⚡ 异步优先API演示
-        await AsyncFirstAPIDemo();
+        var asyncFirstSucceeded = await AsyncFirstAPIDemo();
 
         // 🧩 ColumnTable 示例演示
-        await ColumnTableDemo();
+        var columnTableSucceeded = await ColumnTableDemo();
 
         // 🧠 智能内存管理演示
         await MemoryManagementDemo();
@@ -48,7 +49,14 @@ internal static class Program
         // 📊 性能监控演示
         await MonitoringDemo();
 
+        if (!asyncFirstSucceeded || !columnTableSucceeded)
+        {
+            Console.Error.WriteLine("❌ 示例数据加载失败；请重新生成 Generated 与 DataTables 目录中的产物。");
+            return 1;
+        }
+
         Console.WriteLine("🎉 所有演示完成！享受现代化高性能的DataTables！");
+        return 0;
     }
 
     static async Task ConfigurationDemo()
@@ -57,8 +65,9 @@ internal static class Program
         Console.WriteLine("-------------------");
 
         // 文件系统数据源配置
-        DataTableManager.UseFileSystem("./DataTables");
-        Console.WriteLine("✅ 配置文件系统数据源: ./DataTables");
+        var dataDirectory = Path.Combine(AppContext.BaseDirectory, "DataTables");
+        DataTableManager.UseFileSystem(dataDirectory);
+        Console.WriteLine($"✅ 配置文件系统数据源: {dataDirectory}");
 
         // 启用内存管理
         DataTableManager.EnableMemoryManagement(30); // 30MB限制
@@ -72,7 +81,7 @@ internal static class Program
         Console.WriteLine("✅ 启用性能监控\n");
     }
 
-    static async Task AsyncFirstAPIDemo()
+    static async Task<bool> AsyncFirstAPIDemo()
     {
         Console.WriteLine("⚡ 异步优先API演示");
         Console.WriteLine("-----------------");
@@ -94,14 +103,21 @@ internal static class Program
                     Console.WriteLine($"✅ 成功加载数据表: {sampleTable.Count} 行数据");
 
                     // 演示静态API - 使用Static后缀的静态方法
+                    const string sampleName = "示例字符k串1";
                     var row1 = DTDataTableSample.GetRowById(1);
-                    var rowsByName = DTDataTableSample.GetRowsGroupByName("示例字符串1");
+                    var rowsByName = DTDataTableSample.GetRowsGroupByName(sampleName);
+                    if (row1?.Name != sampleName || rowsByName?.Count != 1)
+                    {
+                        Console.Error.WriteLine("❌ 静态查询验证失败：示例数据与生成代码不匹配。");
+                        return false;
+                    }
+
                     Console.WriteLine($"✅ 静态API测试: 找到ID=1的行: {row1?.Name}, 分组查询结果: {rowsByName?.Count ?? 0}条");
+                    Console.WriteLine("✅ 异步优先架构已就绪\n");
+                    return true;
                 }
-                else
-                {
-                    Console.WriteLine("📝 数据表加载返回null，可能是.bytes文件不存在或格式错误");
-                }
+
+                Console.WriteLine("📝 数据表加载返回null，可能是.bytes文件不存在或格式错误");
             }
             catch (Exception ex)
             {
@@ -118,10 +134,10 @@ internal static class Program
             Console.WriteLine($"📝 演示异步API：{ex.GetType().Name} - {ex.Message}");
         }
 
-        Console.WriteLine("✅ 异步优先架构已就绪\n");
+        return false;
     }
 
-    static async Task ColumnTableDemo()
+    static async Task<bool> ColumnTableDemo()
     {
         Console.WriteLine("🧩 ColumnTable 示例演示");
         Console.WriteLine("---------------------");
@@ -134,11 +150,11 @@ internal static class Program
             if (table != null)
             {
                 Console.WriteLine($"✅ 载入示例数据: 当前已有 {table.Count} 行");
+                Console.WriteLine();
+                return true;
             }
-            else
-            {
-                Console.WriteLine("ℹ️ 未检测到示例 .bytes，可在工程中添加 Column 布局的示例后重试");
-            }
+
+            Console.WriteLine("ℹ️ 未检测到示例 .bytes，可在工程中添加 Column 布局的示例后重试");
         }
         catch (Exception ex)
         {
@@ -146,6 +162,7 @@ internal static class Program
         }
 
         Console.WriteLine();
+        return false;
     }
 
     static async Task MemoryManagementDemo()

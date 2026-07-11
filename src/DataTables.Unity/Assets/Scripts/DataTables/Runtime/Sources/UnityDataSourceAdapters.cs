@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -6,21 +7,23 @@ namespace DataTables
 {
     /// <summary>
     /// Unity Addressables 数据源适配预留基类。
-    /// 具体项目可继承后桥接 Addressables.LoadAssetAsync<TextAsset>() 等 Unity API。
+    /// 具体项目可继承后桥接 Addressables.LoadAssetAsync&lt;TextAsset&gt;() 等 Unity API。
     /// </summary>
     public abstract class AddressablesDataSourceBase : IDataSource
     {
         public DataSourceType SourceType => DataSourceType.Addressables;
 
-        public ValueTask<byte[]> LoadAsync(string tableName) => LoadAsync(tableName, CancellationToken.None);
-
-        public abstract ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken);
+        public abstract ValueTask<Stream> OpenReadAsync(string name, CancellationToken cancellationToken);
 
         public virtual ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken) => new ValueTask<bool>(true);
 
         public virtual ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken) => new ValueTask<DataSourceManifest>(DataSourceManifest.Empty);
 
-        public virtual ValueTask<bool> IsAvailableAsync() => new ValueTask<bool>(true);
+        public virtual ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return new ValueTask<bool>(true);
+        }
     }
 
     /// <summary>

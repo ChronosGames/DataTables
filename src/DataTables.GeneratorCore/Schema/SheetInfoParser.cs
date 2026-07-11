@@ -40,9 +40,17 @@ internal static class SheetInfoParser
                     case "matrixdefaultvalue": context.MatrixDefaultValue = args[1].Trim(); break;
                 }
             }
-            else if (args.Length == 1 && args[0].Trim().Equals("disabletagsfilter", StringComparison.OrdinalIgnoreCase))
+            else if (args.Length == 1)
             {
-                context.DisableTagsFilter = true;
+                var marker = args[0].Trim();
+                if (marker.Equals("disabletagsfilter", StringComparison.OrdinalIgnoreCase))
+                {
+                    context.DisableTagsFilter = true;
+                }
+                else if (marker.Equals("datatabegenerator", StringComparison.OrdinalIgnoreCase) || marker.Equals("datatablegenerator", StringComparison.OrdinalIgnoreCase))
+                {
+                    context.DataSetType = "table";
+                }
             }
         }
         return !string.IsNullOrEmpty(context.ClassName);

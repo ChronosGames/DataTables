@@ -130,8 +130,13 @@ public sealed partial class DataTableProcessor
                     return new DataTypeDescriptor(m_Text, signature, canonicalName, args);
                 }
 
-                var normalized = canonicalName == "DateTime" ? "datetime" : canonicalName.ToLowerInvariant();
+                var normalized = IsSupportedLeaf(canonicalName) ? canonicalName.ToLowerInvariant() : canonicalName;
                 return new DataTypeDescriptor(m_Text, normalized, canonicalName, Array.Empty<DataTypeDescriptor>());
+            }
+
+            private bool IsSupportedLeaf(string name)
+            {
+                return m_SupportedTypes.Any(type => type.IndexOf('<') < 0 && type.Equals(name, StringComparison.OrdinalIgnoreCase));
             }
 
             private string ParseName()

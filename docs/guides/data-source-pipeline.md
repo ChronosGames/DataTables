@@ -16,11 +16,11 @@ DataTables 运行时采用**传输层处理优先**的模型：`IDataSource` 及
 
 ## HashValidatedDataSource
 
-`HashValidatedDataSource` 是可选的 `IDataSource` 装饰器，用 manifest 条目的 `Hash` 在 `LoadAsync` 返回前校验 payload：
+`HashValidatedDataSource` 是可选的 `IDataSource` 装饰器，用 manifest 条目的 `Hash` 在流读取到末尾时校验 payload：
 
 - **算法与大小写**：固定为 SHA-256 lowercase hex，长度 64；大写 hex 或其他长度会被视为 manifest 格式错误。
 - **覆盖范围**：校验传入下一层运行时解析前的 DataTables payload。对于压缩/加密链路，应放在 `CompressedDataSource`、`EncryptedDataSource` 之后，以校验解压/解密后的明文字节；如需校验 CDN 原始传输包，可在外层另行增加传输包 hash。
-- **校验时机**：`LoadAsync` 从内部数据源取到字节后、返回给 `DataTableManager` 解析前立即校验，便于在热更新或 CDN 截断/污染时提前失败。
+- **校验时机**：`DataTableManager` 解析流并读取到末尾时完成校验，便于在热更新或 CDN 截断/污染时失败，同时避免为校验额外复制完整 payload。
 - **未配置条目**：manifest 中没有对应 `Hash` 的资源会透传，不影响渐进接入。
 
 示例：

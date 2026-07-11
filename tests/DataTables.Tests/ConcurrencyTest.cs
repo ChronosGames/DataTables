@@ -44,6 +44,133 @@ namespace DataTables.Tests
             results.Should().AllSatisfy(table => ReferenceEquals(table, firstTable).Should().BeTrue());
         }
 
+        [Fact]
+        public async Task ConcurrentLoadSameTable_ShouldStartTheSourceOnce()
+        {
+            const int concurrentCount = 32;
+            ResetDataTableManager();
+
+            var source = new BlockingCountingDataSource();
+            DataTableManager.UseCustomSource(source);
+            ThreadPool.GetMinThreads(out var workerThreads, out var completionPortThreads);
+            ThreadPool.SetMinThreads(Math.Max(workerThreads, concurrentCount), completionPortThreads);
+
+            try
+            {
+                using var start = new Barrier(concurrentCount + 1);
+                var tasks = Enumerable.Range(0, concurrentCount)
+                    .Select(_ => Task.Run(async () =>
+                    {
+                        start.SignalAndWait();
+                        return await DataTableManager.LoadAsync<MockDataTable>();
+                    }))
+                    .ToArray();
+
+                start.SignalAndWait();
+                await source.FirstLoadStarted.Task;
+                await Task.Delay(100);
+
+                source.LoadCount.Should().Be(1, "所有调用应等待同一个已发布的加载任务");
+
+                source.Release();
+                var results = await Task.WhenAll(tasks);
+                results.Should().NotContainNulls();
+            }
+            finally
+            {
+                source.Release();
+                ThreadPool.SetMinThreads(workerThreads, completionPortThreads);
+            }
+        }
+
+        [Fact]
+        public async Task ClearCacheDuringLoad_ShouldNotRepublishTheTable()
+        {
+            ResetDataTableManager();
+            var source = new BlockingCountingDataSource();
+            DataTableManager.UseCustomSource(source);
+
+            var loading = DataTableManager.LoadAsync<MockDataTable>().AsTask();
+            await source.FirstLoadStarted.Task;
+
+            DataTableManager.ClearCache();
+            source.Release();
+
+            (await loading).Should().BeNull();
+            DataTableManager.GetCached<MockDataTable>().Should().BeNull();
+            (await DataTableManager.LoadAsync<MockDataTable>()).Should().NotBeNull("清理后的新请求应能重新加载");
+        }
+
+        [Fact]
+        public async Task DestroyDuringLoad_ShouldNotRepublishTheTable()
+        {
+            ResetDataTableManager();
+            var source = new BlockingCountingDataSource();
+            DataTableManager.UseCustomSource(source);
+
+            var loading = DataTableManager.LoadAsync<MockDataTable>().AsTask();
+            await source.FirstLoadStarted.Task;
+
+            DataTableManager.DestroyDataTable<MockDataTable>();
+            source.Release();
+
+            (await loading).Should().BeNull();
+            DataTableManager.GetCached<MockDataTable>().Should().BeNull();
+            (await DataTableManager.LoadAsync<MockDataTable>()).Should().NotBeNull("销毁后的新请求应能重新加载");
+        }
+
+        [Fact]
+        public async Task LegacyCreateDuringClear_ShouldNotRepublishTheTable()
+        {
+            ResetDataTableManager();
+            var source = new BlockingCountingDataSource();
+            DataTableManager.UseCustomSource(source);
+            var completed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            DataTableManager.CreateDataTable<MockDataTable>(() => completed.TrySetResult(true));
+            await source.FirstLoadStarted.Task;
+
+            DataTableManager.ClearCache();
+            source.Release();
+            await completed.Task;
+
+            DataTableManager.GetCached<MockDataTable>().Should().BeNull();
+        }
+
+        [Fact]
+        public async Task LegacyCreateAndLoadAsync_ShouldShareOneSourceLoad()
+        {
+            ResetDataTableManager();
+            var source = new BlockingCountingDataSource();
+            DataTableManager.UseCustomSource(source);
+            var callbackCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var callbackCount = 0;
+
+            try
+            {
+                DataTableManager.CreateDataTable<MockDataTable>(() =>
+                {
+                    Interlocked.Increment(ref callbackCount);
+                    callbackCompleted.TrySetResult(true);
+                });
+                await source.FirstLoadStarted.Task;
+
+                var loading = DataTableManager.LoadAsync<MockDataTable>().AsTask();
+                source.LoadCount.Should().Be(1);
+
+                source.Release();
+                (await loading).Should().NotBeNull();
+                await callbackCompleted.Task;
+
+                Volatile.Read(ref callbackCount).Should().Be(1);
+                source.LoadCount.Should().Be(1);
+            }
+            finally
+            {
+                source.Release();
+            }
+        }
+
         /// <summary>
         /// 测试并发加载不同数据表的性能
         /// </summary>
@@ -75,18 +202,8 @@ namespace DataTables.Tests
 
         private void ResetDataTableManager()
         {
-            // 通过反射清理静态字段进行测试重置
-            var type = typeof(DataTableManager);
-            var dataTablesField = type.GetField("s_DataTables",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            var loadingTablesField = type.GetField("s_LoadingTables",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-
-            if (dataTablesField?.GetValue(null) is System.Collections.Concurrent.ConcurrentDictionary<TypeNamePair, DataTableBase> dataTables)
-                dataTables.Clear();
-
-            if (loadingTablesField?.GetValue(null) is System.Collections.Concurrent.ConcurrentDictionary<TypeNamePair, Task<DataTableBase?>> loadingTables)
-                loadingTables.Clear();
+            DataTableManager.ClearCache();
+            DataTableManager.DisableMemoryManagement();
         }
     }
 
@@ -95,22 +212,20 @@ namespace DataTables.Tests
     {
         public DataSourceType SourceType => DataSourceType.Memory;
 
-        public async ValueTask<byte[]> LoadAsync(string tableName)
+        public async ValueTask<System.IO.Stream> OpenReadAsync(string tableName, CancellationToken cancellationToken)
         {
             // 模拟网络延迟
-            await Task.Delay(50);
+            await Task.Delay(50, cancellationToken);
 
             // 返回模拟的数据表二进制数据
-            return CreateMockTableBytes(tableName);
+            return new System.IO.MemoryStream(CreateMockTableBytes(tableName), writable: false);
         }
 
-        public ValueTask<byte[]> LoadAsync(string tableName, CancellationToken cancellationToken)
-            => LoadAsync(tableName);
+        public ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken) => ValueTask.FromResult(true);
 
-        public ValueTask<bool> IsAvailableAsync()
-        {
-            return ValueTask.FromResult(true);
-        }
+        public ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken) => ValueTask.FromResult(DataSourceManifest.Empty);
+
+        public ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken) => ValueTask.FromResult(true);
 
         private byte[] CreateMockTableBytes(string tableName)
         {
@@ -125,6 +240,52 @@ namespace DataTables.Tests
             bw.Write(ushort.MinValue); // 数据行数
             bw.Write(0);         // Flags
 
+            return ms.ToArray();
+        }
+    }
+
+    public sealed class BlockingCountingDataSource : IDataSource
+    {
+        private readonly TaskCompletionSource<byte[]> _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<bool> _firstLoadStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _loadCount;
+
+        public DataSourceType SourceType => DataSourceType.Memory;
+        public int LoadCount => Volatile.Read(ref _loadCount);
+        public TaskCompletionSource<bool> FirstLoadStarted => _firstLoadStarted;
+
+        public async ValueTask<System.IO.Stream> OpenReadAsync(string tableName, CancellationToken cancellationToken)
+        {
+            if (Interlocked.Increment(ref _loadCount) == 1)
+            {
+                _firstLoadStarted.TrySetResult(true);
+            }
+
+            return new System.IO.MemoryStream(await _release.Task, writable: false);
+        }
+
+        public ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken) => ValueTask.FromResult(true);
+
+        public ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken) => ValueTask.FromResult(DataSourceManifest.Empty);
+
+        public ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken) => ValueTask.FromResult(true);
+
+        public void Release()
+        {
+            _release.TrySetResult(CreateMockTableBytes(typeof(MockDataTable).FullName!));
+        }
+
+        private static byte[] CreateMockTableBytes(string tableName)
+        {
+            using var ms = new System.IO.MemoryStream();
+            using var bw = new System.IO.BinaryWriter(ms);
+            bw.Write("DTABLE");
+            bw.Write(3);
+            bw.Write(1UL);
+            bw.Write("test");
+            bw.Write(tableName);
+            bw.Write(ushort.MinValue);
+            bw.Write(0);
             return ms.ToArray();
         }
     }

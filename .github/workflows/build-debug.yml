@@ -17,6 +17,21 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ChronosGames/Actions/.github/actions/setup-dotnet@main
       - run: dotnet build -c Debug
+      - name: Verify console sample end to end
+        run: |
+          dotnet run --project src/DataTables.Generator/DataTables.Generator.csproj --framework net9.0 -c Debug --no-build --no-launch-profile -- \
+            -i '["sandbox/ConsoleApp"]' \
+            -patterns '*.xlsx' \
+            -co sandbox/ConsoleApp/Generated \
+            -do sandbox/ConsoleApp/DataTables \
+            -n ConsoleApp \
+            -p DR \
+            -t C \
+            -f
+          git diff --exit-code -- sandbox/ConsoleApp/Generated sandbox/ConsoleApp/DataTables
+          test -z "$(git status --porcelain --untracked-files=all -- sandbox/ConsoleApp/Generated sandbox/ConsoleApp/DataTables)"
+          dotnet build sandbox/ConsoleApp/ConsoleApp.csproj -c Debug --no-restore
+          dotnet run --project sandbox/ConsoleApp/ConsoleApp.csproj -c Debug --no-build
       - run: ./scripts/verify-unity-runtime-sync.sh
       - run: git diff --exit-code -- src/DataTables.Unity/Assets/Scripts/DataTables
       - run: dotnet test -c Debug --no-build

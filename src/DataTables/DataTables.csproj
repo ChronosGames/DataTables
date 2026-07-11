@@ -30,7 +30,18 @@
         <None Include="..\..\Icon.png" Pack="true" PackagePath="\"/>
         <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
 
-        <TargetFiles1 Include="$(ProjectDir)**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;_InternalVisibleTo.cs"/>
+        <TargetFiles1 Include="$(ProjectDir)**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;_InternalVisibleTo.cs">
+            <UnitySubdirectory>Runtime\Core\%(RecursiveDir)</UnitySubdirectory>
+        </TargetFiles1>
+        <TargetFiles1 Update="$(ProjectDir)LRUDataTableCache.cs">
+            <UnitySubdirectory>Runtime\Caching\</UnitySubdirectory>
+        </TargetFiles1>
+        <TargetFiles1 Update="$(ProjectDir)DataSourceDecorators.cs;$(ProjectDir)FileSystemDataSource.cs;$(ProjectDir)HashValidatingReadStream.cs;$(ProjectDir)IDataSource.cs;$(ProjectDir)NetworkDataSource.cs;$(ProjectDir)OwnedReadStream.cs;$(ProjectDir)UnityDataSourceAdapters.cs">
+            <UnitySubdirectory>Runtime\Sources\</UnitySubdirectory>
+        </TargetFiles1>
+        <TargetFiles1 Update="$(ProjectDir)DataTableBinaryFormat.cs;$(ProjectDir)DataTableBinaryLoader.cs;$(ProjectDir)DataTableBinaryProtocol.cs">
+            <UnitySubdirectory>Runtime\Protocol\</UnitySubdirectory>
+        </TargetFiles1>
 <!--        <TargetFiles2 Include="$(ProjectDir)..\DataTables.Annotations\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;"/>-->
 <!--        <TargetFiles3 Include="$(ProjectDir)..\..\tests\DataTables.Tests\**\*.cs" Exclude="**\bin\**\*.*;**\obj\**\*.*;"/>-->
 
@@ -39,7 +50,7 @@
         </AssemblyAttribute>
     </ItemGroup>
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-        <Copy SourceFiles="@(TargetFiles1)" DestinationFiles="$(DestinationRoot)\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="false"/>
+        <Copy SourceFiles="@(TargetFiles1)" DestinationFiles="$(DestinationRoot)\%(UnitySubdirectory)%(Filename)%(Extension)" SkipUnchangedFiles="false"/>
 <!--        <Copy SourceFiles="@(TargetFiles2)" DestinationFiles="$(DestinationRoot)\Annotations\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true"/>-->
 <!--        <Copy SourceFiles="@(TargetFiles3)" DestinationFiles="$(TestDestination)\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true"/>-->
     </Target>

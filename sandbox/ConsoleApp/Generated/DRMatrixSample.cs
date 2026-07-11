@@ -15,6 +15,8 @@ namespace ConsoleApp
 
 public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
 {
+    public override ulong SchemaHash => 5621984426617809353UL;
+
     protected override bool DefaultValue => true;
 
     public DTMatrixSample(string name, int capacity) : base(name, capacity)
@@ -52,8 +54,7 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool GetDataRowOrDefault(short key1, long key2)
     {
-        var result = Get(key1, key2);
-        return result != null ? result : DefaultValue;
+        return Get(key1, key2)!;
     }
 
     #endregion
@@ -103,12 +104,7 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
     public static bool GetRowOrDefault(short key1, long key2)
     {
         var table = DataTableManager.GetDataTableInternal<DTMatrixSample>();
-        if (table != null)
-        {
-            var result = table.Get(key1, key2);
-            return result != null ? result : table.DefaultValue;
-        }
-        return default(bool);
+        return table != null ? table.Get(key1, key2)! : default!;
     }
 
     #endregion

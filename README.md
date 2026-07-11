@@ -112,7 +112,7 @@ DataTableManager.EnableProfiling(stats =>
 
 2. **现代化Unity使用**
 
-> **运行时源码同步约定**：`src/DataTables` 是运行时源码的唯一修改源；`src/DataTables.Unity/Assets/Scripts/DataTables` 是构建 `src/DataTables/DataTables.csproj` 后自动同步出的 Unity 镜像目录。请不要直接修改 Unity 镜像中的 `.cs` 文件。提交前可运行 `dotnet build -c Debug`，再运行 `./scripts/verify-unity-runtime-sync.sh` 和 `git diff --exit-code -- src/DataTables.Unity/Assets/Scripts/DataTables`，确保 Unity 包与主运行时一致。
+> **运行时源码同步约定**：`src/DataTables` 是运行时源码的唯一修改源；`src/DataTables.Unity/Assets/Scripts/DataTables/Runtime` 是构建 `src/DataTables/DataTables.csproj` 后自动同步出的 Unity 镜像，按 `Core`、`Caching`、`Sources`、`Protocol` 分层。请不要直接修改 Unity 镜像中的 `.cs` 文件。提交前可运行 `dotnet build -c Debug`，再运行 `./scripts/verify-unity-runtime-sync.sh` 和 `git diff --exit-code -- src/DataTables.Unity/Assets/Scripts/DataTables`，确保 Unity 包与主运行时一致。
 
 ```csharp
 using System;
@@ -185,6 +185,24 @@ if (cachedScene != null)
     Console.WriteLine($"场景名称: {sceneData?.Name}");
 }
 ```
+
+### 独立 DataTableContext
+
+`DataTableManager` 是默认上下文的静态兼容门面。服务端多租户、测试隔离或同时加载多套配置时，直接实例化独立上下文：
+
+```csharp
+using var context = new DataTableContext(new FileSystemDataSource("./DataTables/TenantA"));
+context.EnableMemoryManagement(50);
+
+// 生成的清单支持注册到指定上下文
+DataTableManagerExtension.Register(context);
+await context.PreheatAsync(Priority.Critical | Priority.Normal);
+
+var sceneTable = await context.LoadAsync<DTScene>();
+var scene = sceneTable?.GetDataRowById(1001);
+```
+
+每个上下文独立持有数据源、单飞加载任务、LRU 缓存、生命周期版本、统计和 Hook；清理或切换一个上下文不会影响其他实例。
 
 ### 智能配置系统
 
@@ -481,19 +499,23 @@ public class EncryptedDataSource : IDataSource
         _encryptionKey = encryptionKey;
     }
 
-    public async ValueTask<byte[]> LoadAsync(string tableName)
+    public async ValueTask<Stream> OpenReadAsync(string tableName, CancellationToken cancellationToken)
     {
         var filePath = Path.Combine(_baseDirectory, $"{tableName}.encrypted");
-        var encryptedData = await File.ReadAllBytesAsync(filePath);
+        var encryptedData = await File.ReadAllBytesAsync(filePath, cancellationToken);
 
         // 自定义解密逻辑
-        return DecryptData(encryptedData, _encryptionKey);
+        return new MemoryStream(DecryptData(encryptedData, _encryptionKey), writable: false);
     }
 
-    public ValueTask<bool> IsAvailableAsync()
-    {
-        return ValueTask.FromResult(Directory.Exists(_baseDirectory));
-    }
+    public ValueTask<bool> ExistsAsync(string tableName, CancellationToken cancellationToken)
+        => ValueTask.FromResult(File.Exists(Path.Combine(_baseDirectory, $"{tableName}.encrypted")));
+
+    public ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken)
+        => ValueTask.FromResult(DataSourceManifest.Empty);
+
+    public ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken)
+        => ValueTask.FromResult(Directory.Exists(_baseDirectory));
 
     private byte[] DecryptData(byte[] encryptedData, byte[] key)
     {
@@ -624,20 +646,19 @@ dotnet tool install --tool-path ./tools DataTables.Generator
 ### 现代化生成命令
 
 ```bash
-# 基础生成 - 自动优化
-dotnet dtgen -i ./Tables -co ./Generated -do ./Data -n MyProject -p DT
+# 基础生成
+dotnet dtgen -i ./Tables -patterns "*.xlsx" -co ./Generated -do ./Data -n MyProject -p DR
 
-# 高级生成 - 包含工厂模式优化
+# 高级生成
 dotnet dtgen \
   -i "./Tables" \              # 输入目录
+  -patterns "*.xlsx" \         # 输入文件模式
   -co "./Generated" \          # 代码输出目录
   -do "./Data" \               # 数据输出目录
   -n "MyProject" \             # 命名空间
-  -p "DT" \                    # 类名前缀
+  -p "DR" \                    # 数据行类前缀
   -t "RELEASE" \               # 列标签过滤
-  --factory \                  # 启用工厂模式生成
-  --async-first \              # 异步优先API
-  -f                           # 强制覆写
+  -f                            # 强制覆写
 ```
 
 ### 解析选项与诊断
@@ -645,7 +666,7 @@ dotnet dtgen \
 ```bash
 # 启用严格名称校验与公式一致性校验，并生成诊断报告
 dotnet dtgen \
-  -i "./Tables" -co "./Generated" -do "./Data" -n "MyProject" -p "DT" \
+  -i "./Tables" -patterns "*.xlsx" -co "./Generated" -do "./Data" -n "MyProject" -p "DR" \
   --strictNameValidation true \
   --validateFormulaConsistency true \
   --formulaPolicy ValidateOnly \
@@ -657,11 +678,11 @@ dotnet dtgen \
   --diagnosticsJsonOutput diagnostics.json
 
 # 关闭公式评估，快速导出
-dotnet dtgen -i ./Tables -co ./Generated -do ./Data --formulaPolicy Off
+dotnet dtgen -i ./Tables -patterns "*.xlsx" -co ./Generated -do ./Data --formulaPolicy Off
 
 # 自定义嵌套数组的分隔字符（解决 "id#count|id#count" 与单条目 "801000#2" 行为不一致问题）
 # 字符位置 = 数组嵌套深度（从 1 开始）；为空时维持旧行为（优先 '|' 否则 '#'）
-dotnet dtgen -i ./Tables -co ./Generated -do ./Data \
+dotnet dtgen -i ./Tables -patterns "*.xlsx" -co ./Generated -do ./Data \
   --arrayNestedSeparators "|#-"   # 第 1 层 '|'，第 2 层 '#'，第 3 层 '-'
 ```
 
@@ -688,16 +709,18 @@ dotnet dtgen -i ./Tables -co ./Generated -do ./Data \
 ### MSBuild集成
 
 ```xml
-<!-- 现代化MSBuild集成 -->
+<ItemGroup>
+    <PackageReference Include="DataTables.MSBuild.Tasks" Version="x.x.x" PrivateAssets="all" />
+</ItemGroup>
+
 <Target Name="DataTablesGen" BeforeTargets="BeforeBuild">
     <DataTablesGenerator
         UsingNamespace="$(ProjectName)"
-        InputDirectory="$(ProjectDir)Tables"
+        InputDirectories="$(ProjectDir)Tables"
+        SearchPatterns="*.xlsx"
         CodeOutputDirectory="$(ProjectDir)Generated"
         DataOutputDirectory="$(ProjectDir)DataTables"
-        PrefixClassName="DT"
-        EnableFactoryPattern="true"
-        AsyncFirstAPI="true"
+        PrefixClassName="DR"
         FilterColumnTags="RELEASE"
         ForceOverwrite="false" />
 </Target>

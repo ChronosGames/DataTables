@@ -14,6 +14,8 @@ namespace DataTables.MSBuild.Tasks
         [Required]
         public string DataOutputDirectory { get; set; } = string.Empty;
 
+        public string[] SearchPatterns { get; set; } = ["*.*"];
+
         public string UsingNamespace { get; set; } = string.Empty;
 
         public string PrefixClassName { get; set; } = string.Empty;
@@ -28,7 +30,17 @@ namespace DataTables.MSBuild.Tasks
         {
             try
             {
-                new DataTableGenerator().GenerateFile(InputDirectories, CodeOutputDirectory, DataOutputDirectory, UsingNamespace, PrefixClassName, ImportNamespaces, FilterColumnTags, ForceOverwrite, x => this.Log.LogMessage(x));
+                var searchPatterns = SearchPatterns.Length == 0 ? ["*.*"] : SearchPatterns;
+                var result = new DataTableGenerator().GenerateFile(InputDirectories, searchPatterns, CodeOutputDirectory, DataOutputDirectory, UsingNamespace, PrefixClassName, ImportNamespaces, FilterColumnTags, ForceOverwrite, x => this.Log.LogMessage(x)).GetAwaiter().GetResult();
+                if (!result.Succeeded)
+                {
+                    foreach (var failure in result.Failures)
+                    {
+                        this.Log.LogError(failure.ToString());
+                    }
+
+                    return false;
+                }
             }
             catch (Exception ex)
             {

@@ -22,13 +22,14 @@ public sealed class DataTableGenerator
         m_Locks = new();
     }
 
-    public async Task GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string dataRowClassPrefix, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger, ParseOptions? options = null, string? diagnosticsJsonOutput = null)
+    public async Task<GenerationResult> GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string dataRowClassPrefix, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger, ParseOptions? options = null, string? diagnosticsJsonOutput = null)
     {
         // By default, ExcelDataReader throws a NotSupportedException "No data is available for encoding 1252." on .NET Core.
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
         dataRowClassPrefix ??= string.Empty;
         var list = new ConcurrentBag<GenerationContext>();
+        var failures = new ConcurrentBag<GenerationFailure>();
 
         // 拼接Import的命名空间
         string[] usingStrings = string.IsNullOrEmpty(importNamespaces) ? Array.Empty<string>() : importNamespaces.Split('&');
@@ -86,26 +87,22 @@ public sealed class DataTableGenerator
             throw new InvalidOperationException("Not found Excel files, inputDir: " + inputDirectories.Length);
         }
 
-        if (!string.IsNullOrEmpty(codeOutputDir) && !Directory.Exists(codeOutputDir))
-        {
-            Directory.CreateDirectory(codeOutputDir);
-        }
-
-        if (!Directory.Exists(dataOutputDir))
-        {
-            Directory.CreateDirectory(dataOutputDir);
-        }
+        using var transaction = new GenerationTransaction();
+        var stagingCodeOutputDir = string.IsNullOrEmpty(codeOutputDir) ? string.Empty : transaction.GetStagingDirectory(codeOutputDir);
+        var stagingDataOutputDir = transaction.GetStagingDirectory(dataOutputDir);
 
         var parseOptions = options ?? new ParseOptions { FilterColumnTags = filterColumnTags };
 
         var allDiagnostics = new System.Collections.Concurrent.ConcurrentBag<Diagnostic>();
         var allMetrics = new System.Collections.Concurrent.ConcurrentBag<DiagnosticsMetrics>();
 
-        await Parallel.ForEachAsync(filePaths, async (pair, cancellationToken) => GenerateExcel(pair.Value,
+        await Parallel.ForEachAsync(filePaths, (pair, cancellationToken) => new ValueTask(GenerateExcel(pair.Value,
             usingNamespace: usingNamespace,
             forceOverwrite: forceOverwrite,
-            dataOutputDir: dataOutputDir,
-            codeOutputDir: codeOutputDir,
+            dataOutputDir: stagingDataOutputDir,
+            finalDataOutputDir: dataOutputDir,
+            codeOutputDir: stagingCodeOutputDir,
+            finalCodeOutputDir: codeOutputDir,
             list: list,
             prefixClassName: dataRowClassPrefix,
             usingStrings: usingStrings,
@@ -113,7 +110,8 @@ public sealed class DataTableGenerator
             options: parseOptions,
             collectDiagnostic: d => allDiagnostics.Add(d),
             collectMetrics: m => allMetrics.Add(m),
-            log: logger));
+            failures: failures,
+            log: logger)));
 
         logger("Generate Manager Files:");
 
@@ -134,7 +132,7 @@ public sealed class DataTableGenerator
                 DataTables = sortedDict,
                 TablePriorities = tablePriorities,
             };
-            logger(WriteToFile(codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
+            logger(WriteToFile(stagingCodeOutputDir, codeOutputDir, "DataTableManagerExtension.cs", dataTableManagerExtensionTemplate.TransformText(), forceOverwrite));
         }
 
         // 聚合并输出诊断统计（控制台）
@@ -167,18 +165,25 @@ public sealed class DataTableGenerator
                 Metrics = metricsList
             };
             var json = System.Text.Json.JsonSerializer.Serialize(report, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(diagnosticsJsonOutput, json);
+            File.WriteAllText(transaction.GetStagingFile(diagnosticsJsonOutput), json);
             logger($"Diagnostics report saved: {diagnosticsJsonOutput}");
         }
 
         logger(string.Empty);
         logger("===========================================================");
-        logger($"数据表导出完成: {list.Count(x => !x.Failed && !x.Skiped)} 成功，{list.Count(x => x.Failed)} 失败，{list.Count(x => x.Skiped)} 已跳过");
+        var failureList = failures.ToArray();
+        var succeededCount = list.Count(x => !x.Skiped);
+        var skippedCount = list.Count(x => x.Skiped);
+        if (failureList.Length == 0)
+        {
+            transaction.Commit();
+        }
+        logger($"数据表导出完成: {succeededCount} 成功，{failureList.Length} 失败，{skippedCount} 已跳过");
 
-        Environment.ExitCode = list.Any(x => x.Failed) ? 1 : 0;
+        return new GenerationResult(succeededCount, skippedCount, failureList);
     }
 
-    private async Task GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string dataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log, ParseOptions options, Action<Diagnostic> collectDiagnostic, Action<DiagnosticsMetrics> collectMetrics)
+    private async Task GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string finalCodeOutputDir, string dataOutputDir, string finalDataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log, ParseOptions options, Action<Diagnostic> collectDiagnostic, Action<DiagnosticsMetrics> collectMetrics, ConcurrentBag<GenerationFailure> failures)
     {
         using (var logger = new ILogger(log))
         {
@@ -192,6 +197,7 @@ public sealed class DataTableGenerator
                 catch (Exception e)
                 {
                     logger.Error("Generate {0} exception:\n{1}", filePath.Trim('\\'), e);
+                    failures.Add(new GenerationFailure(filePath, null, e));
                     return;
                 }
 
@@ -226,34 +232,50 @@ public sealed class DataTableGenerator
                         processor.CreateGenerationContext(sheet);
                         if (!processor.ValidateGenerationContext())
                         {
-                            logger.Debug("  > (skip).");
+                            if (!string.IsNullOrEmpty(context.DataSetType) && string.IsNullOrEmpty(context.ClassName))
+                            {
+                                var exception = new InvalidOperationException("数据表缺少 class 配置。");
+                                context.Failed = true;
+                                failures.Add(new GenerationFailure(filePath, context.SheetName, exception));
+                                logger.Error("  > {0}.", exception);
+                            }
+                            else
+                            {
+                                logger.Debug("  > (skip).");
+                            }
                             continue;
                         }
 
                         // 生成代码文件
                         if (!string.IsNullOrEmpty(codeOutputDir))
                         {
-                            GenerateCodeFile(context, codeOutputDir, forceOverwrite, logger);
+                            GenerateCodeFile(context, codeOutputDir, finalCodeOutputDir, forceOverwrite, logger);
                         }
 
                         // 生成数据文件
-                        processor.GenerateDataFile(filePath, dataOutputDir, forceOverwrite, sheet, logger);
+                        processor.GenerateDataFile(dataOutputDir, finalDataOutputDir, forceOverwrite, sheet, logger);
 
-                        // 诊断信息输出（可选：当前写入 Debug）
-                        foreach (var d in processor.Diagnostics.Items) collectDiagnostic(d);
-                        foreach (var m in processor.Diagnostics.GetAllMetrics()) collectMetrics(m);
+                        if (context.Failed)
+                        {
+                            failures.Add(new GenerationFailure(filePath, context.SheetName, context.FailureException ?? new InvalidOperationException("数据表导出失败。")));
+                            continue;
+                        }
 
                         // 注册至队列中
                         list.Add(context);
                     }
                     catch (Exception e)
                     {
+                        context.Failed = true;
+                        failures.Add(new GenerationFailure(filePath, context.SheetName, e));
                         logger.Error("  > {0}.", e);
                     }
                     finally
                     {
                         genSw.Stop();
                         diagnostics.GetMetrics(context.FileName, context.SheetName).GenerateElapsedMs += genSw.ElapsedMilliseconds;
+                        foreach (var d in processor.Diagnostics.Items) collectDiagnostic(d);
+                        foreach (var m in processor.Diagnostics.GetAllMetrics()) collectMetrics(m);
                         processor.Dispose();
                     }
                 }
@@ -285,14 +307,14 @@ public sealed class DataTableGenerator
         return true;
     }
 
-    void GenerateCodeFile(GenerationContext context, string outputDir, bool forceOverwrite, ILogger logger)
+    void GenerateCodeFile(GenerationContext context, string outputDir, string comparisonOutputDir, bool forceOverwrite, ILogger logger)
     {
         if (!s_CodeTemplateRendererRegistry.TryGetRenderer(context.DataSetType, out var renderer))
         {
             throw new InvalidOperationException($"未注册 DTGen={context.DataSetType} 的代码生成模板。");
         }
 
-        logger.Debug(WriteToFile(outputDir, context.DataRowClassName + ".cs", renderer.TransformText(context), forceOverwrite));
+        logger.Debug(WriteToFile(outputDir, comparisonOutputDir, context.DataRowClassName + ".cs", renderer.TransformText(context), forceOverwrite));
     }
 
     static string NormalizeNewLines(string content)
@@ -302,18 +324,19 @@ public sealed class DataTableGenerator
         return content.Replace("\r\n", "\n");
     }
 
-    string WriteToFile(string directory, string fileName, string content, bool forceOverwrite)
+    string WriteToFile(string directory, string comparisonDirectory, string fileName, string content, bool forceOverwrite)
     {
         var startTickCount = Environment.TickCount;
         var path = Path.Combine(directory, fileName);
+        var comparisonPath = Path.Combine(comparisonDirectory, fileName);
         var contentBytes = Encoding.UTF8.GetBytes(NormalizeNewLines(content));
 
         // If the generated content is unchanged, skip the write.
-        if (!forceOverwrite && File.Exists(path))
+        if (!forceOverwrite && File.Exists(comparisonPath))
         {
-            if (new FileInfo(path).Length == contentBytes.Length && contentBytes.AsSpan().SequenceEqual(File.ReadAllBytes(path)))
+            if (new FileInfo(comparisonPath).Length == contentBytes.Length && contentBytes.AsSpan().SequenceEqual(File.ReadAllBytes(comparisonPath)))
             {
-                return $"  > Generate {fileName} to: {path} (Skipped) - {Environment.TickCount - startTickCount}ms";
+                return $"  > Generate {fileName} to: {comparisonPath} (Skipped) - {Environment.TickCount - startTickCount}ms";
             }
         }
 
@@ -324,6 +347,6 @@ public sealed class DataTableGenerator
         }
         m_Locks.TryRemove(fileName, out _);
 
-        return $"  > Generate {fileName} to: {path} - {Environment.TickCount - startTickCount}ms";
+        return $"  > Generate {fileName} to: {comparisonPath} - {Environment.TickCount - startTickCount}ms";
     }
 }

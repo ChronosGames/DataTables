@@ -61,6 +61,34 @@ namespace DataTables.Tests
             DataTableManager.ClearTableRegistrations();
         }
 
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        public void MemoryManagement_ShouldRejectNonPositiveLimits(int maxMemoryMB)
+        {
+            ResetDataTableManager();
+
+            Action action = () => DataTableManager.EnableMemoryManagement(maxMemoryMB);
+
+            action.Should().Throw<ArgumentOutOfRangeException>();
+            DataTableManager.IsMemoryManagementEnabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task MemoryManagement_ShouldNotOverflowLargeMegabyteLimits()
+        {
+            ResetDataTableManager();
+            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.EnableMemoryManagement(int.MaxValue);
+
+            var table = await DataTableManager.LoadAsync<MockDataTable>();
+            var stats = DataTableManager.GetCacheStats();
+
+            table.Should().NotBeNull();
+            stats.Should().NotBeNull();
+            stats!.Value.MemoryUsageRate.Should().BeGreaterThan(0f).And.BeLessThan(1f);
+        }
+
         /// <summary>
         /// 测试工厂模式注册
         /// </summary>
@@ -98,6 +126,76 @@ namespace DataTables.Tests
 
             // Cleanup
             DataTableManager.ClearHooks();
+        }
+
+        [Fact]
+        public async Task LoadAsync_ShouldCompleteTableBeforeTriggeringHooks()
+        {
+            ResetDataTableManager();
+            DataTableManager.UseCustomSource(new FastMockDataSource());
+
+            LoadCompletionTrackingDataTable? hookedTable = null;
+            DataTableManager.OnLoaded<LoadCompletionTrackingDataTable>(table =>
+            {
+                table.LoadCompletedCount.Should().Be(1);
+                hookedTable = table;
+            });
+
+            var table = await DataTableManager.LoadAsync<LoadCompletionTrackingDataTable>();
+
+            table.Should().NotBeNull();
+            table!.LoadCompletedCount.Should().Be(1);
+            hookedTable.Should().BeSameAs(table);
+
+            DataTableManager.ClearHooks();
+        }
+
+        [Fact]
+        public async Task TypedHookRegisteredDuringInvocation_ShouldRunOnNextLoad()
+        {
+            ResetDataTableManager();
+            DataTableManager.UseCustomSource(new FastMockDataSource());
+
+            var initialCalls = 0;
+            var deferredCalls = 0;
+            DataTableManager.OnLoaded<MockDataTable>(_ =>
+            {
+                initialCalls++;
+                DataTableManager.OnLoaded<MockDataTable>(_ => deferredCalls++);
+            });
+
+            var first = await DataTableManager.LoadAsync<MockDataTable>();
+            DataTableManager.DestroyDataTable<MockDataTable>();
+            var second = await DataTableManager.LoadAsync<MockDataTable>();
+
+            first.Should().NotBeNull();
+            second.Should().NotBeNull();
+            initialCalls.Should().Be(2);
+            deferredCalls.Should().Be(1, "new hooks must not mutate the current dispatch snapshot");
+        }
+
+        [Fact]
+        public async Task GlobalHookRegisteredDuringInvocation_ShouldRunOnNextLoad()
+        {
+            ResetDataTableManager();
+            DataTableManager.UseCustomSource(new FastMockDataSource());
+
+            var initialCalls = 0;
+            var deferredCalls = 0;
+            DataTableManager.OnAnyLoaded(_ =>
+            {
+                initialCalls++;
+                DataTableManager.OnAnyLoaded(_ => deferredCalls++);
+            });
+
+            var first = await DataTableManager.LoadAsync<MockDataTable>();
+            DataTableManager.DestroyDataTable<MockDataTable>();
+            var second = await DataTableManager.LoadAsync<MockDataTable>();
+
+            first.Should().NotBeNull();
+            second.Should().NotBeNull();
+            initialCalls.Should().Be(2);
+            deferredCalls.Should().Be(1, "new hooks must not mutate the current dispatch snapshot");
         }
 
         /// <summary>
@@ -282,5 +380,18 @@ namespace DataTables.Tests
     {
         public MockDataTable CreateTable(string name, int capacity) => new(name, capacity);
         public MockDataRow CreateRow() => new();
+    }
+
+    public class LoadCompletionTrackingDataTable : DataTable<MockDataRow>
+    {
+        public override ulong SchemaHash => 1UL;
+        public int LoadCompletedCount { get; private set; }
+
+        public LoadCompletionTrackingDataTable(string name, int capacity) : base(name, capacity) { }
+
+        public override void OnLoadCompleted()
+        {
+            LoadCompletedCount++;
+        }
     }
 }

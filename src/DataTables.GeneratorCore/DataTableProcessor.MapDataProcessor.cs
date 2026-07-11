@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 
 namespace DataTables.GeneratorCore;
@@ -52,12 +53,26 @@ public sealed partial class DataTableProcessor
             }
 
             var dict = JsonUtility.Deserialize<Hashtable>(value)!;
-
-            binaryWriter.Write7BitEncodedInt32(dict.Count);
+            var keyProcessor = DataProcessorUtility.GetDataProcessor(m_KeyTypeStr);
+            var valueProcessor = DataProcessorUtility.GetDataProcessor(m_ValueTypeStr);
+            var entries = new List<(string KeyText, string ValueText)>(dict.Count);
             foreach (DictionaryEntry item in dict)
             {
-                DataProcessorUtility.GetDataProcessor(m_KeyTypeStr).WriteToStream(binaryWriter, JsonUtility.Serialize(item.Key));
-                DataProcessorUtility.GetDataProcessor(m_ValueTypeStr).WriteToStream(binaryWriter, JsonUtility.Serialize(item.Value));
+                var keyText = JsonUtility.Serialize(item.Key);
+                entries.Add((keyText, JsonUtility.Serialize(item.Value)));
+            }
+
+            entries.Sort(static (left, right) =>
+            {
+                var compare = StringComparer.Ordinal.Compare(left.KeyText, right.KeyText);
+                return compare != 0 ? compare : StringComparer.Ordinal.Compare(left.ValueText, right.ValueText);
+            });
+
+            binaryWriter.Write7BitEncodedInt32(dict.Count);
+            foreach (var entry in entries)
+            {
+                keyProcessor.WriteToStream(binaryWriter, entry.KeyText);
+                valueProcessor.WriteToStream(binaryWriter, entry.ValueText);
             }
         }
 

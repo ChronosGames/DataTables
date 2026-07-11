@@ -14,7 +14,7 @@ namespace DataTables
         protected IEqualityComparer<TKey2> m_Key2Comparer = EqualityComparer<TKey2>.Default;
         protected IEqualityComparer<TValue> m_ValueComparer = EqualityComparer<TValue>.Default;
 
-        protected virtual TValue DefaultValue => default;
+        protected virtual TValue DefaultValue => default!;
 
         public override Type Type => typeof(TValue);
 

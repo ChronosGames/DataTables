@@ -16,8 +16,28 @@ if [[ ! -d "$unity_dir" ]]; then
 fi
 
 tmp_source="$(mktemp)"
+tmp_expected="$(mktemp)"
 tmp_unity="$(mktemp)"
-trap 'rm -f "$tmp_source" "$tmp_unity"' EXIT
+trap 'rm -f "$tmp_source" "$tmp_expected" "$tmp_unity"' EXIT
+
+map_unity_path() {
+  local relative_path="$1"
+  local file_name="${relative_path##*/}"
+  case "$file_name" in
+    LRUDataTableCache.cs)
+      printf './Runtime/Caching/%s\n' "$file_name"
+      ;;
+    DataSourceDecorators.cs|FileSystemDataSource.cs|HashValidatingReadStream.cs|IDataSource.cs|NetworkDataSource.cs|OwnedReadStream.cs|UnityDataSourceAdapters.cs)
+      printf './Runtime/Sources/%s\n' "$file_name"
+      ;;
+    DataTableBinaryFormat.cs|DataTableBinaryLoader.cs|DataTableBinaryProtocol.cs)
+      printf './Runtime/Protocol/%s\n' "$file_name"
+      ;;
+    *)
+      printf './Runtime/Core/%s\n' "$relative_path"
+      ;;
+  esac
+}
 
 (
   cd "$source_dir"
@@ -28,12 +48,16 @@ trap 'rm -f "$tmp_source" "$tmp_unity"' EXIT
     | sort
 ) > "$tmp_source"
 
+while IFS= read -r relative_path; do
+  map_unity_path "${relative_path#./}"
+done < "$tmp_source" | sort > "$tmp_expected"
+
 (
   cd "$unity_dir"
   find . -type f -name '*.cs' | sort
 ) > "$tmp_unity"
 
-if ! diff -u "$tmp_source" "$tmp_unity"; then
+if ! diff -u "$tmp_expected" "$tmp_unity"; then
   echo "Unity runtime mirror file list differs from src/DataTables." >&2
   echo "Build src/DataTables to regenerate src/DataTables.Unity/Assets/Scripts/DataTables, then commit the synchronized files." >&2
   exit 1
@@ -41,10 +65,12 @@ fi
 
 while IFS= read -r relative_path; do
   relative_path="${relative_path#./}"
-  if ! cmp -s "$source_dir/$relative_path" "$unity_dir/$relative_path"; then
+  unity_path="$(map_unity_path "$relative_path")"
+  unity_path="${unity_path#./}"
+  if ! cmp -s "$source_dir/$relative_path" "$unity_dir/$unity_path"; then
     echo "Unity runtime mirror content differs: $relative_path" >&2
     echo "Source: $source_dir/$relative_path" >&2
-    echo "Unity : $unity_dir/$relative_path" >&2
+    echo "Unity : $unity_dir/$unity_path" >&2
     exit 1
   fi
 done < "$tmp_source"

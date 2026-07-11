@@ -4,5 +4,5 @@ namespace DataTables.GeneratorCore;
 
 internal interface IDataTableBinaryWriter
 {
-    void GenerateDataFile(string filePath, string outputDir, bool forceOverwrite, ISheet sheet, ILogger logger);
+    void GenerateDataFile(string outputDir, string comparisonOutputDir, bool forceOverwrite, ISheet sheet, ILogger logger);
 }

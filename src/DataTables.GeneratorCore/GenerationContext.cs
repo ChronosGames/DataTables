@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -92,6 +93,8 @@ public class GenerationContext
     /// 导出时是否出错
     /// </summary>
     public bool Failed;
+
+    internal Exception? FailureException { get; set; }
 
     /// <summary>
     /// 导出时是否跳过

@@ -152,7 +152,7 @@ namespace DataTables
 
             var result = new T[m_DataSet.Length];
             Array.Copy(m_DataSet, result, m_DataSet.Length);
-            Array.Sort(m_DataSet, comparison);
+            Array.Sort(result, comparison);
             return result;
         }
 
@@ -196,7 +196,7 @@ namespace DataTables
                 throw new Exception("Comparison is invalid.");
             }
 
-            return m_DataSet.Where(x => condition(x)).OrderBy(_ => comparison);
+            return m_DataSet.Where(x => condition(x)).OrderBy(x => x, Comparer<T>.Create(comparison));
         }
 
         /// <summary>
@@ -234,7 +234,7 @@ namespace DataTables
         /// <returns>所有数据表行。</returns>
         public T[] GetAllDataRows()
         {
-            return m_DataSet;
+            return (T[])m_DataSet.Clone();
         }
 
         /// <summary>

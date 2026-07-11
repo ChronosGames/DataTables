@@ -5,25 +5,36 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using DataTables;
-
-
 #nullable enable
 
 namespace ConsoleApp
 {
 public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
 {
-    private Dictionary<int, DRDataTableSample> m_Dict1 = new Dictionary<int, DRDataTableSample>();
-    private Dictionary<ConsoleApp.ColorT, DRDataTableSample> m_Dict2 = new Dictionary<ConsoleApp.ColorT, DRDataTableSample>();
-    private Dictionary<ValueTuple<int, short>, DRDataTableSample> m_Dict3 = new Dictionary<ValueTuple<int, short>, DRDataTableSample>();
-
-    private Dictionary<ValueTuple<string, bool>, List<DRDataTableSample>> m_Dict4 = new Dictionary<ValueTuple<string, bool>, List<DRDataTableSample>>();
-    private Dictionary<string, List<DRDataTableSample>> m_Dict5 = new Dictionary<string, List<DRDataTableSample>>();
-
-    public DTDataTableSample(string name, int capacity) : base(name, capacity) { }
+    public override ulong SchemaHash => 3516481155859488872UL;
+    private readonly Dictionary<int, DRDataTableSample> m_Dict1 = new Dictionary<int, DRDataTableSample>();
+    private readonly IReadOnlyDictionary<int, DRDataTableSample> m_Index1;
+    private readonly Dictionary<ConsoleApp.ColorT, DRDataTableSample> m_Dict2 = new Dictionary<ConsoleApp.ColorT, DRDataTableSample>();
+    private readonly IReadOnlyDictionary<ConsoleApp.ColorT, DRDataTableSample> m_Index2;
+    private readonly Dictionary<ValueTuple<int, short>, DRDataTableSample> m_Dict3 = new Dictionary<ValueTuple<int, short>, DRDataTableSample>();
+    private readonly IReadOnlyDictionary<ValueTuple<int, short>, DRDataTableSample> m_Index3;
+    private readonly Dictionary<ValueTuple<string, bool>, List<DRDataTableSample>> m_Dict4 = new Dictionary<ValueTuple<string, bool>, List<DRDataTableSample>>();
+    private readonly IReadOnlyDictionary<ValueTuple<string, bool>, List<DRDataTableSample>> m_Index4;
+    private readonly Dictionary<string, List<DRDataTableSample>> m_Dict5 = new Dictionary<string, List<DRDataTableSample>>();
+    private readonly IReadOnlyDictionary<string, List<DRDataTableSample>> m_Index5;
+    public DTDataTableSample(string name, int capacity) : base(name, capacity)
+    {
+        m_Index1 = new ReadOnlyDictionary<int, DRDataTableSample>(m_Dict1);
+        m_Index2 = new ReadOnlyDictionary<ConsoleApp.ColorT, DRDataTableSample>(m_Dict2);
+        m_Index3 = new ReadOnlyDictionary<ValueTuple<int, short>, DRDataTableSample>(m_Dict3);
+        m_Index4 = new ReadOnlyDictionary<ValueTuple<string, bool>, List<DRDataTableSample>>(m_Dict4);
+        m_Index5 = new ReadOnlyDictionary<string, List<DRDataTableSample>>(m_Dict5);
+    }
 
     protected override void InternalAddDataRow(int index, DRDataTableSample dataRow)
     {
@@ -33,192 +44,166 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
         m_Dict2.Add(dataRow.Color, dataRow);
         m_Dict3.Add((dataRow.Id, dataRow.Int16Value), dataRow);
         {
-            if (m_Dict4.TryGetValue((dataRow.Name, dataRow.BoolValue), out var arr))
-            {
-                arr.Add(dataRow);
-            }
-            else
+            if (!m_Dict4.TryGetValue((dataRow.Name, dataRow.BoolValue), out var arr))
             {
                 arr = new List<DRDataTableSample>();
-                arr.Add(dataRow);
                 m_Dict4.Add((dataRow.Name, dataRow.BoolValue), arr);
             }
+            arr.Add(dataRow);
         }
         {
-            if (m_Dict5.TryGetValue(dataRow.Name, out var arr))
-            {
-                arr.Add(dataRow);
-            }
-            else
+            if (!m_Dict5.TryGetValue(dataRow.Name, out var arr))
             {
                 arr = new List<DRDataTableSample>();
-                arr.Add(dataRow);
                 m_Dict5.Add(dataRow.Name, arr);
             }
+            arr.Add(dataRow);
         }
     }
 
     #region Instance API
 
-    /// <summary>
-    /// 根据索引获取数据行 (实例方法)
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public DRDataTableSample? GetDataRowById(int id)
     {
-        if (m_Dict1.TryGetValue(id, out var result))
-        {
-            return result;
-        }
-        else
-        {
-#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: id={0}", id);
-#endif
-            return null;
-        }
+        return m_Index1.TryGetValue(id, out var result) ? result : null;
     }
 
-    /// <summary>
-    /// 根据索引获取数据行 (实例方法)
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public DRDataTableSample? GetDataRowByColor(ConsoleApp.ColorT color)
     {
-        if (m_Dict2.TryGetValue(color, out var result))
-        {
-            return result;
-        }
-        else
-        {
-#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: color={0}", color);
-#endif
-            return null;
-        }
+        return m_Index2.TryGetValue(color, out var result) ? result : null;
     }
 
-    /// <summary>
-    /// 根据索引获取数据行 (实例方法)
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public DRDataTableSample? GetDataRowByIdAndInt16Value(int id, short int16Value)
     {
-        if (m_Dict3.TryGetValue((id, int16Value), out var result))
-        {
-            return result;
-        }
-        else
-        {
-#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: id={0}, int16Value={1}", id, int16Value);
-#endif
-            return null;
-        }
+        return m_Index3.TryGetValue((id, int16Value), out var result) ? result : null;
     }
 
-    /// <summary>
-    /// 根据分组获取数据行列表 (实例方法)
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public List<DRDataTableSample>? GetDataRowsGroupByNameAndBoolValue(string name, bool boolValue)
     {
-        return m_Dict4.TryGetValue((name, boolValue), out var result) ? result : null;
+        return m_Index4.TryGetValue((name, boolValue), out var result) ? result : null;
     }
 
-    /// <summary>
-    /// 根据分组获取数据行列表 (实例方法)
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public List<DRDataTableSample>? GetDataRowsGroupByName(string name)
     {
-        return m_Dict5.TryGetValue(name, out var result) ? result : null;
+        return m_Index5.TryGetValue(name, out var result) ? result : null;
     }
-
     #endregion
 
     #region Static API
 
-    /// <summary>
-    /// 根据索引获取数据行 (静态方法)
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static DRDataTableSample? GetRowById(int id)
+    public static DRDataTableSample? GetById(int id)
     {
         var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
-        if (table?.m_Dict1.TryGetValue(id, out var result) == true)
-        {
-            return result;
-        }
-        else
-        {
-#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: id={0}", id);
-#endif
-            return null;
-        }
+        return table?.m_Index1.TryGetValue(id, out var result) == true ? result : null;
     }
 
-    /// <summary>
-    /// 根据索引获取数据行 (静态方法)
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static DRDataTableSample? GetRowByColor(ConsoleApp.ColorT color)
+    public static bool TryGetById(int id, out DRDataTableSample? result)
     {
         var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
-        if (table?.m_Dict2.TryGetValue(color, out var result) == true)
-        {
-            return result;
-        }
-        else
-        {
-#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: color={0}", color);
-#endif
-            return null;
-        }
+        result = null;
+        return table != null && table.m_Index1.TryGetValue(id, out result);
     }
 
-    /// <summary>
-    /// 根据索引获取数据行 (静态方法)
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static DRDataTableSample? GetRowByIdAndInt16Value(int id, short int16Value)
+    public static bool ContainsId(int id)
     {
         var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
-        if (table?.m_Dict3.TryGetValue((id, int16Value), out var result) == true)
-        {
-            return result;
-        }
-        else
-        {
-#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-            UnityEngine.Debug.LogWarningFormat("DTDataTableSample not found index: id={0}, int16Value={1}", id, int16Value);
-#endif
-            return null;
-        }
+        return table?.m_Index1.ContainsKey(id) == true;
     }
 
-    /// <summary>
-    /// 根据分组获取数据行列表 (静态方法)
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<DRDataTableSample>? GetRowsGroupByNameAndBoolValue(string name, bool boolValue)
+    public static DRDataTableSample? GetRowById(int id) => GetById(id);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DRDataTableSample? GetByColor(ConsoleApp.ColorT color)
     {
         var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
-        return table?.m_Dict4.TryGetValue((name, boolValue), out var result) == true ? result : null;
+        return table?.m_Index2.TryGetValue(color, out var result) == true ? result : null;
     }
 
-    /// <summary>
-    /// 根据分组获取数据行列表 (静态方法)
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<DRDataTableSample>? GetRowsGroupByName(string name)
+    public static bool TryGetByColor(ConsoleApp.ColorT color, out DRDataTableSample? result)
     {
         var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
-        return table?.m_Dict5.TryGetValue(name, out var result) == true ? result : null;
+        result = null;
+        return table != null && table.m_Index2.TryGetValue(color, out result);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool ContainsColor(ConsoleApp.ColorT color)
+    {
+        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
+        return table?.m_Index2.ContainsKey(color) == true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DRDataTableSample? GetRowByColor(ConsoleApp.ColorT color) => GetByColor(color);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DRDataTableSample? GetByIdAndInt16Value(int id, short int16Value)
+    {
+        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
+        return table?.m_Index3.TryGetValue((id, int16Value), out var result) == true ? result : null;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryGetByIdAndInt16Value(int id, short int16Value, out DRDataTableSample? result)
+    {
+        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
+        result = null;
+        return table != null && table.m_Index3.TryGetValue((id, int16Value), out result);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool ContainsIdAndInt16Value(int id, short int16Value)
+    {
+        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
+        return table?.m_Index3.ContainsKey((id, int16Value)) == true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static DRDataTableSample? GetRowByIdAndInt16Value(int id, short int16Value) => GetByIdAndInt16Value(id, int16Value);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static IReadOnlyList<DRDataTableSample>? GetManyByNameAndBoolValue(string name, bool boolValue)
+    {
+        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
+        return table?.m_Index4.TryGetValue((name, boolValue), out var result) == true ? result : null;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool ContainsNameAndBoolValue(string name, bool boolValue)
+    {
+        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
+        return table?.m_Index4.ContainsKey((name, boolValue)) == true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static List<DRDataTableSample>? GetRowsGroupByNameAndBoolValue(string name, bool boolValue) => GetManyByNameAndBoolValue(name, boolValue) as List<DRDataTableSample>;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static IReadOnlyList<DRDataTableSample>? GetManyByName(string name)
+    {
+        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
+        return table?.m_Index5.TryGetValue(name, out var result) == true ? result : null;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool ContainsName(string name)
+    {
+        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>();
+        return table?.m_Index5.ContainsKey(name) == true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static List<DRDataTableSample>? GetRowsGroupByName(string name) => GetManyByName(name) as List<DRDataTableSample>;
     #endregion
 }
 
@@ -403,11 +388,10 @@ public sealed partial class DRDataTableSample : DataRowBase
             }
         }
         {
-            CustomJSON = reader.ReadJson<SampleParent>();
+            CustomJSON = reader.ReadJson<SampleParent>()!;
         }
         CustomFieldType = new CustomSample(reader.ReadString());
         return true;
     }
 }
-
 }

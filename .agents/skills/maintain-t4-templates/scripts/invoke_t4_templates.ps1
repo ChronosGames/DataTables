@@ -179,7 +179,7 @@ $($items -join [Environment]::NewLine)
         Write-Output "Generated: $expected"
     }
 
-    Write-Output "T4 preprocessing completed for $($mappings.Count) template(s) into $outputDescription."
+    Write-Output "T4 preprocessing completed for $(@($mappings).Count) template(s) into $outputDescription."
 } finally {
     $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
     $resolvedWork = [IO.Path]::GetFullPath($workDirectory)

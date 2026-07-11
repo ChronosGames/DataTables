@@ -61,7 +61,7 @@ namespace DataTables.Tests
             }
 
             var generator = new DataTableGenerator();
-            await generator.GenerateFile(
+            var result = await generator.GenerateFile(
                 inputDirectories: new[] { Path.GetDirectoryName(xlsxPath)! },
                 searchPatterns: new[] { Path.GetFileName(xlsxPath) },
                 codeOutputDir: codeOut,
@@ -73,6 +73,8 @@ namespace DataTables.Tests
                 forceOverwrite: true,
                 logger: _ => { }
             );
+
+            result.Succeeded.Should().BeTrue();
 
             // Assert data file exists
             // 类名 ItemConfig → DataTable 名称前缀 DT，输出文件 DataTables.Tests.Generated.DTItemConfig.bytes
@@ -102,6 +104,41 @@ namespace DataTables.Tests
             flags.Should().Be(0);
             // 示例中：三条数据（1001/1002/1003）
             rowCount.Should().Be(3);
+        }
+
+        [Fact]
+        public async Task Generate_ReturnsFailure_WithoutChangingProcessExitCode()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), "dt_generation_failure_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            var invalidWorkbookPath = Path.Combine(tempDir, "invalid.xlsx");
+            await File.WriteAllTextAsync(invalidWorkbookPath, "not an Excel workbook");
+
+            var originalExitCode = Environment.ExitCode;
+            Environment.ExitCode = 23;
+            try
+            {
+                var result = await new DataTableGenerator().GenerateFile(
+                    inputDirectories: new[] { tempDir },
+                    searchPatterns: new[] { "*.xlsx" },
+                    codeOutputDir: Path.Combine(tempDir, "code"),
+                    dataOutputDir: Path.Combine(tempDir, "data"),
+                    usingNamespace: "DataTables.Tests.Generated",
+                    dataRowClassPrefix: string.Empty,
+                    importNamespaces: string.Empty,
+                    filterColumnTags: string.Empty,
+                    forceOverwrite: true,
+                    logger: _ => { });
+
+                result.Succeeded.Should().BeFalse();
+                result.FailedCount.Should().Be(1);
+                result.Failures.Should().ContainSingle(x => x.FilePath == invalidWorkbookPath);
+                Environment.ExitCode.Should().Be(23);
+            }
+            finally
+            {
+                Environment.ExitCode = originalExitCode;
+            }
         }
     }
 }

@@ -5,17 +5,18 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using DataTables;
-
-
 #nullable enable
 
 namespace ConsoleApp
 {
 public sealed partial class DTColumnTableSample : DataTable<DRColumnTableSample>
 {
+    public override ulong SchemaHash => 15691908706582767184UL;
     public DTColumnTableSample(string name, int capacity) : base(name, capacity) { }
 
     protected override void InternalAddDataRow(int index, DRColumnTableSample dataRow)
@@ -25,11 +26,9 @@ public sealed partial class DTColumnTableSample : DataTable<DRColumnTableSample>
     }
 
     #region Instance API
-
     #endregion
 
     #region Static API
-
     #endregion
 }
 
@@ -54,5 +53,4 @@ public sealed partial class DRColumnTableSample : DataRowBase
         return true;
     }
 }
-
 }

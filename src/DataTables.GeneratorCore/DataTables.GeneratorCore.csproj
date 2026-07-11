@@ -12,6 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\DataTables\DataTableBinaryFormat.cs" Link="Serialization\DataTableBinaryFormat.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Update="DataTableManagerExtensionTemplate.cs">
       <DependentUpon>DataTableManagerExtensionTemplate.tt</DependentUpon>
       <DesignTime>True</DesignTime>

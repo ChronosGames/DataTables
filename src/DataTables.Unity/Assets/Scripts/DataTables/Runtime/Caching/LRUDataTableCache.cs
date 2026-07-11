@@ -43,6 +43,11 @@ namespace DataTables
         /// <param name="maxMemoryBytes">最大内存使用量(字节)</param>
         public LRUDataTableCache(long maxMemoryBytes)
         {
+            if (maxMemoryBytes <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxMemoryBytes), "Cache memory limit must be greater than zero.");
+            }
+
             _maxMemoryBytes = maxMemoryBytes;
         }
 
@@ -57,28 +62,28 @@ namespace DataTables
         {
             Interlocked.Increment(ref _accessCount);
 
-            if (_cache.TryGetValue(key, out var node))
+            _lock.EnterWriteLock();
+            try
             {
-                _lock.EnterWriteLock();
-                try
+                if (_cache.TryGetValue(key, out var node))
                 {
                     // 移动到头部 (最近使用)
                     _lruList.Remove(node);
                     _lruList.AddFirst(node);
                     node.Value.LastAccessed = DateTime.UtcNow;
-                }
-                finally
-                {
-                    _lock.ExitWriteLock();
+
+                    Interlocked.Increment(ref _hitCount);
+                    table = (T)node.Value.Table;
+                    return true;
                 }
 
-                Interlocked.Increment(ref _hitCount);
-                table = (T)node.Value.Table;
-                return true;
+                table = null;
+                return false;
             }
-
-            table = null;
-            return false;
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
         }
 
         /// <summary>
@@ -86,7 +91,15 @@ namespace DataTables
         /// </summary>
         public bool Contains(TypeNamePair key)
         {
-            return _cache.ContainsKey(key);
+            _lock.EnterReadLock();
+            try
+            {
+                return _cache.ContainsKey(key);
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
         }
 
         /// <summary>
@@ -98,6 +111,7 @@ namespace DataTables
         public void Set<T>(TypeNamePair key, T table) where T : DataTableBase
         {
             var memorySize = EstimateMemoryUsage(table);
+            List<DataTableBase>? removedTables = null;
 
             _lock.EnterWriteLock();
             try
@@ -108,12 +122,17 @@ namespace DataTables
                     _lruList.Remove(existingNode);
                     _cache.TryRemove(key, out _);
                     Interlocked.Add(ref _currentMemoryUsage, -existingNode.Value.MemorySize);
+                    if (!ReferenceEquals(existingNode.Value.Table, table))
+                    {
+                        removedTables = new List<DataTableBase> { existingNode.Value.Table };
+                    }
                 }
 
                 // 淘汰旧项目直到有足够空间
                 while (_currentMemoryUsage + memorySize > _maxMemoryBytes && _lruList.Count > 0)
                 {
-                    EvictLeastRecentlyUsed();
+                    removedTables ??= new List<DataTableBase>();
+                    EvictLeastRecentlyUsed(removedTables);
                 }
 
                 // 添加新项目
@@ -127,6 +146,8 @@ namespace DataTables
             {
                 _lock.ExitWriteLock();
             }
+
+            ShutdownTables(removedTables);
         }
 
         /// <summary>
@@ -134,9 +155,19 @@ namespace DataTables
         /// </summary>
         public void Clear()
         {
+            List<DataTableBase>? removedTables = null;
             _lock.EnterWriteLock();
             try
             {
+                if (_lruList.Count > 0)
+                {
+                    removedTables = new List<DataTableBase>(_lruList.Count);
+                    foreach (var item in _lruList)
+                    {
+                        removedTables.Add(item.Table);
+                    }
+                }
+
                 _cache.Clear();
                 _lruList.Clear();
                 Interlocked.Exchange(ref _currentMemoryUsage, 0);
@@ -146,6 +177,89 @@ namespace DataTables
             finally
             {
                 _lock.ExitWriteLock();
+            }
+
+            ShutdownTables(removedTables);
+        }
+
+        /// <summary>
+        /// 移除并关闭指定缓存项。
+        /// </summary>
+        public bool Remove(TypeNamePair key)
+        {
+            DataTableBase? removedTable = null;
+
+            _lock.EnterWriteLock();
+            try
+            {
+                if (!_cache.TryRemove(key, out var node))
+                {
+                    return false;
+                }
+
+                _lruList.Remove(node);
+                Interlocked.Add(ref _currentMemoryUsage, -node.Value.MemorySize);
+                removedTable = node.Value.Table;
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+
+            Shutdown(removedTable);
+            return true;
+        }
+
+        /// <summary>
+        /// 移交所有缓存项的所有权而不关闭它们。
+        /// </summary>
+        public KeyValuePair<TypeNamePair, DataTableBase>[] Drain()
+        {
+            KeyValuePair<TypeNamePair, DataTableBase>[] tables;
+
+            _lock.EnterWriteLock();
+            try
+            {
+                tables = new KeyValuePair<TypeNamePair, DataTableBase>[_lruList.Count];
+                var index = 0;
+                foreach (var item in _lruList)
+                {
+                    tables[index++] = new KeyValuePair<TypeNamePair, DataTableBase>(item.Key, item.Table);
+                }
+
+                _cache.Clear();
+                _lruList.Clear();
+                Interlocked.Exchange(ref _currentMemoryUsage, 0);
+                Interlocked.Exchange(ref _accessCount, 0);
+                Interlocked.Exchange(ref _hitCount, 0);
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+
+            return tables;
+        }
+
+        /// <summary>
+        /// 获取当前缓存表快照，不改变 LRU 顺序或命中统计。
+        /// </summary>
+        public DataTableBase[] Snapshot()
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                var tables = new DataTableBase[_lruList.Count];
+                var index = 0;
+                foreach (var item in _lruList)
+                {
+                    tables[index++] = item.Table;
+                }
+                return tables;
+            }
+            finally
+            {
+                _lock.ExitReadLock();
             }
         }
 
@@ -180,7 +294,7 @@ namespace DataTables
         /// <summary>
         /// 淘汰最少使用的项
         /// </summary>
-        private void EvictLeastRecentlyUsed()
+        private void EvictLeastRecentlyUsed(List<DataTableBase> removedTables)
         {
             if (_lruList.Last != null)
             {
@@ -190,16 +304,31 @@ namespace DataTables
                 _lruList.RemoveLast();
                 _cache.TryRemove(item.Key, out _);
                 Interlocked.Add(ref _currentMemoryUsage, -item.MemorySize);
+                removedTables.Add(item.Table);
+            }
+        }
 
-                // 清理被淘汰的表
-                try
-                {
-                    item.Table.Shutdown();
-                }
-                catch
-                {
-                    // 静默失败
-                }
+        private static void ShutdownTables(List<DataTableBase>? tables)
+        {
+            if (tables == null) return;
+
+            foreach (var table in tables)
+            {
+                Shutdown(table);
+            }
+        }
+
+        private static void Shutdown(DataTableBase? table)
+        {
+            if (table == null) return;
+
+            try
+            {
+                table.Shutdown();
+            }
+            catch
+            {
+                // 静默失败
             }
         }
 

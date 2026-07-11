@@ -1,7 +1,7 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
-using BenchmarkDotNet.Exporters.Csv;
+using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 
 namespace Benchmark
@@ -18,15 +18,7 @@ namespace Benchmark
     {
         public BenchmarkConfig()
         {
-            // run quickly:)
-            //var baseConfig = Job.ShortRun.WithIterationCount(1).WithWarmupCount(1);
-
-            // Add(baseConfig.With(Runtime.Clr).With(Jit.RyuJit).With(Platform.X64));
-            // Add(baseConfig.With(Runtime.).With(Jit.RyuJit).With(Platform.X64));
-            // Add(baseConfig.With(InProcessEmitToolchain.Instance));
-
-            //AddExporter(MarkdownExporter.GitHub);
-            AddExporter(CsvExporter.Default);
+            AddJob(Job.ShortRun.WithId("net8-short"));
             AddDiagnoser(MemoryDiagnoser.Default);
         }
     }

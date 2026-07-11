@@ -8,6 +8,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using DataTables;
 
 #nullable enable
@@ -42,13 +44,13 @@ public static class DataTableManagerExtension
     var priority = TablePriorities != null && TablePriorities.TryGetValue(pair.Key, out var configuredPriority) ? configuredPriority : "Normal";
     if (!pair.Value.Any())
     {
-        #>        new TableRegistration(typeof(<#=pair.Key#>), string.Empty, Priority.<#= priority #>, async cancellationToken => await DataTableManager.CreateDataTableAsync<<#=pair.Key#>>(string.Empty, cancellationToken)),<#=Environment.NewLine#><#
+        #>        new TableRegistration(typeof(<#=pair.Key#>), string.Empty, Priority.<#= priority #>, async (context, cancellationToken) => await context.CreateDataTableAsync<<#=pair.Key#>>(string.Empty, cancellationToken)),<#=Environment.NewLine#><#
     }
     else
     {
         foreach (var name in pair.Value)
         {
-            #>        new TableRegistration(typeof(<#=pair.Key#>), "<#=name#>", Priority.<#= priority #>, async cancellationToken => await DataTableManager.CreateDataTableAsync<<#=pair.Key#>>("<#=name#>", cancellationToken)),<#=Environment.NewLine#><#
+            #>        new TableRegistration(typeof(<#=pair.Key#>), "<#=name#>", Priority.<#= priority #>, async (context, cancellationToken) => await context.CreateDataTableAsync<<#=pair.Key#>>("<#=name#>", cancellationToken)),<#=Environment.NewLine#><#
         }
     }
 }
@@ -60,6 +62,24 @@ public static class DataTableManagerExtension
     public static void Register()
     {
         DataTableManager.RegisterTables(TableRegistrations);
+    }
+
+    /// <summary>
+    /// Registers this generated table set with an independent DataTableContext.
+    /// </summary>
+    public static void Register(DataTableContext context)
+    {
+        if (context == null) throw new ArgumentNullException(nameof(context));
+        context.RegisterTables(TableRegistrations);
+    }
+
+    /// <summary>
+    /// Registers and preloads this generated table set in an independent context.
+    /// </summary>
+    public static ValueTask<LoadStats> PreloadAsync(DataTableContext context, Priority priorities = Priority.All, CancellationToken cancellationToken = default)
+    {
+        Register(context);
+        return context.PreheatAsync(priorities, cancellationToken);
     }
 
     /// <summary>

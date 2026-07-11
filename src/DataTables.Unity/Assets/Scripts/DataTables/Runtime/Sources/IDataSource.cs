@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,18 +14,10 @@ namespace DataTables
         /// <summary>
         /// 异步加载数据表数据。
         /// </summary>
-        /// <param name="tableName">数据表名称。</param>
-        /// <returns>数据表的字节数据。</returns>
-        ValueTask<byte[]> LoadAsync(string tableName)
-            => LoadAsync(tableName, CancellationToken.None);
-
-        /// <summary>
-        /// 异步加载数据表数据。
-        /// </summary>
         /// <param name="name">数据表或资源名称。</param>
         /// <param name="cancellationToken">取消令牌。</param>
-        /// <returns>数据表的字节数据。</returns>
-        ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken);
+        /// <returns>由调用方负责释放的可读数据流。</returns>
+        ValueTask<Stream> OpenReadAsync(string name, CancellationToken cancellationToken);
 
         /// <summary>
         /// 检查指定数据表是否存在。
@@ -32,31 +25,21 @@ namespace DataTables
         /// <param name="name">数据表或资源名称。</param>
         /// <param name="cancellationToken">取消令牌。</param>
         /// <returns>是否存在。</returns>
-        ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken)
-            => new ValueTask<bool>(true);
+        ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken);
 
         /// <summary>
         /// 获取数据源清单。
         /// </summary>
         /// <param name="cancellationToken">取消令牌。</param>
         /// <returns>数据源清单。</returns>
-        ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken)
-            => new ValueTask<DataSourceManifest>(DataSourceManifest.Empty);
-
-        /// <summary>
-        /// 检查数据源是否可用。
-        /// </summary>
-        /// <returns>是否可用。</returns>
-        ValueTask<bool> IsAvailableAsync()
-            => IsAvailableAsync(CancellationToken.None);
+        ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// 检查数据源是否可用。
         /// </summary>
         /// <param name="cancellationToken">取消令牌。</param>
         /// <returns>是否可用。</returns>
-        ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken)
-            => IsAvailableAsync();
+        ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// 数据源类型。
@@ -126,5 +109,41 @@ namespace DataTables
         Network,            // 网络数据源
         Memory,             // 内存数据源
         Composite           // 组合数据源
+    }
+
+    public static class DataSourceExtensions
+    {
+        public static ValueTask<byte[]> LoadAsync(this IDataSource source, string name)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            return LoadAsync(source, name, CancellationToken.None);
+        }
+
+        public static async ValueTask<byte[]> LoadAsync(this IDataSource source, string name, CancellationToken cancellationToken)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            await using var input = await source.OpenReadAsync(name, cancellationToken);
+            await using var output = new MemoryStream();
+            await input.CopyToAsync(output, 81920, cancellationToken);
+            return output.ToArray();
+        }
+
+        public static ValueTask<bool> ExistsAsync(this IDataSource source, string name)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            return source.ExistsAsync(name, CancellationToken.None);
+        }
+
+        public static ValueTask<DataSourceManifest> GetManifestAsync(this IDataSource source)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            return source.GetManifestAsync(CancellationToken.None);
+        }
+
+        public static ValueTask<bool> IsAvailableAsync(this IDataSource source)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            return source.IsAvailableAsync(CancellationToken.None);
+        }
     }
 }

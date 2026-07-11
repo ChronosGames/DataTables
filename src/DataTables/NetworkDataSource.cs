@@ -32,29 +32,39 @@ namespace DataTables
 
         public DataSourceType SourceType => DataSourceType.Network;
 
-        public ValueTask<byte[]> LoadAsync(string tableName) => LoadAsync(tableName, CancellationToken.None);
-
-        public async ValueTask<byte[]> LoadAsync(string name, CancellationToken cancellationToken)
+        public async ValueTask<System.IO.Stream> OpenReadAsync(string name, CancellationToken cancellationToken)
         {
             var url = $"{_baseUrl}/{name}.bytes";
-            using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-            response.EnsureSuccessStatusCode();
+            var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            try
+            {
+                response.EnsureSuccessStatusCode();
 #if NET5_0_OR_GREATER
-            return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+                var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
 #else
-            cancellationToken.ThrowIfCancellationRequested();
-            var bytes = await response.Content.ReadAsByteArrayAsync();
-            cancellationToken.ThrowIfCancellationRequested();
-            return bytes;
+                var stream = await response.Content.ReadAsStreamAsync();
 #endif
+                return new OwnedReadStream(stream, response);
+            }
+            catch
+            {
+                response.Dispose();
+                throw;
+            }
         }
 
         public async ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken)
         {
             var url = $"{_baseUrl}/{name}.bytes";
             using var request = new HttpRequestMessage(HttpMethod.Head, url);
-            var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             return response.IsSuccessStatusCode;
+        }
+
+        public ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return new ValueTask<DataSourceManifest>(DataSourceManifest.Empty);
         }
 
         public ValueTask<bool> IsAvailableAsync() => IsAvailableAsync(CancellationToken.None);

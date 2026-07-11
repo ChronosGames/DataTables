@@ -20,6 +20,22 @@ function Resolve-RepositoryPath([string]$path) {
     return [IO.Path]::GetFullPath((Join-Path $RepositoryRoot $path))
 }
 
+function Remove-TrailingHorizontalWhitespace([string]$path) {
+    $bytes = [IO.File]::ReadAllBytes($path)
+    $hasUtf8Bom = $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
+    $offset = if ($hasUtf8Bom) { 3 } else { 0 }
+    $text = [Text.Encoding]::UTF8.GetString($bytes, $offset, $bytes.Length - $offset)
+    $normalized = [Text.RegularExpressions.Regex]::Replace(
+        $text,
+        '[\t ]+(?=\r?$)',
+        '',
+        [Text.RegularExpressions.RegexOptions]::Multiline)
+
+    if ($normalized -cne $text) {
+        [IO.File]::WriteAllText($path, $normalized, [Text.UTF8Encoding]::new($hasUtf8Bom))
+    }
+}
+
 function Test-GitDirty([string]$relativePath) {
     $result = & git -C $RepositoryRoot status --porcelain=v1 --untracked-files=all -- $relativePath 2>$null
     if ($LASTEXITCODE -ne 0) {
@@ -159,6 +175,7 @@ $($items -join [Environment]::NewLine)
         if (-not (Test-Path -LiteralPath $expected) -or (Get-Item -LiteralPath $expected).Length -eq 0) {
             throw "T4 did not produce the expected output: $expected"
         }
+        Remove-TrailingHorizontalWhitespace $expected
         Write-Output "Generated: $expected"
     }
 

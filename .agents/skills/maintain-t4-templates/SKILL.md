@@ -36,7 +36,7 @@ Treat every `LastGenOutput` C# file as generated output. Never patch it directly
    ```
 
 9. Review the `.tt`, project metadata, and generated `.cs` diff together. The `.cs` may change only as T4 output.
-10. Run targeted generated-code compilation tests, the full test suite, and the solution build.
+10. Run targeted generated-code compilation tests, the full test suite, and the solution build. The bundled script removes trailing horizontal whitespace from preprocessed C# while preserving its BOM and line endings.
 
 ## Guardrails
 
@@ -63,7 +63,7 @@ Run:
 ```powershell
 dotnet test tests/DataTables.Tests/DataTables.Tests.csproj --no-restore
 dotnet build DataTables.sln --no-restore
-git diff --check -- src/DataTables.GeneratorCore
+git -c core.whitespace=cr-at-eol diff --check -- src/DataTables.GeneratorCore .agents
 ```
 
 Report T4 preprocessing, generated C# compilation, output-equivalence coverage, tests, build results, and any pre-existing warnings separately.

@@ -12,8 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
-using DataTables;<# if (!string.IsNullOrEmpty(Using)) { #>
-<#= Using #><# } #>
+using DataTables;<# if (!string.IsNullOrEmpty(Using)) { #><#= Environment.NewLine + Using #><# } #>
 
 #nullable enable
 

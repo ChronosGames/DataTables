@@ -30,6 +30,24 @@ public class DataTableTemplateTests
     }
 
     [Fact]
+    public void CustomUsing_Output_Should_Start_On_A_New_Line()
+    {
+        const string customUsing = "using System.Globalization;";
+        var context = new GenerationContext
+        {
+            ClassName = "GameConfig",
+            UsingStrings = [customUsing],
+            Fields = [new XField(0) { Name = "Version", TypeName = "int" }],
+        };
+        var expected = $"using DataTables;{Environment.NewLine}{customUsing}";
+
+        new DataTableTemplate(context).TransformText().Should().Contain(expected);
+        var kvCode = new KvTableTemplate(context).TransformText();
+        kvCode.Should().Contain(expected);
+        AssertCompiles("GeneratedKvCustomUsing", kvCode);
+    }
+
+    [Fact]
     public void GraphIndex_Output_Should_Compile()
     {
         var context = new GenerationContext { ClassName = "LevelGraph", DataSetType = "graph" };

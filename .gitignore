@@ -134,3 +134,24 @@ src/MasterMemory.Unity/MasterMemory.Unity.sln
 src/MasterMemory.Unity/MessagePack.Annotations.csproj
 
 src/MasterMemory.Unity/MessagePack.csproj
+
+# Local IDE files
+.idea/
+
+# DataTables Unity local/generated files
+/src/DataTables.Unity/Logs/
+/src/DataTables.Unity/UserSettings/
+/src/DataTables.Unity/.vsconfig
+/src/DataTables.Unity/*.csproj
+/src/DataTables.Unity/*.sln
+/src/DataTables.Unity/*.unitypackage
+
+# Legacy Unity files removed from the repository
+/src/DataTables.Unity/Assets/Scripts/DataTables/Annotations.meta
+/src/DataTables.Unity/Assets/Tests/BinarySearchTest.cs*
+/src/DataTables.Unity/Assets/Tests/MemoryKeyTest.cs*
+/src/DataTables.Unity/Assets/Tests/MemoryTest.cs*
+/src/DataTables.Unity/Assets/Tests/MessagePackResolver.cs*
+/src/DataTables.Unity/Assets/Tests/MetaTest.cs*
+/src/DataTables.Unity/Assets/Tests/RangeViewTest.cs*
+/src/DataTables.Unity/Assets/Tests/ValidatorTest.cs*

@@ -241,7 +241,7 @@ public class GenerationContext
 
     public string BuildReadOnlyIndexDictDefine(string[] fields) => BuildIndexDictDefine(fields).Replace("Dictionary<", "IReadOnlyDictionary<");
 
-    public string BuildReadOnlyGroupDictDefine(string[] fields) => BuildGroupDictDefine(fields).Replace("Dictionary<", "IReadOnlyDictionary<").Replace(", List<", ", IReadOnlyList<");
+    public string BuildReadOnlyGroupDictDefine(string[] fields) => BuildGroupDictDefine(fields).Replace("Dictionary<", "IReadOnlyDictionary<");
 
     public string BuildGroupDictDefine(string[] fields)
     {

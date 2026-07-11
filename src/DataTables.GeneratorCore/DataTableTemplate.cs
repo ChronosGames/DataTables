@@ -22,6 +22,7 @@ public partial class DataTableTemplate
         WL("using System.Collections.Generic;");
         WL("using System.Collections.ObjectModel;");
         WL("using System.IO;");
+        WL("using System.Linq;");
         WL("using System.Runtime.CompilerServices;");
         WL("using DataTables;");
         if (!string.IsNullOrEmpty(Using)) WL(Using);
@@ -37,17 +38,33 @@ public partial class DataTableTemplate
         foreach (var index in GenerationContext.IndexDefinitions)
         {
             WL($"    private readonly {GenerationContext.BuildIndexDictDefine(index.Fields)} m_Dict{dictIndex} = new {GenerationContext.BuildIndexDictDefine(index.Fields)}();");
-            WL($"    private {GenerationContext.BuildReadOnlyIndexDictDefine(index.Fields)} m_Index{dictIndex} = new ReadOnlyDictionary<{GenerationContext.BuildIndexDictDefine(index.Fields).Substring(11)}(m_Dict{dictIndex});");
+            WL($"    private readonly {GenerationContext.BuildReadOnlyIndexDictDefine(index.Fields)} m_Index{dictIndex};");
             dictIndex++;
         }
         foreach (var group in GenerationContext.GroupIndexDefinitions)
         {
             WL($"    private readonly {GenerationContext.BuildGroupDictDefine(group.Fields)} m_Dict{dictIndex} = new {GenerationContext.BuildGroupDictDefine(group.Fields)}();");
-            WL($"    private {GenerationContext.BuildReadOnlyGroupDictDefine(group.Fields)} m_Index{dictIndex} = new ReadOnlyDictionary<{GenerationContext.BuildGroupDictDefine(group.Fields).Substring(11)}(m_Dict{dictIndex});");
+            WL($"    private readonly {GenerationContext.BuildReadOnlyGroupDictDefine(group.Fields)} m_Index{dictIndex};");
             dictIndex++;
         }
         if (dictIndex > 1) WL();
-        WL($"    public {GenerationContext.DataTableClassName}(string name, int capacity) : base(name, capacity) {{ }}");
+        if (dictIndex == 1)
+        {
+            WL($"    public {GenerationContext.DataTableClassName}(string name, int capacity) : base(name, capacity) {{ }}");
+        }
+        else
+        {
+            WL($"    public {GenerationContext.DataTableClassName}(string name, int capacity) : base(name, capacity)");
+            WL("    {");
+            for (var i = 1; i < dictIndex; i++)
+            {
+                var dictionaryType = i <= GenerationContext.IndexDefinitions.Count
+                    ? GenerationContext.BuildIndexDictDefine(GenerationContext.IndexDefinitions[i - 1].Fields)
+                    : GenerationContext.BuildGroupDictDefine(GenerationContext.GroupIndexDefinitions[i - GenerationContext.IndexDefinitions.Count - 1].Fields);
+                WL($"        m_Index{i} = new ReadOnlyDictionary<{dictionaryType.Substring(11)}(m_Dict{i});");
+            }
+            WL("    }");
+        }
         WL();
         WL($"    protected override void InternalAddDataRow(int index, {GenerationContext.DataRowClassName} dataRow)");
         WL("    {");
@@ -73,15 +90,6 @@ public partial class DataTableTemplate
         }
         WL("    }");
         WL();
-        if (dictIndex > 1)
-        {
-            WL("    public override void OnLoadCompleted()");
-            WL("    {");
-            WL("        base.OnLoadCompleted();");
-            for (var i = 1; i < dictIndex; i++) WL($"        m_Index{i} = new ReadOnlyDictionary<" + (i <= GenerationContext.IndexDefinitions.Count ? GenerationContext.BuildIndexDictDefine(GenerationContext.IndexDefinitions[i - 1].Fields).Substring(11) : GenerationContext.BuildGroupDictDefine(GenerationContext.GroupIndexDefinitions[i - GenerationContext.IndexDefinitions.Count - 1].Fields).Substring(11)) + $"(m_Dict{i});");
-            WL("    }");
-            WL();
-        }
         WL("    #region Instance API");
         for (var i = 0; i < GenerationContext.IndexDefinitions.Count; i++) EmitUniqueApi(sb, GenerationContext.IndexDefinitions[i].Fields, i + 1, false);
         for (var i = 0; i < GenerationContext.GroupIndexDefinitions.Count; i++) EmitGroupApi(sb, GenerationContext.GroupIndexDefinitions[i].Fields, GenerationContext.IndexDefinitions.Count + i + 1, false);
@@ -108,20 +116,51 @@ public partial class DataTableTemplate
 
     private void EmitUniqueApi(StringBuilder sb, string[] fields, int dictNo, bool isStatic)
     {
-        var row = GenerationContext.DataRowClassName; var suffix = string.Join("And", fields); var pars = GenerationContext.BuildMethodParameters(fields); var key = BuildParameterKey(fields); var dict = isStatic ? $"table?.m_Index{dictNo}" : $"m_Index{dictNo}"; var staticPrefix = isStatic ? "static " : string.Empty; var tableLine = isStatic ? $"        var table = DataTableManager.GetDataTableInternal<{GenerationContext.DataTableClassName}>();\n" : string.Empty;
-        sb.AppendLine(); sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]"); sb.AppendLine($"    public {staticPrefix}{row}? GetBy{suffix}({pars})"); sb.AppendLine("    {"); sb.Append(tableLine); sb.AppendLine($"        return {dict}.TryGetValue({key}, out var result) == true ? result : null;"); sb.AppendLine("    }");
-        sb.AppendLine(); sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]"); sb.AppendLine($"    public {staticPrefix}bool TryGetBy{suffix}({pars}, out {row}? result)"); sb.AppendLine("    {"); sb.Append(tableLine); if (isStatic) { sb.AppendLine("        result = null;"); sb.AppendLine($"        return table != null && table.m_Index{dictNo}.TryGetValue({key}, out result);"); } else { sb.AppendLine($"        return {dict}.TryGetValue({key}, out result);"); } sb.AppendLine("    }");
-        sb.AppendLine(); sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]"); sb.AppendLine($"    public {staticPrefix}bool Contains{suffix}({pars})"); sb.AppendLine("    {"); sb.Append(tableLine); sb.AppendLine($"        return {dict}.ContainsKey({key}) == true;"); sb.AppendLine("    }");
-        // Legacy aliases
-        sb.AppendLine(); sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]"); sb.AppendLine($"    public {staticPrefix}{row}? {(isStatic ? "GetRowBy" : "GetDataRowBy")}{suffix}({pars}) => GetBy{suffix}({GenerationContext.BuildCamelCaseParameters(fields)});");
+        var row = GenerationContext.DataRowClassName;
+        var suffix = string.Join("And", fields);
+        var pars = GenerationContext.BuildMethodParameters(fields);
+        var key = BuildParameterKey(fields);
+
+        if (!isStatic)
+        {
+            sb.AppendLine();
+            sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+            sb.AppendLine($"    public {row}? GetDataRowBy{suffix}({pars})");
+            sb.AppendLine("    {");
+            sb.AppendLine($"        return m_Index{dictNo}.TryGetValue({key}, out var result) ? result : null;");
+            sb.AppendLine("    }");
+            return;
+        }
+
+        var tableLine = $"        var table = DataTableManager.GetDataTableInternal<{GenerationContext.DataTableClassName}>();\n";
+        sb.AppendLine(); sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]"); sb.AppendLine($"    public static {row}? GetBy{suffix}({pars})"); sb.AppendLine("    {"); sb.Append(tableLine); sb.AppendLine($"        return table?.m_Index{dictNo}.TryGetValue({key}, out var result) == true ? result : null;"); sb.AppendLine("    }");
+        sb.AppendLine(); sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]"); sb.AppendLine($"    public static bool TryGetBy{suffix}({pars}, out {row}? result)"); sb.AppendLine("    {"); sb.Append(tableLine); sb.AppendLine("        result = null;"); sb.AppendLine($"        return table != null && table.m_Index{dictNo}.TryGetValue({key}, out result);"); sb.AppendLine("    }");
+        sb.AppendLine(); sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]"); sb.AppendLine($"    public static bool Contains{suffix}({pars})"); sb.AppendLine("    {"); sb.Append(tableLine); sb.AppendLine($"        return table?.m_Index{dictNo}.ContainsKey({key}) == true;"); sb.AppendLine("    }");
+        sb.AppendLine(); sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]"); sb.AppendLine($"    public static {row}? GetRowBy{suffix}({pars}) => GetBy{suffix}({GenerationContext.BuildCamelCaseParameters(fields)});");
     }
 
     private void EmitGroupApi(StringBuilder sb, string[] fields, int dictNo, bool isStatic)
     {
-        var row = GenerationContext.DataRowClassName; var suffix = string.Join("And", fields); var pars = GenerationContext.BuildMethodParameters(fields); var key = BuildParameterKey(fields); var dict = isStatic ? $"table?.m_Index{dictNo}" : $"m_Index{dictNo}"; var staticPrefix = isStatic ? "static " : string.Empty; var tableLine = isStatic ? $"        var table = DataTableManager.GetDataTableInternal<{GenerationContext.DataTableClassName}>();\n" : string.Empty;
-        sb.AppendLine(); sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]"); sb.AppendLine($"    public {staticPrefix}IReadOnlyList<{row}>? GetManyBy{suffix}({pars})"); sb.AppendLine("    {"); sb.Append(tableLine); sb.AppendLine($"        return {dict}.TryGetValue({key}, out var result) == true ? result : null;"); sb.AppendLine("    }");
-        sb.AppendLine(); sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]"); sb.AppendLine($"    public {staticPrefix}bool Contains{suffix}({pars})"); sb.AppendLine("    {"); sb.Append(tableLine); sb.AppendLine($"        return {dict}.ContainsKey({key}) == true;"); sb.AppendLine("    }");
-        sb.AppendLine(); sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]"); sb.AppendLine($"    public {staticPrefix}List<{row}>? {(isStatic ? "GetRowsGroupBy" : "GetDataRowsGroupBy")}{suffix}({pars}) => GetManyBy{suffix}({GenerationContext.BuildCamelCaseParameters(fields)}) as List<{row}>;");
+        var row = GenerationContext.DataRowClassName;
+        var suffix = string.Join("And", fields);
+        var pars = GenerationContext.BuildMethodParameters(fields);
+        var key = BuildParameterKey(fields);
+
+        if (!isStatic)
+        {
+            sb.AppendLine();
+            sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+            sb.AppendLine($"    public List<{row}>? GetDataRowsGroupBy{suffix}({pars})");
+            sb.AppendLine("    {");
+            sb.AppendLine($"        return m_Index{dictNo}.TryGetValue({key}, out var result) ? result : null;");
+            sb.AppendLine("    }");
+            return;
+        }
+
+        var tableLine = $"        var table = DataTableManager.GetDataTableInternal<{GenerationContext.DataTableClassName}>();\n";
+        sb.AppendLine(); sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]"); sb.AppendLine($"    public static IReadOnlyList<{row}>? GetManyBy{suffix}({pars})"); sb.AppendLine("    {"); sb.Append(tableLine); sb.AppendLine($"        return table?.m_Index{dictNo}.TryGetValue({key}, out var result) == true ? result : null;"); sb.AppendLine("    }");
+        sb.AppendLine(); sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]"); sb.AppendLine($"    public static bool Contains{suffix}({pars})"); sb.AppendLine("    {"); sb.Append(tableLine); sb.AppendLine($"        return table?.m_Index{dictNo}.ContainsKey({key}) == true;"); sb.AppendLine("    }");
+        sb.AppendLine(); sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]"); sb.AppendLine($"    public static List<{row}>? GetRowsGroupBy{suffix}({pars}) => GetManyBy{suffix}({GenerationContext.BuildCamelCaseParameters(fields)}) as List<{row}>;");
     }
 
     private static string BuildDataRowKey(string[] fields) => fields.Length > 1 ? "(" + string.Join(", ", fields.Select(x => $"dataRow.{x}")) + ")" : $"dataRow.{fields[0]}";

@@ -1,5 +1,6 @@
-﻿<#@ template debug="false" hostspecific="false" linePragmas="false" language="C#" #>
+<#@ template debug="false" hostspecific="false" linePragmas="false" language="C#" #>
 <#@ assembly name="System.Core" #>
+<#@ import namespace="System" #>
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
@@ -10,185 +11,228 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
-using DataTables;
-<#= Using #>
+using DataTables;<# if (!string.IsNullOrEmpty(Using)) { #>
+<#= Using #><# } #>
 
 #nullable enable
 
-<# if (!string.IsNullOrEmpty(Namespace)) { #>
-namespace <#= Namespace #>
+<# if (!string.IsNullOrEmpty(Namespace)) { #>namespace <#= Namespace #>
 {
-<# } #>
-public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTable<<#= GenerationContext.DataRowClassName #>>
+<# } #>public sealed partial class <#= GenerationContext.DataTableClassName #> : DataTable<<#= GenerationContext.DataRowClassName #>>
 {
+    public override ulong SchemaHash => <#= DataTableSchemaHash.Compute(GenerationContext) #>UL;
 <#
-    if (GenerationContext.Indexs.Count > 0)
+    var dictIndex = 1;
+    foreach (var index in GenerationContext.IndexDefinitions)
     {
-        for (var i = 0; i < GenerationContext.Indexs.Count; i++)
-        {
-            var item = GenerationContext.Indexs[i];
-            #>    private <#= GenerationContext.BuildIndexDictDefine(item) #> m_Dict<#= i + 1 #> = new <#= GenerationContext.BuildIndexDictDefine(item) #>();<#=Environment.NewLine#><#
-        }
-
-        #><#=Environment.NewLine#><#
+        var dictionaryType = GenerationContext.BuildIndexDictDefine(index.Fields);
+#>
+    private readonly <#= dictionaryType #> m_Dict<#= dictIndex #> = new <#= dictionaryType #>();
+    private readonly <#= GenerationContext.BuildReadOnlyIndexDictDefine(index.Fields) #> m_Index<#= dictIndex #>;
+<#
+        dictIndex++;
+    }
+    foreach (var group in GenerationContext.GroupIndexDefinitions)
+    {
+        var dictionaryType = GenerationContext.BuildGroupDictDefine(group.Fields);
+#>
+    private readonly <#= dictionaryType #> m_Dict<#= dictIndex #> = new <#= dictionaryType #>();
+    private readonly <#= GenerationContext.BuildReadOnlyGroupDictDefine(group.Fields) #> m_Index<#= dictIndex #>;
+<#
+        dictIndex++;
     }
 
-    if (GenerationContext.Groups.Count > 0)
+    if (dictIndex == 1)
     {
-        for (var j = 0; j < GenerationContext.Groups.Count; j++)
-        {
-            var fieldNames = GenerationContext.Groups[j];
-
-            #>    private <#= GenerationContext.BuildGroupDictDefine(fieldNames) #> m_Dict<#= GenerationContext.Indexs.Count + 1 + j #> = new <#= GenerationContext.BuildGroupDictDefine(fieldNames) #>();<#=Environment.NewLine#><#
-        }
-
-        #><#=Environment.NewLine#><#
-    }
 #>
     public <#= GenerationContext.DataTableClassName #>(string name, int capacity) : base(name, capacity) { }
+<#
+    }
+    else
+    {
+#>
+    public <#= GenerationContext.DataTableClassName #>(string name, int capacity) : base(name, capacity)
+    {
+<#
+        for (var i = 1; i < dictIndex; i++)
+        {
+            var dictionaryType = i <= GenerationContext.IndexDefinitions.Count
+                ? GenerationContext.BuildIndexDictDefine(GenerationContext.IndexDefinitions[i - 1].Fields)
+                : GenerationContext.BuildGroupDictDefine(GenerationContext.GroupIndexDefinitions[i - GenerationContext.IndexDefinitions.Count - 1].Fields);
+#>
+        m_Index<#= i #> = new ReadOnlyDictionary<<#= dictionaryType.Substring(11) #>(m_Dict<#= i #>);
+<#
+        }
+#>
+    }
+<#
+    }
+#>
 
     protected override void InternalAddDataRow(int index, <#= GenerationContext.DataRowClassName #> dataRow)
     {
         base.InternalAddDataRow(index, dataRow);
 
-<#  for (var i = 0; i < GenerationContext.Indexs.Count; i++)
+<#
+    for (var i = 0; i < GenerationContext.IndexDefinitions.Count; i++)
     {
-        var item = GenerationContext.Indexs[i];
+        var fields = GenerationContext.IndexDefinitions[i].Fields;
+        var key = fields.Length > 1 ? "(" + string.Join(", ", fields.Select(x => $"dataRow.{x}")) + ")" : $"dataRow.{fields[0]}";
 #>
-        m_Dict<#= i+1 #>.Add(<#= item.Length > 1 ? ('(' + (string.Join(", ", item.Select(x => $"dataRow.{x}"))) + ')') : $"dataRow.{item[0]}" #>, dataRow);
-<#  }
-    for (var i = 0; i < GenerationContext.Groups.Count; i++)
+        m_Dict<#= i + 1 #>.Add(<#= key #>, dataRow);
+<#
+    }
+    for (var i = 0; i < GenerationContext.GroupIndexDefinitions.Count; i++)
     {
-        var item = GenerationContext.Groups[i];
+        var fields = GenerationContext.GroupIndexDefinitions[i].Fields;
+        var dictNo = GenerationContext.IndexDefinitions.Count + i + 1;
+        var key = fields.Length > 1 ? "(" + string.Join(", ", fields.Select(x => $"dataRow.{x}")) + ")" : $"dataRow.{fields[0]}";
 #>
         {
-            if (m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + (string.Join(", ", item.Select(x => $"dataRow.{x}"))) + ')' : $"dataRow.{item[0]}" #>, out var arr))
-            {
-                arr.Add(dataRow);
-            }
-            else
+            if (!m_Dict<#= dictNo #>.TryGetValue(<#= key #>, out var arr))
             {
                 arr = new List<<#= GenerationContext.DataRowClassName #>>();
-                arr.Add(dataRow);
-                m_Dict<#= GenerationContext.Indexs.Count + i + 1 #>.Add(<#= item.Length > 1 ? '(' + (string.Join(", ", item.Select(x => $"dataRow.{x}"))) + ')' : $"dataRow.{item[0]}" #>, arr);
+                m_Dict<#= dictNo #>.Add(<#= key #>, arr);
             }
+            arr.Add(dataRow);
         }
-<#  } #>
+<#
+    }
+#>
     }
 
     #region Instance API
-<#  for (var i = 0; i < GenerationContext.Indexs.Count; i++)
+<#
+    for (var i = 0; i < GenerationContext.IndexDefinitions.Count; i++)
     {
-        var item = GenerationContext.Indexs[i];
+        var fields = GenerationContext.IndexDefinitions[i].Fields;
+        var suffix = string.Join("And", fields);
+        var key = fields.Length > 1 ? "(" + GenerationContext.BuildCamelCaseParameters(fields) + ")" : GenerationContext.ToCamelCase(fields[0]);
 #>
 
-    /// <summary>
-    /// 根据索引获取数据行 (实例方法)
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public <#= GenerationContext.DataRowClassName #>? GetDataRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    public <#= GenerationContext.DataRowClassName #>? GetDataRowBy<#= suffix #>(<#= GenerationContext.BuildMethodParameters(fields) #>)
     {
-        if (m_Dict<#= i + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + GenerationContext.BuildCamelCaseParameters(item) + ')' : GenerationContext.ToCamelCase(item[0]) #>, out var result))
-        {
-            return result;
-        }
-        else
-        {
-#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-            UnityEngine.Debug.LogWarningFormat("<#= GenerationContext.DataTableClassName #> not found index: <#= GenerationContext.BuildIndexsLogFormat(item) #>", <#= GenerationContext.BuildCamelCaseParameters(item) #>);
-#endif
-            return null;
-        }
+        return m_Index<#= i + 1 #>.TryGetValue(<#= key #>, out var result) ? result : null;
     }
-<#  }
-    for (var j = 0; j < GenerationContext.Groups.Count; j++)
+<#
+    }
+    for (var i = 0; i < GenerationContext.GroupIndexDefinitions.Count; i++)
     {
-        var item = GenerationContext.Groups[j];
+        var fields = GenerationContext.GroupIndexDefinitions[i].Fields;
+        var suffix = string.Join("And", fields);
+        var dictNo = GenerationContext.IndexDefinitions.Count + i + 1;
+        var key = fields.Length > 1 ? "(" + GenerationContext.BuildCamelCaseParameters(fields) + ")" : GenerationContext.ToCamelCase(fields[0]);
 #>
 
-    /// <summary>
-    /// 根据分组获取数据行列表 (实例方法)
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public List<<#= GenerationContext.DataRowClassName #>>? GetDataRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    public List<<#= GenerationContext.DataRowClassName #>>? GetDataRowsGroupBy<#= suffix #>(<#= GenerationContext.BuildMethodParameters(fields) #>)
     {
-        return m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + GenerationContext.BuildCamelCaseParameters(item) + ')' : GenerationContext.ToCamelCase(item[0]) #>, out var result) ? result : null;
+        return m_Index<#= dictNo #>.TryGetValue(<#= key #>, out var result) ? result : null;
     }
-<#  } #>
-
+<#
+    }
+#>
     #endregion
 
     #region Static API
-<#  for (var i = 0; i < GenerationContext.Indexs.Count; i++)
+<#
+    for (var i = 0; i < GenerationContext.IndexDefinitions.Count; i++)
     {
-        var item = GenerationContext.Indexs[i];
+        var fields = GenerationContext.IndexDefinitions[i].Fields;
+        var suffix = string.Join("And", fields);
+        var parameters = GenerationContext.BuildMethodParameters(fields);
+        var key = fields.Length > 1 ? "(" + GenerationContext.BuildCamelCaseParameters(fields) + ")" : GenerationContext.ToCamelCase(fields[0]);
 #>
 
-    /// <summary>
-    /// 根据索引获取数据行 (静态方法)
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= GenerationContext.DataRowClassName #>? GetRowBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    public static <#= GenerationContext.DataRowClassName #>? GetBy<#= suffix #>(<#= parameters #>)
     {
         var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
-        if (table?.m_Dict<#= i + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + GenerationContext.BuildCamelCaseParameters(item) + ')' : GenerationContext.ToCamelCase(item[0]) #>, out var result) == true)
-        {
-            return result;
-        }
-        else
-        {
-#if DT_CHECK_NOT_FOUND && UNITY_EDITOR
-            UnityEngine.Debug.LogWarningFormat("<#= GenerationContext.DataTableClassName #> not found index: <#= GenerationContext.BuildIndexsLogFormat(item) #>", <#= GenerationContext.BuildCamelCaseParameters(item) #>);
-#endif
-            return null;
-        }
+        return table?.m_Index<#= i + 1 #>.TryGetValue(<#= key #>, out var result) == true ? result : null;
     }
-<#  }
-    for (var j = 0; j < GenerationContext.Groups.Count; j++)
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryGetBy<#= suffix #>(<#= parameters #>, out <#= GenerationContext.DataRowClassName #>? result)
     {
-        var item = GenerationContext.Groups[j];
+        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
+        result = null;
+        return table != null && table.m_Index<#= i + 1 #>.TryGetValue(<#= key #>, out result);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool Contains<#= suffix #>(<#= parameters #>)
+    {
+        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
+        return table?.m_Index<#= i + 1 #>.ContainsKey(<#= key #>) == true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static <#= GenerationContext.DataRowClassName #>? GetRowBy<#= suffix #>(<#= parameters #>) => GetBy<#= suffix #>(<#= GenerationContext.BuildCamelCaseParameters(fields) #>);
+<#
+    }
+    for (var i = 0; i < GenerationContext.GroupIndexDefinitions.Count; i++)
+    {
+        var fields = GenerationContext.GroupIndexDefinitions[i].Fields;
+        var suffix = string.Join("And", fields);
+        var parameters = GenerationContext.BuildMethodParameters(fields);
+        var key = fields.Length > 1 ? "(" + GenerationContext.BuildCamelCaseParameters(fields) + ")" : GenerationContext.ToCamelCase(fields[0]);
+        var dictNo = GenerationContext.IndexDefinitions.Count + i + 1;
 #>
 
-    /// <summary>
-    /// 根据分组获取数据行列表 (静态方法)
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<<#= GenerationContext.DataRowClassName #>>? GetRowsGroupBy<#= string.Join("And", item) #>(<#= GenerationContext.BuildMethodParameters(item) #>)
+    public static IReadOnlyList<<#= GenerationContext.DataRowClassName #>>? GetManyBy<#= suffix #>(<#= parameters #>)
     {
         var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
-        return table?.m_Dict<#= GenerationContext.Indexs.Count + j + 1 #>.TryGetValue(<#= item.Length > 1 ? '(' + GenerationContext.BuildCamelCaseParameters(item) + ')' : GenerationContext.ToCamelCase(item[0]) #>, out var result) == true ? result : null;
+        return table?.m_Index<#= dictNo #>.TryGetValue(<#= key #>, out var result) == true ? result : null;
     }
-<#  } #>
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool Contains<#= suffix #>(<#= parameters #>)
+    {
+        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
+        return table?.m_Index<#= dictNo #>.ContainsKey(<#= key #>) == true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static List<<#= GenerationContext.DataRowClassName #>>? GetRowsGroupBy<#= suffix #>(<#= parameters #>) => GetManyBy<#= suffix #>(<#= GenerationContext.BuildCamelCaseParameters(fields) #>) as List<<#= GenerationContext.DataRowClassName #>>;
+<#
+    }
+#>
     #endregion
 }
 
 /// <summary><#= BuildSummary(GenerationContext.Title) #></summary>
 public sealed partial class <#= GenerationContext.DataRowClassName #> : DataRowBase
 {
-<# foreach(var item in GenerationContext.Fields)
-{
-    if (item.IsIgnore) continue;
+<#
+    foreach (var item in GenerationContext.Fields.Where(x => !x.IsIgnore))
+    {
 #>
 
     /// <summary><#= BuildSummary(item.Title) #></summary><#= string.IsNullOrEmpty(item.Note) ? string.Empty : Environment.NewLine + "    /// <remarks>" + BuildSummary(item.Note) + "</remarks>" #>
     public <#= GetPropertyTypeString(item) #> <#= item.Name #> { get; private set; }
-<# } #>
+<#
+    }
+#>
 
     public override bool Deserialize(BinaryReader reader)
     {
-<# foreach(var item in GenerationContext.Fields)
-{
-    if (item.IsIgnore) continue;
+<#
+    foreach (var item in GenerationContext.Fields.Where(x => !x.IsIgnore))
+    {
 #>
         <#= GetDeserializeMethodString(item) #>
-<# } #>
+<#
+    }
+#>
         return true;
     }
 }
-
 <# if (!string.IsNullOrEmpty(Namespace)) { #>
 }
 <# } #>

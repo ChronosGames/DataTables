@@ -29,21 +29,21 @@ public sealed class TreeTableTemplate : DataTableTemplate
 
         WL();
         WL("    #region Tree API");
-        WL($"    public IReadOnlyList<{row}> GetRoots() => GetManyByParentId(string.Empty) ?? Array.Empty<{row}>();");
+        WL($"    public IReadOnlyList<{row}> GetRoots() => (IReadOnlyList<{row}>?)GetDataRowsGroupByParentId(string.Empty) ?? Array.Empty<{row}>();");
         WL();
         WL("    [MethodImpl(MethodImplOptions.AggressiveInlining)]");
-        WL($"    public IReadOnlyList<{row}>? GetChildren(string id) => GetManyByParentId(id);");
+        WL($"    public IReadOnlyList<{row}>? GetChildren(string id) => GetDataRowsGroupByParentId(id);");
         WL();
         WL("    [MethodImpl(MethodImplOptions.AggressiveInlining)]");
         WL($"    public {row}? GetParent(string id)");
         WL("    {");
-        WL("        var node = GetById(id);");
-        WL("        return node == null || string.IsNullOrEmpty(node.ParentId) ? null : GetById(node.ParentId);");
+        WL("        var node = GetDataRowById(id);");
+        WL("        return node == null || string.IsNullOrEmpty(node.ParentId) ? null : GetDataRowById(node.ParentId);");
         WL("    }");
         WL();
         WL($"    public IEnumerable<{row}> TraverseDepthFirst(string id)");
         WL("    {");
-        WL("        var root = GetById(id);");
+        WL("        var root = GetDataRowById(id);");
         WL("        if (root == null) yield break;");
         WL("        var stack = new Stack<IEnumerator<" + row + ">>();");
         WL("        yield return root;");

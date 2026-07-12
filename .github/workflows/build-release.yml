@@ -92,10 +92,28 @@ jobs:
       dry-run: ${{ inputs.dry-run }}
       commit-id: ${{ needs.update-packagejson.outputs.sha }}
       tag: ${{ inputs.tag }}
-      nuget-push: true
+      nuget-push: false
       release-upload: true
       release-asset-path: ./DataTables.Unity.${{ inputs.tag }}.unitypackage/DataTables.Unity.${{ inputs.tag }}.unitypackage
     secrets: inherit
+
+  # publish to NuGet.org using trusted publishing (OIDC)
+  publish-nuget:
+    needs: [build-dotnet, create-release]
+    if: ${{ inputs.dry-run == false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: nuget
+          path: ./publish
+      - uses: ChronosGames/Actions/.github/actions/setup-dotnet@main
+      - name: Push to NuGet.org
+        run: dotnet nuget push ./publish/*.nupkg --source https://api.nuget.org/v3/index.json --skip-duplicate
 
   cleanup:
     if: ${{ needs.update-packagejson.outputs.is-branch-created == 'true' }}

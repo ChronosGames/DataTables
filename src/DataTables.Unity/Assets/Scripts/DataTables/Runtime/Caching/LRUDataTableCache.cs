@@ -6,7 +6,8 @@ using System.Threading;
 namespace DataTables
 {
     /// <summary>
-    /// LRU数据表缓存实现 - 智能内存管理
+    /// 基于可插拔大小估算器的LRU数据表缓存。
+    /// 预算统计表示缓存项估算值之和，不代表进程实际内存。
     /// </summary>
     public class LRUDataTableCache
     {
@@ -14,6 +15,7 @@ namespace DataTables
         private readonly LinkedList<CacheItem> _lruList = new();
         private readonly ReaderWriterLockSlim _lock = new();
         private readonly long _maxMemoryBytes;
+        private readonly Func<DataTableBase, long> _estimatedSizeProvider;
         private long _currentMemoryUsage;
         private int _accessCount;
         private int _hitCount;
@@ -40,8 +42,18 @@ namespace DataTables
         /// <summary>
         /// 创建LRU缓存
         /// </summary>
-        /// <param name="maxMemoryBytes">最大内存使用量(字节)</param>
+        /// <param name="maxMemoryBytes">估算内存预算(字节)</param>
         public LRUDataTableCache(long maxMemoryBytes)
+            : this(maxMemoryBytes, EstimateMemoryUsage)
+        {
+        }
+
+        /// <summary>
+        /// 创建使用指定大小估算器的LRU缓存。
+        /// </summary>
+        /// <param name="maxMemoryBytes">估算内存预算(字节)</param>
+        /// <param name="estimatedSizeProvider">返回单个数据表估算字节数的函数，必须返回正数。</param>
+        public LRUDataTableCache(long maxMemoryBytes, Func<DataTableBase, long> estimatedSizeProvider)
         {
             if (maxMemoryBytes <= 0)
             {
@@ -49,6 +61,31 @@ namespace DataTables
             }
 
             _maxMemoryBytes = maxMemoryBytes;
+            _estimatedSizeProvider = estimatedSizeProvider ?? throw new ArgumentNullException(nameof(estimatedSizeProvider));
+        }
+
+        /// <summary>
+        /// 获取该缓存的估算内存预算（字节）。
+        /// </summary>
+        public long EstimatedMemoryBudgetBytes => _maxMemoryBytes;
+
+        /// <summary>
+        /// 获取当前缓存项的估算内存总量（字节）。
+        /// </summary>
+        public long EstimatedMemoryUsageBytes
+        {
+            get
+            {
+                _lock.EnterReadLock();
+                try
+                {
+                    return _currentMemoryUsage;
+                }
+                finally
+                {
+                    _lock.ExitReadLock();
+                }
+            }
         }
 
         /// <summary>
@@ -103,14 +140,37 @@ namespace DataTables
         }
 
         /// <summary>
-        /// 添加数据表到缓存
+        /// 尝试添加数据表到缓存。估算大小超过预算时静默跳过，以兼容现有调用方。
         /// </summary>
         /// <typeparam name="T">数据表类型</typeparam>
         /// <param name="key">表键</param>
         /// <param name="table">表实例</param>
         public void Set<T>(TypeNamePair key, T table) where T : DataTableBase
         {
-            var memorySize = EstimateMemoryUsage(table);
+            TrySet(key, table);
+        }
+
+        /// <summary>
+        /// 尝试添加数据表到缓存。
+        /// </summary>
+        /// <typeparam name="T">数据表类型</typeparam>
+        /// <param name="key">表键</param>
+        /// <param name="table">表实例</param>
+        /// <returns>成功缓存时为 <see langword="true"/>；单表估算大小超过预算时为 <see langword="false"/>。</returns>
+        public bool TrySet<T>(TypeNamePair key, T table) where T : DataTableBase
+        {
+            if (table == null) throw new ArgumentNullException(nameof(table));
+
+            var memorySize = _estimatedSizeProvider(table);
+            if (memorySize <= 0)
+            {
+                throw new InvalidOperationException("The estimated size provider must return a positive byte count.");
+            }
+            if (memorySize > _maxMemoryBytes)
+            {
+                return false;
+            }
+
             List<DataTableBase>? removedTables = null;
 
             _lock.EnterWriteLock();
@@ -129,7 +189,7 @@ namespace DataTables
                 }
 
                 // 淘汰旧项目直到有足够空间
-                while (_currentMemoryUsage + memorySize > _maxMemoryBytes && _lruList.Count > 0)
+                while (_currentMemoryUsage > _maxMemoryBytes - memorySize && _lruList.Count > 0)
                 {
                     removedTables ??= new List<DataTableBase>();
                     EvictLeastRecentlyUsed(removedTables);
@@ -148,6 +208,7 @@ namespace DataTables
             }
 
             ShutdownTables(removedTables);
+            return true;
         }
 
         /// <summary>
@@ -264,7 +325,8 @@ namespace DataTables
         }
 
         /// <summary>
-        /// 获取缓存统计信息
+        /// 获取缓存统计信息。<see cref="CacheStats.EstimatedMemoryUsageBytes"/> 和
+        /// <see cref="CacheStats.EstimatedBudgetUsageRate"/> 均基于配置的大小估算器，并非进程实际内存。
         /// </summary>
         /// <returns>缓存统计</returns>
         public CacheStats GetStats()

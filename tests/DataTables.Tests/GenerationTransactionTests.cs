@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using DataTables.GeneratorCore;
 using FluentAssertions;
@@ -137,8 +138,12 @@ public sealed class GenerationTransactionTests
         var workbook = Path.Combine(input, "items.xlsx");
         await CreateValidWorkbookAsync(workbook);
         (await GenerateAsync(input, code, data)).Succeeded.Should().BeTrue();
+        var codeOutput = Path.Combine(code, "DRItem.cs");
+        var managerOutput = Path.Combine(code, "DataTableManagerExtension.cs");
         var output = Path.Combine(data, "DataTables.Tests.Generated.DTItem.bytes");
         var manifest = Path.Combine(data, ".dtgen-manifest.json");
+        var codeText = await File.ReadAllTextAsync(codeOutput);
+        var managerText = await File.ReadAllTextAsync(managerOutput);
         var outputBytes = await File.ReadAllBytesAsync(output);
         var manifestText = await File.ReadAllTextAsync(manifest);
 
@@ -146,8 +151,12 @@ public sealed class GenerationTransactionTests
         var result = await GenerateAsync(input, code, data, forceOverwrite: false);
 
         result.Succeeded.Should().BeFalse();
+        (await File.ReadAllTextAsync(codeOutput)).Should().Be(codeText);
+        (await File.ReadAllTextAsync(managerOutput)).Should().Be(managerText);
         (await File.ReadAllBytesAsync(output)).Should().Equal(outputBytes);
         (await File.ReadAllTextAsync(manifest)).Should().Be(manifestText);
+        Directory.EnumerateDirectories(code, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+        Directory.EnumerateDirectories(data, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
     }
 
     [Fact]
@@ -207,9 +216,233 @@ public sealed class GenerationTransactionTests
         logs.Should().Contain(message => message.Contains("Generate Excel File:"));
     }
 
-    private static Task<GenerationResult> GenerateAsync(string input, string code, string data, bool forceOverwrite = true, Action<string>? logger = null, string dataRowClassPrefix = "DR")
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DataOnlyGeneration_ShouldPreserveCodeManagerAndCodeManifest(bool useExplicitMode)
     {
-        return new DataTableGenerator().GenerateFile(
+        var root = CreateTempDirectory();
+        var input = Directory.CreateDirectory(Path.Combine(root, "input")).FullName;
+        var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
+        var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
+        var workbook = Path.Combine(input, "items.xlsx");
+        await CreateValidWorkbookAsync(workbook, id: 1);
+        (await GenerateAsync(input, code, data)).Succeeded.Should().BeTrue();
+        var rowCode = Path.Combine(code, "DRItem.cs");
+        var managerCode = Path.Combine(code, "DataTableManagerExtension.cs");
+        var codeManifest = Path.Combine(data, ".dtgen-manifest.json");
+        var dataFile = Path.Combine(data, "DataTables.Tests.Generated.DTItem.bytes");
+        var rowCodeText = await File.ReadAllTextAsync(rowCode);
+        var managerCodeText = await File.ReadAllTextAsync(managerCode);
+        var codeManifestText = await File.ReadAllTextAsync(codeManifest);
+        var previousData = await File.ReadAllBytesAsync(dataFile);
+
+        await CreateValidWorkbookAsync(workbook, id: 2);
+        var result = await GenerateAsync(
+            input,
+            string.Empty,
+            data,
+            generationMode: useExplicitMode ? GenerationMode.DataOnly : null);
+
+        result.Succeeded.Should().BeTrue();
+        (await File.ReadAllTextAsync(rowCode)).Should().Be(rowCodeText);
+        (await File.ReadAllTextAsync(managerCode)).Should().Be(managerCodeText);
+        (await File.ReadAllTextAsync(codeManifest)).Should().Be(codeManifestText);
+        (await File.ReadAllBytesAsync(dataFile)).Should().NotEqual(previousData);
+        File.Exists(Path.Combine(data, ".dtgen-data-manifest.json")).Should().BeTrue();
+        Directory.EnumerateDirectories(code, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+        Directory.EnumerateDirectories(data, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task InvalidGenerationMode_ShouldRejectWithoutTouchingExistingOutputs()
+    {
+        var root = CreateTempDirectory();
+        var input = Directory.CreateDirectory(Path.Combine(root, "input")).FullName;
+        var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
+        var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
+        await CreateValidWorkbookAsync(Path.Combine(input, "items.xlsx"));
+        (await GenerateAsync(input, code, data)).Succeeded.Should().BeTrue();
+        var rowCode = Path.Combine(code, "DRItem.cs");
+        var managerCode = Path.Combine(code, "DataTableManagerExtension.cs");
+        var dataFile = Path.Combine(data, "DataTables.Tests.Generated.DTItem.bytes");
+        var manifest = Path.Combine(data, ".dtgen-manifest.json");
+        var rowCodeText = await File.ReadAllTextAsync(rowCode);
+        var managerCodeText = await File.ReadAllTextAsync(managerCode);
+        var dataBytes = await File.ReadAllBytesAsync(dataFile);
+        var manifestText = await File.ReadAllTextAsync(manifest);
+
+        Func<Task> action = () => GenerateAsync(input, code, data, generationMode: (GenerationMode)int.MaxValue);
+
+        await action.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        (await File.ReadAllTextAsync(rowCode)).Should().Be(rowCodeText);
+        (await File.ReadAllTextAsync(managerCode)).Should().Be(managerCodeText);
+        (await File.ReadAllBytesAsync(dataFile)).Should().Equal(dataBytes);
+        (await File.ReadAllTextAsync(manifest)).Should().Be(manifestText);
+        File.Exists(Path.Combine(data, ".dtgen-data-manifest.json")).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ErrorDiagnostic_ShouldFailAndKeepDiagnosticsReportAvailable()
+    {
+        var root = CreateTempDirectory();
+        var input = Directory.CreateDirectory(Path.Combine(root, "input")).FullName;
+        var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
+        var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
+        var reportPath = Path.Combine(root, "diagnostics", "report.json");
+        await CreateValidWorkbookAsync(Path.Combine(input, "items.xlsx"));
+        (await GenerateAsync(input, code, data)).Succeeded.Should().BeTrue();
+        var rowCode = Path.Combine(code, "DRItem.cs");
+        var managerCode = Path.Combine(code, "DataTableManagerExtension.cs");
+        var dataFile = Path.Combine(data, "DataTables.Tests.Generated.DTItem.bytes");
+        var manifest = Path.Combine(data, ".dtgen-manifest.json");
+        var rowCodeText = await File.ReadAllTextAsync(rowCode);
+        var managerCodeText = await File.ReadAllTextAsync(managerCode);
+        var dataBytes = await File.ReadAllBytesAsync(dataFile);
+        var manifestText = await File.ReadAllTextAsync(manifest);
+        await CreateUnknownTableWorkbookAsync(Path.Combine(input, "unknown.xlsx"));
+
+        var result = await GenerateAsync(input, code, data, forceOverwrite: false, diagnosticsJsonOutput: reportPath);
+
+        result.Succeeded.Should().BeFalse();
+        result.Diagnostics.Should().ContainSingle(x => x.Severity == DiagnosticSeverity.Error);
+        result.Failures.Should().ContainSingle(x => x.Exception.Message.Contains("Generator diagnostic error"));
+        File.Exists(reportPath).Should().BeTrue();
+        using var report = JsonDocument.Parse(await File.ReadAllTextAsync(reportPath));
+        report.RootElement.GetProperty("ErrorCount").GetInt32().Should().Be(1);
+        (await File.ReadAllTextAsync(rowCode)).Should().Be(rowCodeText);
+        (await File.ReadAllTextAsync(managerCode)).Should().Be(managerCodeText);
+        (await File.ReadAllBytesAsync(dataFile)).Should().Equal(dataBytes);
+        (await File.ReadAllTextAsync(manifest)).Should().Be(manifestText);
+        Directory.EnumerateDirectories(code, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+        Directory.EnumerateDirectories(data, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task EquivalentSplitWorkbooks_ShouldShareCodeOutputWithoutRacing()
+    {
+        var root = CreateTempDirectory();
+        var input = Directory.CreateDirectory(Path.Combine(root, "input")).FullName;
+        var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
+        var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
+        await CreateWorkbookAsync(Path.Combine(input, "split-1.xlsx"), workbook =>
+        {
+            AddTableSheet(workbook, "Split1", "SplitItem", 1, child: "x001");
+        });
+        await CreateWorkbookAsync(Path.Combine(input, "split-2.xlsx"), workbook =>
+        {
+            AddTableSheet(workbook, "Split2", "SplitItem", 2, child: "x002");
+        });
+
+        var result = await GenerateAsync(input, code, data);
+        var incrementalResult = await GenerateAsync(input, code, data, forceOverwrite: false);
+
+        result.Succeeded.Should().BeTrue();
+        incrementalResult.Succeeded.Should().BeTrue();
+        incrementalResult.SkippedCount.Should().Be(2);
+        Directory.GetFiles(code, "DRSplitItem.cs").Should().ContainSingle();
+        Directory.GetFiles(data, "DataTables.Tests.Generated.DTSplitItem.*.bytes").Select(Path.GetFileName)
+            .Should().BeEquivalentTo(
+                "DataTables.Tests.Generated.DTSplitItem.x001.bytes",
+                "DataTables.Tests.Generated.DTSplitItem.x002.bytes");
+    }
+
+    [Fact]
+    public async Task SplitSheetsWithDifferentCode_ShouldFailInsteadOfOverwriting()
+    {
+        var root = CreateTempDirectory();
+        var input = Directory.CreateDirectory(Path.Combine(root, "input")).FullName;
+        var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
+        var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
+        var workbookPath = Path.Combine(input, "split.xlsx");
+        await CreateWorkbookAsync(workbookPath, workbook =>
+        {
+            AddTableSheet(workbook, "Split1", "SplitItem", 1, child: "x001");
+        });
+        (await GenerateAsync(input, code, data)).Succeeded.Should().BeTrue();
+        var rowCode = Path.Combine(code, "DRSplitItem.cs");
+        var managerCode = Path.Combine(code, "DataTableManagerExtension.cs");
+        var dataFile = Path.Combine(data, "DataTables.Tests.Generated.DTSplitItem.x001.bytes");
+        var manifest = Path.Combine(data, ".dtgen-manifest.json");
+        var rowCodeText = await File.ReadAllTextAsync(rowCode);
+        var managerCodeText = await File.ReadAllTextAsync(managerCode);
+        var dataBytes = await File.ReadAllBytesAsync(dataFile);
+        var manifestText = await File.ReadAllTextAsync(manifest);
+        await CreateWorkbookAsync(workbookPath, workbook =>
+        {
+            AddTableSheet(workbook, "Split1", "SplitItem", 1, child: "x001");
+            AddTableSheet(workbook, "Split2", "SplitItem", 2, child: "x002", includeName: true);
+        });
+
+        var result = await GenerateAsync(input, code, data, forceOverwrite: false);
+
+        result.Succeeded.Should().BeFalse();
+        result.Failures.Should().ContainSingle(x =>
+            x.Exception.Message.Contains("Generated code output conflict")
+            && x.Exception.Message.Contains("DRSplitItem.cs"));
+        (await File.ReadAllTextAsync(rowCode)).Should().Be(rowCodeText);
+        (await File.ReadAllTextAsync(managerCode)).Should().Be(managerCodeText);
+        (await File.ReadAllBytesAsync(dataFile)).Should().Equal(dataBytes);
+        (await File.ReadAllTextAsync(manifest)).Should().Be(manifestText);
+        File.Exists(Path.Combine(data, "DataTables.Tests.Generated.DTSplitItem.x002.bytes")).Should().BeFalse();
+        Directory.EnumerateDirectories(code, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+        Directory.EnumerateDirectories(data, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DuplicateDataOutputAcrossWorkbooks_ShouldFailInsteadOfOverwriting()
+    {
+        var root = CreateTempDirectory();
+        var input = Directory.CreateDirectory(Path.Combine(root, "input")).FullName;
+        var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
+        var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
+        await CreateValidWorkbookAsync(Path.Combine(input, "items-a.xlsx"), id: 1);
+        (await GenerateAsync(input, code, data)).Succeeded.Should().BeTrue();
+        var rowCode = Path.Combine(code, "DRItem.cs");
+        var managerCode = Path.Combine(code, "DataTableManagerExtension.cs");
+        var dataFile = Path.Combine(data, "DataTables.Tests.Generated.DTItem.bytes");
+        var manifest = Path.Combine(data, ".dtgen-manifest.json");
+        var rowCodeText = await File.ReadAllTextAsync(rowCode);
+        var managerCodeText = await File.ReadAllTextAsync(managerCode);
+        var dataBytes = await File.ReadAllBytesAsync(dataFile);
+        var manifestText = await File.ReadAllTextAsync(manifest);
+        await CreateValidWorkbookAsync(Path.Combine(input, "items-b.xlsx"), id: 2);
+
+        var result = await GenerateAsync(input, code, data, forceOverwrite: false);
+
+        result.Succeeded.Should().BeFalse();
+        result.Failures.Should().ContainSingle(x =>
+            x.Exception.Message.Contains("Generated data output conflict")
+            && x.Exception.Message.Contains("DataTables.Tests.Generated.DTItem.bytes"));
+        (await File.ReadAllTextAsync(rowCode)).Should().Be(rowCodeText);
+        (await File.ReadAllTextAsync(managerCode)).Should().Be(managerCodeText);
+        (await File.ReadAllBytesAsync(dataFile)).Should().Equal(dataBytes);
+        (await File.ReadAllTextAsync(manifest)).Should().Be(manifestText);
+        Directory.EnumerateDirectories(code, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+        Directory.EnumerateDirectories(data, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+    }
+
+    private static Task<GenerationResult> GenerateAsync(string input, string code, string data, bool forceOverwrite = true, Action<string>? logger = null, string dataRowClassPrefix = "DR", string? diagnosticsJsonOutput = null, GenerationMode? generationMode = null)
+    {
+        var generator = new DataTableGenerator();
+        if (generationMode.HasValue)
+        {
+            return generator.GenerateFile(
+                inputDirectories: new[] { input },
+                searchPatterns: new[] { "*.xlsx" },
+                codeOutputDir: code,
+                dataOutputDir: data,
+                usingNamespace: "DataTables.Tests.Generated",
+                dataRowClassPrefix: dataRowClassPrefix,
+                importNamespaces: string.Empty,
+                filterColumnTags: string.Empty,
+                forceOverwrite: forceOverwrite,
+                logger: logger ?? (_ => { }),
+                generationMode: generationMode.Value,
+                diagnosticsJsonOutput: diagnosticsJsonOutput);
+        }
+
+        return generator.GenerateFile(
             inputDirectories: new[] { input },
             searchPatterns: new[] { "*.xlsx" },
             codeOutputDir: code,
@@ -219,20 +452,50 @@ public sealed class GenerationTransactionTests
             importNamespaces: string.Empty,
             filterColumnTags: string.Empty,
             forceOverwrite: forceOverwrite,
-            logger: logger ?? (_ => { }));
+            logger: logger ?? (_ => { }),
+            diagnosticsJsonOutput: diagnosticsJsonOutput);
     }
 
     private static async Task CreateValidWorkbookAsync(string path, string className = "Item", int id = 1)
     {
+        await CreateWorkbookAsync(path, workbook => AddTableSheet(workbook, "Items", className, id));
+    }
+
+    private static async Task CreateUnknownTableWorkbookAsync(string path)
+    {
+        await CreateWorkbookAsync(path, workbook =>
+        {
+            var sheet = workbook.CreateSheet("Unknown");
+            sheet.CreateRow(0).CreateCell(0, CellType.String).SetCellValue("dtgen=unknown, class=UnknownItem");
+        });
+    }
+
+    private static async Task CreateWorkbookAsync(string path, Action<XSSFWorkbook> configure)
+    {
         using var workbook = new XSSFWorkbook();
-        var sheet = workbook.CreateSheet("Items");
-        sheet.CreateRow(0).CreateCell(0, CellType.String).SetCellValue($"dtgen=table, class={className}");
+        configure(workbook);
+        await using var stream = File.Create(path);
+        workbook.Write(stream);
+    }
+
+    private static void AddTableSheet(XSSFWorkbook workbook, string sheetName, string className, int id, string child = "", bool includeName = false)
+    {
+        var sheet = workbook.CreateSheet(sheetName);
+        var childSetting = string.IsNullOrEmpty(child) ? string.Empty : $", child={child}";
+        sheet.CreateRow(0).CreateCell(0, CellType.String).SetCellValue($"dtgen=table, class={className}{childSetting}");
         sheet.CreateRow(1).CreateCell(0, CellType.String).SetCellValue("Identifier");
         sheet.CreateRow(2).CreateCell(0, CellType.String).SetCellValue("Id");
         sheet.CreateRow(3).CreateCell(0, CellType.String).SetCellValue("int");
         sheet.CreateRow(4).CreateCell(0, CellType.Numeric).SetCellValue(id);
-        await using var stream = File.Create(path);
-        workbook.Write(stream);
+        if (!includeName)
+        {
+            return;
+        }
+
+        sheet.GetRow(1).CreateCell(1, CellType.String).SetCellValue("Name");
+        sheet.GetRow(2).CreateCell(1, CellType.String).SetCellValue("Name");
+        sheet.GetRow(3).CreateCell(1, CellType.String).SetCellValue("string");
+        sheet.GetRow(4).CreateCell(1, CellType.String).SetCellValue("Item");
     }
 
     private static string CreateTempDirectory()

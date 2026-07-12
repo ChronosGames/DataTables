@@ -28,7 +28,9 @@ using DataTables;<# if (!string.IsNullOrEmpty(Using)) { #><#= Environment.NewLin
     {
 #>
     /// <summary><#= BuildSummary(item.Title) #></summary>
-    public static <#= GetPropertyTypeString(item) #> <#= item.Name #> => DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>()![0].<#= item.Name #>;
+    public static <#= GetPropertyTypeString(item) #> <#= item.Name #> => Get<#= item.Name #>(string.Empty);
+
+    public static <#= GetPropertyTypeString(item) #> Get<#= item.Name #>(string dataTableName) => DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>(dataTableName)![0].<#= item.Name #>;
 
 <#
     }

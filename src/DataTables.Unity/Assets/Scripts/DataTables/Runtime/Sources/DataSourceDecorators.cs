@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -31,28 +30,117 @@ namespace DataTables
         public virtual ValueTask<bool> IsAvailableAsync() => IsAvailableAsync(CancellationToken.None);
 
         public virtual ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken) => Inner.IsAvailableAsync(cancellationToken);
+
+        public override string ToString() => Inner.ToString() ?? Inner.GetType().Name;
     }
 
+    /// <summary>
+    /// Caches fully materialized payloads with an LRU byte budget.
+    /// The budget covers payload byte arrays, not dictionary or stream object overhead.
+    /// </summary>
     public sealed class CachedDataSource : DataSourceDecorator
     {
-        private readonly ConcurrentDictionary<string, byte[]> _cache = new();
+        public const long DefaultMaxCacheBytes = 64L * 1024 * 1024;
 
-        public CachedDataSource(IDataSource inner) : base(inner)
+        private readonly Dictionary<string, LinkedListNode<CacheEntry>> _cache = new(StringComparer.Ordinal);
+        private readonly LinkedList<CacheEntry> _lru = new();
+        private readonly object _gate = new();
+        private readonly long _maxCacheBytes;
+        private long _cachedBytes;
+
+        private sealed class CacheEntry
+        {
+            public CacheEntry(string name, byte[] payload)
+            {
+                Name = name;
+                Payload = payload;
+            }
+
+            public string Name { get; }
+            public byte[] Payload { get; }
+        }
+
+        public CachedDataSource(IDataSource inner) : this(inner, DefaultMaxCacheBytes)
         {
         }
 
-        public void Clear() => _cache.Clear();
+        public CachedDataSource(IDataSource inner, long maxCacheBytes) : base(inner)
+        {
+            if (maxCacheBytes <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxCacheBytes), "Cache byte budget must be greater than zero.");
+            }
+
+            _maxCacheBytes = maxCacheBytes;
+        }
+
+        public long MaxCacheBytes => _maxCacheBytes;
+
+        public long CachedBytes
+        {
+            get
+            {
+                lock (_gate) return _cachedBytes;
+            }
+        }
+
+        public int Count
+        {
+            get
+            {
+                lock (_gate) return _cache.Count;
+            }
+        }
+
+        public void Clear()
+        {
+            lock (_gate)
+            {
+                _cache.Clear();
+                _lru.Clear();
+                _cachedBytes = 0;
+            }
+        }
 
         public override async ValueTask<Stream> OpenReadAsync(string name, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (_cache.TryGetValue(name, out var cached))
+            lock (_gate)
             {
-                return new MemoryStream(cached, writable: false);
+                if (_cache.TryGetValue(name, out var cached))
+                {
+                    _lru.Remove(cached);
+                    _lru.AddFirst(cached);
+                    return new MemoryStream(cached.Value.Payload, writable: false);
+                }
             }
 
             var bytes = await Inner.LoadAsync(name, cancellationToken);
-            _cache[name] = bytes;
+            if (bytes.LongLength <= _maxCacheBytes)
+            {
+                lock (_gate)
+                {
+                    if (_cache.TryGetValue(name, out var existing))
+                    {
+                        _lru.Remove(existing);
+                        _cachedBytes -= existing.Value.Payload.LongLength;
+                    }
+
+                    while (_cachedBytes > _maxCacheBytes - bytes.LongLength && _lru.Last != null)
+                    {
+                        var expired = _lru.Last;
+                        _lru.RemoveLast();
+                        _cache.Remove(expired.Value.Name);
+                        _cachedBytes -= expired.Value.Payload.LongLength;
+                    }
+
+                    var entry = new LinkedListNode<CacheEntry>(new CacheEntry(name, bytes));
+                    _lru.AddFirst(entry);
+                    _cache[name] = entry;
+                    _cachedBytes += bytes.LongLength;
+                }
+            }
+
             return new MemoryStream(bytes, writable: false);
         }
     }
@@ -181,6 +269,10 @@ namespace DataTables
 
     }
 
+    /// <summary>
+    /// Tries sources in order and buffers each candidate completely before exposing it.
+    /// Full buffering is required so delayed decode, validation, or I/O failures can still fall back safely.
+    /// </summary>
     public sealed class FallbackDataSource : IDataSource
     {
         private readonly IReadOnlyList<IDataSource> _sources;
@@ -204,6 +296,7 @@ namespace DataTables
 
         public async ValueTask<Stream> OpenReadAsync(string name, CancellationToken cancellationToken)
         {
+            LastHitSource = null;
             Exception? lastError = null;
             var failures = new List<string>();
             foreach (var source in _sources)
@@ -218,10 +311,11 @@ namespace DataTables
                         continue;
                     }
 
-                    var stream = await source.OpenReadAsync(name, cancellationToken);
+                    var payload = await source.LoadAsync(name, cancellationToken);
+                    var result = new MemoryStream(payload, writable: false);
                     LastHitSource = sourceName;
                     Log.Info($"FallbackDataSource loaded '{name}' from {sourceName}.");
-                    return stream;
+                    return result;
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
@@ -254,13 +348,41 @@ namespace DataTables
         public async ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken)
         {
             var entries = new Dictionary<string, DataSourceManifestEntry>(StringComparer.OrdinalIgnoreCase);
+            var hashStates = new Dictionary<string, (string? Hash, int SourceCount, bool Conflict)>(StringComparer.OrdinalIgnoreCase);
             foreach (var source in _sources)
             {
                 var manifest = await source.GetManifestAsync(cancellationToken);
-                foreach (var entry in manifest.Entries)
+                var sourceEntries = new Dictionary<string, DataSourceManifestEntry>(StringComparer.OrdinalIgnoreCase);
+                foreach (var entry in manifest.Entries) sourceEntries.TryAdd(entry.Name, entry);
+
+                foreach (var entry in sourceEntries.Values)
                 {
-                    entries.TryAdd(entry.Name, new DataSourceManifestEntry(entry.Name, entry.Length, entry.Version ?? manifest.Version, entry.Hash, GetSourceName(source)));
+                    if (!entries.ContainsKey(entry.Name))
+                    {
+                        entries.Add(entry.Name, new DataSourceManifestEntry(entry.Name, entry.Length, entry.Version ?? manifest.Version, entry.Hash, GetSourceName(source)));
+                    }
+
+                    if (!hashStates.TryGetValue(entry.Name, out var state))
+                    {
+                        hashStates.Add(entry.Name, (entry.Hash, 1, entry.Hash == null));
+                    }
+                    else
+                    {
+                        hashStates[entry.Name] = (
+                            state.Hash,
+                            state.SourceCount + 1,
+                            state.Conflict || entry.Hash == null || !string.Equals(state.Hash, entry.Hash, StringComparison.Ordinal));
+                    }
                 }
+            }
+
+            foreach (var pair in entries.ToArray())
+            {
+                var state = hashStates[pair.Key];
+                if (!state.Conflict && state.SourceCount == _sources.Count) continue;
+
+                var entry = pair.Value;
+                entries[pair.Key] = new DataSourceManifestEntry(entry.Name, entry.Length, entry.Version, hash: null, sourceName: entry.SourceName);
             }
 
             return new DataSourceManifest(entries.Values.ToArray());

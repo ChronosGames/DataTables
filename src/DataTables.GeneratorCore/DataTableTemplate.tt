@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -104,6 +105,21 @@ using DataTables;<# if (!string.IsNullOrEmpty(Using)) { #><#= Environment.NewLin
 #>
     }
 
+    protected override void OnDataRowsRemoved()
+    {
+<#
+    for (var i = 1; i < dictIndex; i++)
+    {
+#>
+        m_Dict<#= i #>.Clear();
+<#
+    }
+#>
+        OnGeneratedRowsRemoved();
+    }
+
+    partial void OnGeneratedRowsRemoved();
+
     #region Instance API
 <#
     for (var i = 0; i < GenerationContext.IndexDefinitions.Count; i++)
@@ -145,33 +161,46 @@ using DataTables;<# if (!string.IsNullOrEmpty(Using)) { #><#= Environment.NewLin
         var fields = GenerationContext.IndexDefinitions[i].Fields;
         var suffix = string.Join("And", fields);
         var parameters = GenerationContext.BuildMethodParameters(fields);
+        var arguments = GenerationContext.BuildCamelCaseParameters(fields);
         var key = fields.Length > 1 ? "(" + GenerationContext.BuildCamelCaseParameters(fields) + ")" : GenerationContext.ToCamelCase(fields[0]);
+        var tableNameParameter = GetTableNameParameter(fields);
 #>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= GenerationContext.DataRowClassName #>? GetBy<#= suffix #>(<#= parameters #>)
+    public static <#= GenerationContext.DataRowClassName #>? GetBy<#= suffix #>(<#= parameters #>) => GetBy<#= suffix #>(string.Empty, <#= arguments #>);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static <#= GenerationContext.DataRowClassName #>? GetBy<#= suffix #>(string <#= tableNameParameter #>, <#= parameters #>)
     {
-        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
+        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
         return table?.m_Index<#= i + 1 #>.TryGetValue(<#= key #>, out var result) == true ? result : null;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetBy<#= suffix #>(<#= parameters #>, out <#= GenerationContext.DataRowClassName #>? result)
+    public static bool TryGetBy<#= suffix #>(<#= parameters #>, out <#= GenerationContext.DataRowClassName #>? result) => TryGetBy<#= suffix #>(string.Empty, <#= arguments #>, out result);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryGetBy<#= suffix #>(string <#= tableNameParameter #>, <#= parameters #>, out <#= GenerationContext.DataRowClassName #>? result)
     {
-        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
+        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
         result = null;
         return table != null && table.m_Index<#= i + 1 #>.TryGetValue(<#= key #>, out result);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool Contains<#= suffix #>(<#= parameters #>)
+    public static bool Contains<#= suffix #>(<#= parameters #>) => Contains<#= suffix #>(string.Empty, <#= arguments #>);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool Contains<#= suffix #>(string <#= tableNameParameter #>, <#= parameters #>)
     {
-        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
+        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
         return table?.m_Index<#= i + 1 #>.ContainsKey(<#= key #>) == true;
     }
 
+    [Obsolete("Use GetBy<#= suffix #> instead.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= GenerationContext.DataRowClassName #>? GetRowBy<#= suffix #>(<#= parameters #>) => GetBy<#= suffix #>(<#= GenerationContext.BuildCamelCaseParameters(fields) #>);
+    public static <#= GenerationContext.DataRowClassName #>? GetRowBy<#= suffix #>(<#= parameters #>) => GetBy<#= suffix #>(<#= arguments #>);
 <#
     }
     for (var i = 0; i < GenerationContext.GroupIndexDefinitions.Count; i++)
@@ -179,26 +208,36 @@ using DataTables;<# if (!string.IsNullOrEmpty(Using)) { #><#= Environment.NewLin
         var fields = GenerationContext.GroupIndexDefinitions[i].Fields;
         var suffix = string.Join("And", fields);
         var parameters = GenerationContext.BuildMethodParameters(fields);
+        var arguments = GenerationContext.BuildCamelCaseParameters(fields);
         var key = fields.Length > 1 ? "(" + GenerationContext.BuildCamelCaseParameters(fields) + ")" : GenerationContext.ToCamelCase(fields[0]);
         var dictNo = GenerationContext.IndexDefinitions.Count + i + 1;
+        var tableNameParameter = GetTableNameParameter(fields);
 #>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static IReadOnlyList<<#= GenerationContext.DataRowClassName #>>? GetManyBy<#= suffix #>(<#= parameters #>)
+    public static IReadOnlyList<<#= GenerationContext.DataRowClassName #>>? GetManyBy<#= suffix #>(<#= parameters #>) => GetManyBy<#= suffix #>(string.Empty, <#= arguments #>);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static IReadOnlyList<<#= GenerationContext.DataRowClassName #>>? GetManyBy<#= suffix #>(string <#= tableNameParameter #>, <#= parameters #>)
     {
-        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
+        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
         return table?.m_Index<#= dictNo #>.TryGetValue(<#= key #>, out var result) == true ? result : null;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool Contains<#= suffix #>(<#= parameters #>)
+    public static bool Contains<#= suffix #>(<#= parameters #>) => Contains<#= suffix #>(string.Empty, <#= arguments #>);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool Contains<#= suffix #>(string <#= tableNameParameter #>, <#= parameters #>)
     {
-        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>();
+        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
         return table?.m_Index<#= dictNo #>.ContainsKey(<#= key #>) == true;
     }
 
+    [Obsolete("Use GetManyBy<#= suffix #> instead.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<<#= GenerationContext.DataRowClassName #>>? GetRowsGroupBy<#= suffix #>(<#= parameters #>) => GetManyBy<#= suffix #>(<#= GenerationContext.BuildCamelCaseParameters(fields) #>) as List<<#= GenerationContext.DataRowClassName #>>;
+    public static List<<#= GenerationContext.DataRowClassName #>>? GetRowsGroupBy<#= suffix #>(<#= parameters #>) => GetManyBy<#= suffix #>(<#= arguments #>) as List<<#= GenerationContext.DataRowClassName #>>;
 <#
     }
 #>

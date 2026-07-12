@@ -70,8 +70,8 @@ internal static class Program
         Console.WriteLine($"✅ 配置文件系统数据源: {dataDirectory}");
 
         // 启用内存管理
-        DataTableManager.EnableMemoryManagement(30); // 30MB限制
-        Console.WriteLine("✅ 启用智能内存管理: 30MB LRU缓存");
+        DataTableManager.EnableEstimatedMemoryBudget(30); // 30MB估算预算
+        Console.WriteLine("✅ 启用估算内存预算: 30MB LRU缓存");
 
         // 启用性能监控
         DataTableManager.EnableProfiling(stats =>
@@ -102,17 +102,29 @@ internal static class Program
                 {
                     Console.WriteLine($"✅ 成功加载数据表: {sampleTable.Count} 行数据");
 
-                    // 演示静态API - 使用Static后缀的静态方法
+                    // 演示生成的静态查询 API
                     const string sampleName = "示例字符k串1";
-                    var row1 = DTDataTableSample.GetRowById(1);
-                    var rowsByName = DTDataTableSample.GetRowsGroupByName(sampleName);
+                    var row1 = DTDataTableSample.GetById(1);
+                    var rowsByName = DTDataTableSample.GetManyByName(sampleName);
                     if (row1?.Name != sampleName || rowsByName?.Count != 1)
                     {
                         Console.Error.WriteLine("❌ 静态查询验证失败：示例数据与生成代码不匹配。");
                         return false;
                     }
 
+                    var split1 = DataTableManager.GetCached<DTDataTableSplitSample>("x001");
+                    var split2 = DataTableManager.GetCached<DTDataTableSplitSample>("x002");
+                    var splitRow1 = DTDataTableSplitSample.GetById("x001", 1);
+                    var splitRow2 = DTDataTableSplitSample.GetById("x002", 1);
+                    if (split1?.Name != "x001" || split2?.Name != "x002"
+                        || ReferenceEquals(split1, split2) || splitRow1 is null || splitRow2 is null)
+                    {
+                        Console.Error.WriteLine("❌ 分表查询验证失败：静态查询没有使用指定的 child name。");
+                        return false;
+                    }
+
                     Console.WriteLine($"✅ 静态API测试: 找到ID=1的行: {row1?.Name}, 分组查询结果: {rowsByName?.Count ?? 0}条");
+                    Console.WriteLine("✅ 分表查询测试: x001/x002 使用各自缓存实例");
                     Console.WriteLine("✅ 异步优先架构已就绪\n");
                     return true;
                 }
@@ -177,8 +189,8 @@ internal static class Program
             var stats = cacheStats.Value;
             Console.WriteLine($"📊 缓存统计:");
             Console.WriteLine($"   - 缓存项数: {stats.TotalItems}");
-            Console.WriteLine($"   - 内存使用: {stats.MemoryUsage / 1024:F1}KB");
-            Console.WriteLine($"   - 内存使用率: {stats.MemoryUsageRate:P}");
+            Console.WriteLine($"   - 估算内存使用: {stats.EstimatedMemoryUsageBytes / 1024:F1}KB");
+            Console.WriteLine($"   - 估算预算使用率: {stats.EstimatedBudgetUsageRate:P}");
             Console.WriteLine($"   - 访问次数: {stats.AccessCount}");
             Console.WriteLine($"   - 命中次数: {stats.HitCount}");
             Console.WriteLine($"   - 命中率: {stats.HitRate:P}");
@@ -237,8 +249,8 @@ internal static class Program
         Console.WriteLine($"   - 加载时间: {stats.LoadTime}ms");
 
         // 检查内存管理状态
-        bool memoryEnabled = DataTableManager.IsMemoryManagementEnabled;
-        Console.WriteLine($"   - 内存管理状态: {(memoryEnabled ? "已启用" : "未启用")}");
+        bool memoryEnabled = DataTableManager.IsEstimatedMemoryBudgetEnabled;
+        Console.WriteLine($"   - 估算内存预算状态: {(memoryEnabled ? "已启用" : "未启用")}");
 
         // 获取数据表数量
         int tableCount = DataTableManager.Count;

@@ -8,7 +8,7 @@ namespace DataTables
 {
     public abstract class DataTable<T> : DataTableBase, IDataTable<T> where T : class, IDataRow, new()
     {
-        private readonly T[] m_DataSet;
+        private T[] m_DataSet;
 
         /// <summary>
         /// 初始化数据表的新实例。
@@ -281,7 +281,10 @@ namespace DataTables
         /// 清空所有数据表行。
         /// </summary>
         public override void RemoveAllDataRows()
-        { }
+        {
+            m_DataSet = Array.Empty<T>();
+            OnDataRowsRemoved();
+        }
 
         /// <summary>
         /// 返回循环访问集合的枚举数。
@@ -305,7 +308,9 @@ namespace DataTables
         /// 关闭并清理数据表。
         /// </summary>
         internal override void Shutdown()
-        { }
+        {
+            RemoveAllDataRows();
+        }
 
         internal override void AddDataRow(int index, DataRowBase dataRow)
         {
@@ -316,5 +321,11 @@ namespace DataTables
         {
             m_DataSet[index] = dataRow;
         }
+
+        /// <summary>
+        /// Called after all rows have been removed so derived generated tables can clear indexes.
+        /// </summary>
+        protected virtual void OnDataRowsRemoved()
+        { }
     }
 }

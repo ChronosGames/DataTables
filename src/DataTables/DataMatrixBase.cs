@@ -6,9 +6,9 @@ namespace DataTables
 {
     public abstract class DataMatrixBase<TKey1, TKey2, TValue> : DataTableBase
     {
-        private readonly TKey1[] m_Keies1;
-        private readonly TKey2[] m_Keies2;
-        private readonly TValue[] m_Values;
+        private TKey1[] m_Keies1;
+        private TKey2[] m_Keies2;
+        private TValue[] m_Values;
 
         protected IEqualityComparer<TKey1> m_Key1Comparer = EqualityComparer<TKey1>.Default;
         protected IEqualityComparer<TKey2> m_Key2Comparer = EqualityComparer<TKey2>.Default;
@@ -236,5 +236,17 @@ namespace DataTables
         /// </summary>
         /// <returns></returns>
         protected abstract MatrixDataRowBase<TKey1, TKey2, TValue> CreateDataRowInstance();
+
+        public override void RemoveAllDataRows()
+        {
+            m_Keies1 = Array.Empty<TKey1>();
+            m_Keies2 = Array.Empty<TKey2>();
+            m_Values = Array.Empty<TValue>();
+        }
+
+        internal override void Shutdown()
+        {
+            RemoveAllDataRows();
+        }
     }
 }

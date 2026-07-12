@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,9 +10,29 @@ using System.Threading.Tasks;
 namespace DataTables
 {
     /// <summary>
+    /// Controls where synchronous binary deserialization runs after the payload has been read asynchronously.
+    /// </summary>
+    public enum DataTableParseExecution
+    {
+        /// <summary>
+        /// Parse on a thread-pool worker after asynchronous payload I/O. Unity WebGL Player falls back to
+        /// <see cref="CallingContext"/> because background threads are unavailable.
+        /// </summary>
+        BackgroundThread,
+
+        /// <summary>
+        /// Parse on the async continuation after payload I/O. A captured Unity synchronization context keeps
+        /// this on the main thread; without a synchronization context, no particular thread is guaranteed.
+        /// </summary>
+        CallingContext
+    }
+
+    /// <summary>
     /// 独立的数据表运行时上下文。每个实例拥有自己的数据源、加载任务、缓存、生命周期和 Hook。
     /// </summary>
-    public sealed class DataTableContext : IDataTableManager, IDisposable
+#pragma warning disable CS0618
+    public sealed class DataTableContext : IDataTableContext, IDataTableManager, IDisposable
+#pragma warning restore CS0618
     {
         private readonly ConcurrentDictionary<TypeNamePair, DataTableBase> m_DataTables = new();
         private readonly ConcurrentDictionary<TypeNamePair, TaskCompletionSource<DataTableBase?>> m_LoadingTables = new();
@@ -21,6 +43,8 @@ namespace DataTables
         private readonly object m_Gate = new();
         private LRUDataTableCache? m_Cache;
         private IDataSource? m_DataSource;
+        private CancellationTokenSource? m_LifecycleCancellation = new();
+        private DataTableParseExecution m_ParseExecution = DataTableParseExecution.BackgroundThread;
         private long m_LifecycleGeneration;
         private long m_TotalLoadTimeMs;
         private long m_TotalMemoryDeltaBytes;
@@ -50,7 +74,7 @@ namespace DataTables
             }
         }
 
-        public bool IsMemoryManagementEnabled
+        public bool IsEstimatedMemoryBudgetEnabled
         {
             get
             {
@@ -58,6 +82,38 @@ namespace DataTables
                 lock (m_Gate)
                 {
                     return m_Cache != null;
+                }
+            }
+        }
+
+        [Obsolete("Use IsEstimatedMemoryBudgetEnabled instead.")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public bool IsMemoryManagementEnabled => IsEstimatedMemoryBudgetEnabled;
+
+        /// <summary>
+        /// Gets or sets where synchronous payload deserialization executes. Payload I/O is always asynchronous.
+        /// </summary>
+        public DataTableParseExecution ParseExecution
+        {
+            get
+            {
+                ThrowIfDisposed();
+                lock (m_Gate)
+                {
+                    return m_ParseExecution;
+                }
+            }
+            set
+            {
+                if (!Enum.IsDefined(typeof(DataTableParseExecution), value))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value));
+                }
+
+                ThrowIfDisposed();
+                lock (m_Gate)
+                {
+                    m_ParseExecution = value;
                 }
             }
         }
@@ -89,43 +145,60 @@ namespace DataTables
             ShutdownTables(tables);
         }
 
-        public void EnableMemoryManagement(int maxMemoryMB)
+        public void EnableEstimatedMemoryBudget(int maxEstimatedMemoryMB, Func<DataTableBase, long>? estimatedSizeProvider = null)
         {
-            if (maxMemoryMB <= 0)
+            if (maxEstimatedMemoryMB <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(maxMemoryMB), "Memory limit must be greater than zero.");
+                throw new ArgumentOutOfRangeException(nameof(maxEstimatedMemoryMB), "Estimated memory budget must be greater than zero.");
             }
 
             ThrowIfDisposed();
-            var cache = new LRUDataTableCache((long)maxMemoryMB * 1024 * 1024);
+            var estimatedBudgetBytes = (long)maxEstimatedMemoryMB * 1024 * 1024;
+            var cache = estimatedSizeProvider == null
+                ? new LRUDataTableCache(estimatedBudgetBytes)
+                : new LRUDataTableCache(estimatedBudgetBytes, estimatedSizeProvider);
+            LRUDataTableCache? previousCache;
             lock (m_Gate)
             {
-                var tables = m_Cache != null
-                    ? m_Cache.Drain()
+                previousCache = m_Cache;
+                var tables = previousCache != null
+                    ? previousCache.Drain()
                     : m_DataTables.Select(pair => new KeyValuePair<TypeNamePair, DataTableBase>(pair.Key, pair.Value)).ToArray();
                 m_DataTables.Clear();
                 m_Cache = cache;
                 foreach (var table in tables)
                 {
-                    cache.Set(table.Key, table.Value);
+                    if (!cache.TrySet(table.Key, table.Value)) ShutdownTable(table.Value);
                 }
             }
+            previousCache?.Dispose();
         }
 
-        public void DisableMemoryManagement()
+        [Obsolete("Use EnableEstimatedMemoryBudget(maxEstimatedMemoryMB, estimatedSizeProvider) instead.")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public void EnableMemoryManagement(int maxMemoryMB) => EnableEstimatedMemoryBudget(maxMemoryMB);
+
+        public void DisableEstimatedMemoryBudget()
         {
             ThrowIfDisposed();
+            LRUDataTableCache? cache;
             lock (m_Gate)
             {
                 if (m_Cache == null) return;
-                var tables = m_Cache.Drain();
+                cache = m_Cache;
+                var tables = cache.Drain();
                 m_Cache = null;
                 foreach (var table in tables)
                 {
                     m_DataTables[table.Key] = table.Value;
                 }
             }
+            cache.Dispose();
         }
+
+        [Obsolete("Use DisableEstimatedMemoryBudget() instead.")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public void DisableMemoryManagement() => DisableEstimatedMemoryBudget();
 
         public void EnableProfiling(Action<LoadStats> onPerformanceReport)
         {
@@ -168,7 +241,7 @@ namespace DataTables
             var tasks = registrations.Select(async registration =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (HasDataTable(registration.TableType, registration.Name)) return (CacheHit: true, Loaded: false, Canceled: false);
+                if (IsLoaded(new TypeNamePair(registration.TableType, registration.Name))) return (CacheHit: true, Loaded: false, Canceled: false);
                 try
                 {
                     var table = await registration.LoadAsync(this, cancellationToken);
@@ -196,21 +269,27 @@ namespace DataTables
 
         public ValueTask<LoadStats> PreloadAllAsync(CancellationToken cancellationToken = default) => PreheatAsync(Priority.All, cancellationToken);
 
-        public ValueTask<T?> LoadAsync<T>(CancellationToken cancellationToken = default) where T : DataTableBase
-            => GetOrCreateDataTableAsync<T>(string.Empty, cancellationToken);
-
-        public ValueTask<T?> LoadAsync<T>(string name, CancellationToken cancellationToken = default) where T : DataTableBase
-            => GetOrCreateDataTableAsync<T>(name, cancellationToken);
-
-        public async ValueTask<T?> GetOrCreateDataTableAsync<T>(string name = "", CancellationToken cancellationToken = default) where T : DataTableBase
+        public async ValueTask<T?> LoadAsync<T>(string name = "", CancellationToken cancellationToken = default) where T : DataTableBase
         {
             ThrowIfDisposed();
             var result = await GetOrCreateDataTableAsync(new TypeNamePair(typeof(T), name ?? string.Empty), cancellationToken);
             return result as T;
         }
 
+        [Obsolete("Use LoadAsync<T>(name, cancellationToken) instead.")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public ValueTask<T?> LoadAsync<T>(CancellationToken cancellationToken) where T : DataTableBase
+            => LoadAsync<T>(string.Empty, cancellationToken);
+
+        [Obsolete("Use LoadAsync<T>(name, cancellationToken) instead.")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public ValueTask<T?> GetOrCreateDataTableAsync<T>(string name = "", CancellationToken cancellationToken = default) where T : DataTableBase
+            => LoadAsync<T>(name, cancellationToken);
+
+        [Obsolete("Use LoadAsync<T>(name, cancellationToken) instead.")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public ValueTask<T?> CreateDataTableAsync<T>(string name = "", CancellationToken cancellationToken = default) where T : DataTableBase
-            => GetOrCreateDataTableAsync<T>(name, cancellationToken);
+            => LoadAsync<T>(name, cancellationToken);
 
         public T? GetCached<T>(string name = "") where T : DataTableBase
         {
@@ -223,6 +302,8 @@ namespace DataTables
 
         public bool IsLoaded<T>(string name = "") where T : DataTableBase => GetCached<T>(name) != null;
 
+        [Obsolete("Compatibility API. Prefer IsLoaded<T>(name).")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public bool HasDataTable(Type dataTableType, string name = "")
         {
             if (dataTableType == null) throw new ArgumentNullException(nameof(dataTableType));
@@ -233,10 +314,16 @@ namespace DataTables
             }
         }
 
+        [Obsolete("Use IsLoaded<T>(name) instead.")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public bool HasDataTable<T>(string name = "") where T : DataTableBase => IsLoaded<T>(name);
 
+        [Obsolete("Use GetCached<T>(name) instead.")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public T? GetDataTable<T>(string name = "") where T : DataTableBase => GetCached<T>(name);
 
+        [Obsolete("Compatibility API. Prefer GetCached<T>(name).")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public DataTableBase? GetDataTable(Type dataTableType, string name = "")
         {
             if (dataTableType == null) throw new ArgumentNullException(nameof(dataTableType));
@@ -263,15 +350,30 @@ namespace DataTables
             results.AddRange(GetAllDataTables());
         }
 
-        public void CreateDataTable<T>(Action onCompleted) where T : DataTableBase => CreateDataTable<T>(string.Empty, onCompleted);
+        [Obsolete("Use LoadAsync<T>(name, cancellationToken) instead.")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public void CreateDataTable<T>(Action onCompleted) where T : DataTableBase
+        {
+            _ = CompleteLegacyCreateAsync(new TypeNamePair(typeof(T), string.Empty), onCompleted);
+        }
 
-        public void CreateDataTable(Type dataTableType, Action onCompleted) => CreateDataTable(dataTableType, string.Empty, onCompleted);
+        [Obsolete("Use the generic LoadAsync<T>(name, cancellationToken) API instead.")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public void CreateDataTable(Type dataTableType, Action onCompleted)
+        {
+            if (dataTableType == null) throw new ArgumentNullException(nameof(dataTableType));
+            _ = CompleteLegacyCreateAsync(new TypeNamePair(dataTableType, string.Empty), onCompleted);
+        }
 
+        [Obsolete("Use LoadAsync<T>(name, cancellationToken) instead.")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public void CreateDataTable<T>(string name, Action onCompleted) where T : DataTableBase
         {
             _ = CompleteLegacyCreateAsync(new TypeNamePair(typeof(T), name ?? string.Empty), onCompleted);
         }
 
+        [Obsolete("Use the generic LoadAsync<T>(name, cancellationToken) API instead.")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public void CreateDataTable(Type dataTableType, string name, Action onCompleted)
         {
             if (dataTableType == null) throw new ArgumentNullException(nameof(dataTableType));
@@ -380,19 +482,29 @@ namespace DataTables
         {
             if (Interlocked.Exchange(ref m_Disposed, 1) != 0) return;
             ShutdownTables(ResetState(dataSource: null, replaceDataSource: false));
+            LRUDataTableCache? cache;
             lock (m_Gate)
             {
+                cache = m_Cache;
+                m_Cache = null;
                 m_DataSource = null;
                 m_TypedHooks.Clear();
                 m_GlobalHooks.Clear();
                 m_TableRegistrations.Clear();
                 m_ProfilingHook = null;
             }
+            cache?.Dispose();
         }
 
         private async ValueTask<DataTableBase?> GetOrCreateDataTableAsync(TypeNamePair pair, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            long lifecycleGeneration;
+            long tableGeneration;
+            CancellationToken lifecycleToken;
+            DataTableParseExecution parseExecution;
+            TaskCompletionSource<DataTableBase?> completion;
+            TaskCompletionSource<DataTableBase?> sharedCompletion;
             lock (m_Gate)
             {
                 if (TryGetDataTableUnsafe(pair, out var existing))
@@ -403,25 +515,29 @@ namespace DataTables
                 {
                     throw new InvalidOperationException("DataTableContext requires an IDataSource before loading tables.");
                 }
+
+                var lifecycleCancellation = m_LifecycleCancellation ?? throw new ObjectDisposedException(nameof(DataTableContext));
+                lifecycleGeneration = m_LifecycleGeneration;
+                tableGeneration = m_TableGenerations.GetOrAdd(pair, 0);
+                lifecycleToken = lifecycleCancellation.Token;
+                parseExecution = m_ParseExecution;
+                completion = new TaskCompletionSource<DataTableBase?>(TaskCreationOptions.RunContinuationsAsynchronously);
+                sharedCompletion = m_LoadingTables.GetOrAdd(pair, completion);
             }
 
-            var lifecycleGeneration = Volatile.Read(ref m_LifecycleGeneration);
-            var tableGeneration = m_TableGenerations.GetOrAdd(pair, 0);
-            var completion = new TaskCompletionSource<DataTableBase?>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var sharedCompletion = m_LoadingTables.GetOrAdd(pair, completion);
             if (ReferenceEquals(sharedCompletion, completion))
             {
-                _ = CompleteLoadAsync(pair, completion, lifecycleGeneration, tableGeneration);
+                _ = CompleteLoadAsync(pair, completion, lifecycleGeneration, tableGeneration, lifecycleToken, parseExecution);
             }
 
             return await AwaitSharedLoadAsync(sharedCompletion.Task, cancellationToken);
         }
 
-        private async Task CompleteLoadAsync(TypeNamePair pair, TaskCompletionSource<DataTableBase?> completion, long lifecycleGeneration, long tableGeneration)
+        private async Task CompleteLoadAsync(TypeNamePair pair, TaskCompletionSource<DataTableBase?> completion, long lifecycleGeneration, long tableGeneration, CancellationToken lifecycleToken, DataTableParseExecution parseExecution)
         {
             try
             {
-                completion.TrySetResult(await LoadDataTableInternalAsync(pair, lifecycleGeneration, tableGeneration));
+                completion.TrySetResult(await LoadDataTableInternalAsync(pair, lifecycleGeneration, tableGeneration, lifecycleToken, parseExecution));
             }
             catch (Exception exception)
             {
@@ -451,7 +567,7 @@ namespace DataTables
             }
         }
 
-        private async Task<DataTableBase?> LoadDataTableInternalAsync(TypeNamePair pair, long lifecycleGeneration, long tableGeneration)
+        private async Task<DataTableBase?> LoadDataTableInternalAsync(TypeNamePair pair, long lifecycleGeneration, long tableGeneration, CancellationToken lifecycleToken, DataTableParseExecution parseExecution)
         {
             DataTableBase? loadedTable = null;
             var started = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -466,9 +582,22 @@ namespace DataTables
                     source = m_DataSource ?? throw new InvalidOperationException("DataTableContext requires an IDataSource before loading tables.");
                 }
 
-                await using var stream = await source.OpenReadAsync(pair.ToString(), CancellationToken.None);
+                await using var stream = await source.OpenReadAsync(pair.ToString(), lifecycleToken);
+                await using var payload = new MemoryStream();
+                await stream.CopyToAsync(payload, 81920, lifecycleToken);
+                lifecycleToken.ThrowIfCancellationRequested();
                 if (!IsLoadCurrent(pair, lifecycleGeneration, tableGeneration)) return null;
-                loadedTable = DataTableBinaryLoader.Load(pair, stream);
+                payload.Position = 0;
+                loadedTable = parseExecution == DataTableParseExecution.BackgroundThread && SupportsBackgroundParsing
+                    ? await Task.Run(() => DataTableBinaryLoader.Load(pair, payload), lifecycleToken)
+                    : DataTableBinaryLoader.Load(pair, payload);
+                lifecycleToken.ThrowIfCancellationRequested();
+                if (!IsLoadCurrent(pair, lifecycleGeneration, tableGeneration))
+                {
+                    ShutdownTable(loadedTable);
+                    loadedTable = null;
+                    return null;
+                }
                 loadedTable.OnLoadCompleted();
 
                 DataTableBase? published;
@@ -501,6 +630,11 @@ namespace DataTables
                 if (added) TriggerHooks(loadedTable);
                 return published;
             }
+            catch (OperationCanceledException) when (lifecycleToken.IsCancellationRequested && !IsLoadCurrent(pair, lifecycleGeneration, tableGeneration))
+            {
+                ShutdownTable(loadedTable);
+                return null;
+            }
             catch
             {
                 ShutdownTable(loadedTable);
@@ -523,22 +657,36 @@ namespace DataTables
 
         private DataTableBase[] ResetState(IDataSource? dataSource, bool replaceDataSource = true)
         {
+            DataTableBase[] tables;
+            CancellationTokenSource? lifecycleCancellation;
             lock (m_Gate)
             {
                 Interlocked.Increment(ref m_LifecycleGeneration);
+                lifecycleCancellation = m_LifecycleCancellation;
+                m_LifecycleCancellation = Volatile.Read(ref m_Disposed) == 0 ? new CancellationTokenSource() : null;
                 m_TableGenerations.Clear();
                 m_Cache?.Clear();
-                var tables = m_DataTables.Values.ToArray();
+                tables = m_DataTables.Values.ToArray();
                 m_DataTables.Clear();
                 m_LoadingTables.Clear();
                 if (replaceDataSource) m_DataSource = dataSource;
-                return tables;
             }
+
+            CancelAndDispose(lifecycleCancellation);
+            return tables;
         }
 
         private bool TryGetDataTableUnsafe(TypeNamePair pair, out DataTableBase? table)
         {
             return m_Cache != null ? m_Cache.TryGet<DataTableBase>(pair, out table) : m_DataTables.TryGetValue(pair, out table);
+        }
+
+        private bool IsLoaded(TypeNamePair pair)
+        {
+            lock (m_Gate)
+            {
+                return TryGetDataTableUnsafe(pair, out _);
+            }
         }
 
         private bool DestroyDataTable(TypeNamePair pair)
@@ -558,7 +706,7 @@ namespace DataTables
 
         private void StoreDataTableUnsafe(TypeNamePair pair, DataTableBase table)
         {
-            if (m_Cache != null) m_Cache.Set(pair, table);
+            if (m_Cache != null) m_Cache.TrySet(pair, table);
             else m_DataTables[pair] = table;
         }
 
@@ -618,6 +766,26 @@ namespace DataTables
             if (Volatile.Read(ref m_Disposed) != 0)
             {
                 throw new ObjectDisposedException(nameof(DataTableContext));
+            }
+        }
+
+        private static void CancelAndDispose(CancellationTokenSource? cancellation)
+        {
+            if (cancellation == null) return;
+            try { cancellation.Cancel(); }
+            catch (Exception exception) { Log.Error($"Data table lifecycle cancellation callback failed: {exception.Message}", exception); }
+            finally { cancellation.Dispose(); }
+        }
+
+        private static bool SupportsBackgroundParsing
+        {
+            get
+            {
+#if UNITY_WEBGL && !UNITY_EDITOR
+                return false;
+#else
+                return true;
+#endif
             }
         }
 

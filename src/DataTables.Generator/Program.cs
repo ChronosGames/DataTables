@@ -4,9 +4,41 @@ using System.Threading.Tasks;
 using DataTables.GeneratorCore;
 using ConsoleAppFramework;
 
-var app = ConsoleApp.Create();
-app.Add<MyCommands>();
-app.Run(args);
+return GeneratorCli.Run(args);
+
+public static class GeneratorCli
+{
+    public static int Run(string[] args, Action<string>? writeLine = null, Action<string>? writeError = null)
+    {
+        var oldExitCode = Environment.ExitCode;
+        var oldLog = ConsoleApp.Log;
+        var oldLogError = ConsoleApp.LogError;
+
+        try
+        {
+            Environment.ExitCode = 0;
+            if (writeLine != null)
+            {
+                ConsoleApp.Log = writeLine;
+            }
+            if (writeError != null)
+            {
+                ConsoleApp.LogError = writeError;
+            }
+
+            var app = ConsoleApp.Create();
+            app.Add<MyCommands>();
+            app.Run(args);
+            return Environment.ExitCode;
+        }
+        finally
+        {
+            ConsoleApp.Log = oldLog;
+            ConsoleApp.LogError = oldLogError;
+            Environment.ExitCode = oldExitCode;
+        }
+    }
+}
 
 public class MyCommands
 {
@@ -54,6 +86,7 @@ public class MyCommands
             filterColumnTags: filterColumnTags,
             forceOverwrite,
             Console.WriteLine,
+            GenerationMode.CodeAndData,
             options,
             string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput);
 
@@ -107,6 +140,7 @@ public class MyCommands
             filterColumnTags: filterColumnTags,
             true,
             Console.WriteLine,
+            GenerationMode.DataOnly,
             options,
             string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput);
 

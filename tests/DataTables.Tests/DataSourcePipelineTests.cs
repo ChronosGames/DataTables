@@ -36,13 +36,124 @@ public class DataSourcePipelineTests
         var second = new StubDataSource("backup", true, new DataSourceManifestEntry("Config", 12, "new", "hash-new"));
         var fallback = new FallbackDataSource(first, second);
 
-        var bytes = await fallback.LoadAsync("Config", CancellationToken.None);
+        await using var stream = await fallback.OpenReadAsync("Config", CancellationToken.None);
         var manifest = await fallback.GetManifestAsync(CancellationToken.None);
 
-        bytes.Should().Equal(1, 2, 3);
+        var buffered = stream.Should().BeOfType<MemoryStream>().Subject;
+        buffered.CanSeek.Should().BeTrue();
+        buffered.ReadByte().Should().Be(1);
+        buffered.Position = 0;
+        buffered.ReadByte().Should().Be(1);
+        buffered.ToArray().Should().Equal(1, 2, 3);
         fallback.LastHitSource.Should().Be("Memory:backup");
         manifest.Entries.Single().SourceName.Should().Be("Memory:primary");
         manifest.Entries.Single().Version.Should().Be("old", "first source wins for fallback manifest entries");
+        manifest.Entries.Single().Hash.Should().BeNull("different source payloads cannot share one fallback-wide hash");
+    }
+
+    [Fact]
+    public async Task FallbackDataSource_ManifestShouldNotExposeHashUnlessEverySourceDeclaresTheSameHash()
+    {
+        const string hash = "039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81";
+        var fallback = new FallbackDataSource(
+            new StubDataSource("primary", true, new DataSourceManifestEntry("Config", hash: hash)),
+            new StubDataSource("backup", true));
+        var matching = new FallbackDataSource(
+            new StubDataSource("primary", true, new DataSourceManifestEntry("Config", hash: hash)),
+            new StubDataSource("backup", true, new DataSourceManifestEntry("Config", hash: hash)));
+
+        var manifest = await fallback.GetManifestAsync(CancellationToken.None);
+        var matchingManifest = await matching.GetManifestAsync(CancellationToken.None);
+
+        manifest.Entries.Single().Hash.Should().BeNull("a backup without a declared hash may serve different content");
+        matchingManifest.Entries.Single().Hash.Should().Be(hash, "a common source hash is safe to expose");
+    }
+
+    [Fact]
+    public async Task FallbackDataSource_ShouldFallbackWhenCandidateStreamFailsDuringRead()
+    {
+        var failedStream = new ThrowAfterReadStream(new byte[] { 9, 9, 9 }, bytesBeforeFailure: 1);
+        var fallback = new FallbackDataSource(
+            new StreamDataSource("primary", () => failedStream),
+            new StubDataSource("backup", true));
+
+        var payload = await fallback.LoadAsync("Config", CancellationToken.None);
+
+        payload.Should().Equal(1, 2, 3);
+        failedStream.Disposed.Should().BeTrue();
+        fallback.LastHitSource.Should().Be("Memory:backup");
+    }
+
+    [Fact]
+    public async Task FallbackDataSource_ShouldFallbackWhenDecompressionFailsDuringRead()
+    {
+        var corruptCompressed = new CompressedDataSource(
+            new StreamDataSource("primary", () => new MemoryStream(new byte[] { 0x07 }, writable: false)));
+        var fallback = new FallbackDataSource(corruptCompressed, new StubDataSource("backup", true));
+
+        var payload = await fallback.LoadAsync("Config", CancellationToken.None);
+
+        payload.Should().Equal(1, 2, 3);
+        fallback.LastHitSource.Should().Be("Memory:backup");
+    }
+
+    [Fact]
+    public async Task FallbackDataSource_ShouldFallbackWhenDecryptionFailsDuringRead()
+    {
+        using var aes = Aes.Create();
+        var encoded = new MemoryStream();
+        await using (var encryptor = new CryptoStream(encoded, aes.CreateEncryptor(), CryptoStreamMode.Write, leaveOpen: true))
+        {
+            await encryptor.WriteAsync(new byte[] { 9, 9, 9 });
+        }
+
+        var truncated = encoded.ToArray()[..^1];
+        var corruptEncrypted = new EncryptedDataSource(new PayloadDataSource(truncated), aes.Key, aes.IV);
+        var fallback = new FallbackDataSource(corruptEncrypted, new StubDataSource("backup", true));
+
+        var payload = await fallback.LoadAsync("Config", CancellationToken.None);
+
+        payload.Should().Equal(1, 2, 3);
+        fallback.LastHitSource.Should().Be("Memory:backup");
+    }
+
+    [Fact]
+    public async Task FallbackDataSource_ShouldValidateEachSourceWithItsOwnHashBeforeRecordingHit()
+    {
+        var primaryInner = new ManifestPayloadDataSource(
+            "primary",
+            new byte[] { 9 },
+            new DataSourceManifestEntry("Config", hash: Sha256Hex(new byte[] { 1 })));
+        var backupPayload = new byte[] { 4, 5, 6 };
+        var backupInner = new ManifestPayloadDataSource(
+            "backup",
+            backupPayload,
+            new DataSourceManifestEntry("Config", hash: Sha256Hex(backupPayload)));
+        var primary = new HashValidatedDataSource(primaryInner, await primaryInner.GetManifestAsync(CancellationToken.None));
+        var backup = new HashValidatedDataSource(backupInner, await backupInner.GetManifestAsync(CancellationToken.None));
+        var fallback = new FallbackDataSource(primary, backup);
+
+        var logs = new List<(Log.Level Level, string Message)>();
+        byte[] payload;
+        Log.Configure((level, message, _) => logs.Add((level, message)));
+        try
+        {
+            payload = await fallback.LoadAsync("Config", CancellationToken.None);
+        }
+        finally
+        {
+            Log.Configure(null!);
+        }
+        var manifest = await fallback.GetManifestAsync(CancellationToken.None);
+
+        payload.Should().Equal(backupPayload);
+        primaryInner.OpenCount.Should().Be(1);
+        backupInner.OpenCount.Should().Be(1);
+        fallback.LastHitSource.Should().Be("Memory:backup");
+        manifest.Entries.Single().Hash.Should().BeNull("the primary and backup have source-specific hashes");
+        logs.Should().ContainSingle(entry => entry.Level == Log.Level.Info && entry.Message.Contains("Memory:backup"));
+        logs.Should().NotContain(entry => entry.Level == Log.Level.Info && entry.Message.Contains("Memory:primary"),
+            "a source must not log success before its delayed hash validation completes");
     }
 
     [Fact]
@@ -91,6 +202,22 @@ public class DataSourcePipelineTests
             .WithMessage("*Hash validation failed*");
         await uppercaseAct.Should().ThrowAsync<InvalidDataException>()
             .WithMessage("*hex-lowercase*");
+    }
+
+    [Fact]
+    public async Task HashValidatedDataSource_ZeroLengthReadShouldNotBeTreatedAsEndOfStream()
+    {
+        var payload = new byte[] { 1, 2, 3 };
+        var source = new HashValidatedDataSource(
+            new PayloadDataSource(payload),
+            new[] { new DataSourceManifestEntry("Config", hash: Sha256Hex(payload)) });
+
+        await using var stream = await source.OpenReadAsync("Config", CancellationToken.None);
+        stream.Read(Array.Empty<byte>(), 0, 0).Should().Be(0);
+        await using var output = new MemoryStream();
+        await stream.CopyToAsync(output);
+
+        output.ToArray().Should().Equal(payload);
     }
 
     [Fact]
@@ -194,6 +321,48 @@ public class DataSourcePipelineTests
         second.ReadByte().Should().Be(1);
 
         inner.OpenCount.Should().Be(1);
+        source.MaxCacheBytes.Should().Be(CachedDataSource.DefaultMaxCacheBytes);
+        source.CachedBytes.Should().Be(3);
+        source.Count.Should().Be(1);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void CachedDataSource_ShouldRejectNonPositiveByteBudgets(long maxCacheBytes)
+    {
+        var action = () => new CachedDataSource(new PayloadDataSource(new byte[] { 1 }), maxCacheBytes);
+
+        action.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public async Task CachedDataSource_ShouldEvictLeastRecentlyUsedPayloadWithinByteBudget()
+    {
+        var inner = new PayloadDataSource(new byte[] { 1, 2 });
+        var source = new CachedDataSource(inner, maxCacheBytes: 3);
+
+        await source.LoadAsync("First", CancellationToken.None);
+        await source.LoadAsync("Second", CancellationToken.None);
+        await source.LoadAsync("First", CancellationToken.None);
+
+        inner.OpenCount.Should().Be(3, "First should have been evicted when Second was cached");
+        source.CachedBytes.Should().Be(2);
+        source.Count.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task CachedDataSource_ShouldNotCacheSinglePayloadLargerThanByteBudget()
+    {
+        var inner = new PayloadDataSource(new byte[] { 1, 2, 3 });
+        var source = new CachedDataSource(inner, maxCacheBytes: 2);
+
+        await source.LoadAsync("Config", CancellationToken.None);
+        await source.LoadAsync("Config", CancellationToken.None);
+
+        inner.OpenCount.Should().Be(2);
+        source.CachedBytes.Should().Be(0);
+        source.Count.Should().Be(0);
     }
 
     [Fact]
@@ -324,4 +493,107 @@ public class DataSourcePipelineTests
 
         public ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken) => ValueTask.FromResult(true);
     }
+
+    private sealed class ManifestPayloadDataSource : IDataSource
+    {
+        private readonly string _name;
+        private readonly byte[] _payload;
+        private readonly DataSourceManifest _manifest;
+
+        public ManifestPayloadDataSource(string name, byte[] payload, params DataSourceManifestEntry[] entries)
+        {
+            _name = name;
+            _payload = payload;
+            _manifest = new DataSourceManifest(entries);
+        }
+
+        public int OpenCount { get; private set; }
+
+        public DataSourceType SourceType => DataSourceType.Memory;
+
+        public ValueTask<Stream> OpenReadAsync(string name, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            OpenCount++;
+            return ValueTask.FromResult<Stream>(new MemoryStream(_payload, writable: false));
+        }
+
+        public ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken) => ValueTask.FromResult(true);
+
+        public ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken) => ValueTask.FromResult(_manifest);
+
+        public ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken) => ValueTask.FromResult(true);
+
+        public override string ToString() => _name;
+    }
+
+    private sealed class StreamDataSource : IDataSource
+    {
+        private readonly string _name;
+        private readonly Func<Stream> _streamFactory;
+
+        public StreamDataSource(string name, Func<Stream> streamFactory)
+        {
+            _name = name;
+            _streamFactory = streamFactory;
+        }
+
+        public DataSourceType SourceType => DataSourceType.Memory;
+
+        public ValueTask<Stream> OpenReadAsync(string name, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return ValueTask.FromResult(_streamFactory());
+        }
+
+        public ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken) => ValueTask.FromResult(true);
+
+        public ValueTask<DataSourceManifest> GetManifestAsync(CancellationToken cancellationToken) => ValueTask.FromResult(DataSourceManifest.Empty);
+
+        public ValueTask<bool> IsAvailableAsync(CancellationToken cancellationToken) => ValueTask.FromResult(true);
+
+        public override string ToString() => _name;
+    }
+
+    private sealed class ThrowAfterReadStream : Stream
+    {
+        private readonly byte[] _payload;
+        private readonly int _bytesBeforeFailure;
+        private int _position;
+
+        public ThrowAfterReadStream(byte[] payload, int bytesBeforeFailure)
+        {
+            _payload = payload;
+            _bytesBeforeFailure = bytesBeforeFailure;
+        }
+
+        public bool Disposed { get; private set; }
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => _payload.Length;
+        public override long Position { get => _position; set => throw new NotSupportedException(); }
+        public override void Flush() { }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            if (_position >= _bytesBeforeFailure) throw new IOException("read failed after partial payload");
+            var read = Math.Min(count, _bytesBeforeFailure - _position);
+            Array.Copy(_payload, _position, buffer, offset, read);
+            _position += read;
+            return read;
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        protected override void Dispose(bool disposing)
+        {
+            Disposed = true;
+            base.Dispose(disposing);
+        }
+    }
+
+    private static string Sha256Hex(byte[] payload) => Convert.ToHexString(SHA256.HashData(payload)).ToLowerInvariant();
 }

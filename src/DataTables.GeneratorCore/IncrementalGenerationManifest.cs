@@ -11,6 +11,7 @@ internal sealed class IncrementalGenerationManifest
 {
     public const int CurrentVersion = 1;
     public const string FileName = ".dtgen-manifest.json";
+    public const string DataOnlyFileName = ".dtgen-data-manifest.json";
 
     public int Version { get; set; } = CurrentVersion;
 

@@ -25,12 +25,12 @@ namespace DataTables.Tests
             ResetDataTableManager();
 
             // 设置测试数据源
-            DataTableManager.UseCustomSource(new MockDataSource());
+            DataTableManager.UseDataSource(new MockDataSource());
 
             // Act - 并发加载同一个表
             for (int i = 0; i < concurrentCount; i++)
             {
-                tasks.Add(DataTableManager.GetOrCreateDataTableAsync<MockDataTable>());
+                tasks.Add(DataTableManager.LoadAsync<MockDataTable>());
             }
 
             var results = await Task.WhenAll(tasks.Select(t => t.AsTask()));
@@ -51,7 +51,7 @@ namespace DataTables.Tests
             ResetDataTableManager();
 
             var source = new BlockingCountingDataSource();
-            DataTableManager.UseCustomSource(source);
+            DataTableManager.UseDataSource(source);
             ThreadPool.GetMinThreads(out var workerThreads, out var completionPortThreads);
             ThreadPool.SetMinThreads(Math.Max(workerThreads, concurrentCount), completionPortThreads);
 
@@ -88,7 +88,7 @@ namespace DataTables.Tests
         {
             ResetDataTableManager();
             var source = new BlockingCountingDataSource();
-            DataTableManager.UseCustomSource(source);
+            DataTableManager.UseDataSource(source);
 
             var loading = DataTableManager.LoadAsync<MockDataTable>().AsTask();
             await source.FirstLoadStarted.Task;
@@ -106,7 +106,7 @@ namespace DataTables.Tests
         {
             ResetDataTableManager();
             var source = new BlockingCountingDataSource();
-            DataTableManager.UseCustomSource(source);
+            DataTableManager.UseDataSource(source);
 
             var loading = DataTableManager.LoadAsync<MockDataTable>().AsTask();
             await source.FirstLoadStarted.Task;
@@ -124,10 +124,12 @@ namespace DataTables.Tests
         {
             ResetDataTableManager();
             var source = new BlockingCountingDataSource();
-            DataTableManager.UseCustomSource(source);
+            DataTableManager.UseDataSource(source);
             var completed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
+#pragma warning disable CS0618 // This test intentionally exercises the callback compatibility layer.
             DataTableManager.CreateDataTable<MockDataTable>(() => completed.TrySetResult(true));
+#pragma warning restore CS0618
             await source.FirstLoadStarted.Task;
 
             DataTableManager.ClearCache();
@@ -142,17 +144,19 @@ namespace DataTables.Tests
         {
             ResetDataTableManager();
             var source = new BlockingCountingDataSource();
-            DataTableManager.UseCustomSource(source);
+            DataTableManager.UseDataSource(source);
             var callbackCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var callbackCount = 0;
 
             try
             {
+#pragma warning disable CS0618 // This test intentionally exercises the callback compatibility layer.
                 DataTableManager.CreateDataTable<MockDataTable>(() =>
                 {
                     Interlocked.Increment(ref callbackCount);
                     callbackCompleted.TrySetResult(true);
                 });
+#pragma warning restore CS0618
                 await source.FirstLoadStarted.Task;
 
                 var loading = DataTableManager.LoadAsync<MockDataTable>().AsTask();
@@ -179,14 +183,14 @@ namespace DataTables.Tests
         {
             // Arrange
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new MockDataSource());
+            DataTableManager.UseDataSource(new MockDataSource());
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             // Act - 并发加载多个相同类型的表（简化测试）
-            var task1 = DataTableManager.GetOrCreateDataTableAsync<MockDataTable>().AsTask();
-            var task2 = DataTableManager.GetOrCreateDataTableAsync<MockDataTable>().AsTask();
-            var task3 = DataTableManager.GetOrCreateDataTableAsync<MockDataTable>().AsTask();
+            var task1 = DataTableManager.LoadAsync<MockDataTable>().AsTask();
+            var task2 = DataTableManager.LoadAsync<MockDataTable>().AsTask();
+            var task3 = DataTableManager.LoadAsync<MockDataTable>().AsTask();
 
             var results = await Task.WhenAll(task1, task2, task3);
             stopwatch.Stop();
@@ -203,7 +207,7 @@ namespace DataTables.Tests
         private void ResetDataTableManager()
         {
             DataTableManager.ClearCache();
-            DataTableManager.DisableMemoryManagement();
+            DataTableManager.DisableEstimatedMemoryBudget();
         }
     }
 

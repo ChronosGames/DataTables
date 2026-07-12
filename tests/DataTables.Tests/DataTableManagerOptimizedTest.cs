@@ -20,7 +20,7 @@ namespace DataTables.Tests
         {
             // Arrange
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.UseDataSource(new FastMockDataSource());
 
             // Act - 使用新的异步优先API
             var table1 = await DataTableManager.LoadAsync<MockDataTable>();
@@ -38,55 +38,55 @@ namespace DataTables.Tests
         /// 测试内存管理功能
         /// </summary>
         [Fact]
-        public async Task MemoryManagement_ShouldWorkCorrectly()
+        public async Task EstimatedMemoryBudget_ShouldWorkCorrectly()
         {
             // Arrange
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
-            DataTableManager.EnableMemoryManagement(10); // 10MB限制
+            DataTableManager.UseDataSource(new FastMockDataSource());
+            DataTableManager.EnableEstimatedMemoryBudget(10); // 10MB估算预算
 
             // Act
             var table = await DataTableManager.LoadAsync<MockDataTable>();
 
             // Assert
             table.Should().NotBeNull();
-            DataTableManager.IsMemoryManagementEnabled.Should().BeTrue();
+            DataTableManager.IsEstimatedMemoryBudgetEnabled.Should().BeTrue();
 
             var cacheStats = DataTableManager.GetCacheStats();
             cacheStats.Should().NotBeNull("应该有缓存统计信息");
-            cacheStats.Value.TotalItems.Should().BeGreaterThan(0, "应该有缓存项");
+            cacheStats.GetValueOrDefault().TotalItems.Should().BeGreaterThan(0, "应该有缓存项");
 
             // Cleanup
-            DataTableManager.DisableMemoryManagement();
+            DataTableManager.DisableEstimatedMemoryBudget();
             DataTableManager.ClearTableRegistrations();
         }
 
         [Theory]
         [InlineData(0)]
         [InlineData(-1)]
-        public void MemoryManagement_ShouldRejectNonPositiveLimits(int maxMemoryMB)
+        public void EstimatedMemoryBudget_ShouldRejectNonPositiveLimits(int maxEstimatedMemoryMB)
         {
             ResetDataTableManager();
 
-            Action action = () => DataTableManager.EnableMemoryManagement(maxMemoryMB);
+            Action action = () => DataTableManager.EnableEstimatedMemoryBudget(maxEstimatedMemoryMB);
 
             action.Should().Throw<ArgumentOutOfRangeException>();
-            DataTableManager.IsMemoryManagementEnabled.Should().BeFalse();
+            DataTableManager.IsEstimatedMemoryBudgetEnabled.Should().BeFalse();
         }
 
         [Fact]
-        public async Task MemoryManagement_ShouldNotOverflowLargeMegabyteLimits()
+        public async Task EstimatedMemoryBudget_ShouldNotOverflowLargeMegabyteLimits()
         {
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
-            DataTableManager.EnableMemoryManagement(int.MaxValue);
+            DataTableManager.UseDataSource(new FastMockDataSource());
+            DataTableManager.EnableEstimatedMemoryBudget(int.MaxValue);
 
             var table = await DataTableManager.LoadAsync<MockDataTable>();
             var stats = DataTableManager.GetCacheStats();
 
             table.Should().NotBeNull();
             stats.Should().NotBeNull();
-            stats!.Value.MemoryUsageRate.Should().BeGreaterThan(0f).And.BeLessThan(1f);
+            stats!.Value.EstimatedBudgetUsageRate.Should().BeGreaterThan(0f).And.BeLessThan(1f);
         }
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace DataTables.Tests
         {
             // Arrange
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.UseDataSource(new FastMockDataSource());
 
             bool hookTriggered = false;
             DataTableManager.OnLoaded<MockDataTable>(table => hookTriggered = true);
@@ -132,7 +132,7 @@ namespace DataTables.Tests
         public async Task LoadAsync_ShouldCompleteTableBeforeTriggeringHooks()
         {
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.UseDataSource(new FastMockDataSource());
 
             LoadCompletionTrackingDataTable? hookedTable = null;
             DataTableManager.OnLoaded<LoadCompletionTrackingDataTable>(table =>
@@ -154,7 +154,7 @@ namespace DataTables.Tests
         public async Task TypedHookRegisteredDuringInvocation_ShouldRunOnNextLoad()
         {
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.UseDataSource(new FastMockDataSource());
 
             var initialCalls = 0;
             var deferredCalls = 0;
@@ -178,7 +178,7 @@ namespace DataTables.Tests
         public async Task GlobalHookRegisteredDuringInvocation_ShouldRunOnNextLoad()
         {
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.UseDataSource(new FastMockDataSource());
 
             var initialCalls = 0;
             var deferredCalls = 0;
@@ -206,7 +206,7 @@ namespace DataTables.Tests
         {
             // Arrange
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.UseDataSource(new FastMockDataSource());
 
             // Act
             var stats = await DataTableManager.PreheatAsync(Priority.Critical);
@@ -229,7 +229,7 @@ namespace DataTables.Tests
                     typeof(MockDataTable),
                     string.Empty,
                     Priority.Critical,
-                    _ =>
+                    (_, _) =>
                     {
                         loadCount++;
                         return ValueTask.FromResult<DataTableBase?>(new MockDataTable(string.Empty, 0));
@@ -252,16 +252,16 @@ namespace DataTables.Tests
         {
             // Arrange
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.UseDataSource(new FastMockDataSource());
             await DataTableManager.LoadAsync<MockDataTable>();
 
             DataTableManager.RegisterTables(new[]
             {
-                new TableRegistration(typeof(MockDataTable), string.Empty, Priority.Critical, _ =>
+                new TableRegistration(typeof(MockDataTable), string.Empty, Priority.Critical, (_, _) =>
                     ValueTask.FromResult<DataTableBase?>(new MockDataTable(string.Empty, 0))),
-                new TableRegistration(typeof(MockDataTable), "loaded", Priority.Critical, _ =>
+                new TableRegistration(typeof(MockDataTable), "loaded", Priority.Critical, (_, _) =>
                     ValueTask.FromResult<DataTableBase?>(new MockDataTable("loaded", 0))),
-                new TableRegistration(typeof(MockDataTable), "missing", Priority.Critical, _ =>
+                new TableRegistration(typeof(MockDataTable), "missing", Priority.Critical, (_, _) =>
                     ValueTask.FromResult<DataTableBase?>(null))
             });
 
@@ -302,12 +302,10 @@ namespace DataTables.Tests
         {
             // Arrange
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.UseDataSource(new FastMockDataSource());
 
-            bool profilingTriggered = false;
             DataTableManager.EnableProfiling(stats =>
             {
-                profilingTriggered = true;
                 stats.Should().NotBeNull();
             });
 
@@ -337,7 +335,7 @@ namespace DataTables.Tests
             table.Should().BeNull("没有数据源时应该返回null");
 
             // 设置数据源后应该能工作
-            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.UseDataSource(new FastMockDataSource());
             var loadedTable = await DataTableManager.LoadAsync<MockDataTable>();
             loadedTable.Should().NotBeNull("设置数据源后应该能加载");
         }
@@ -350,7 +348,7 @@ namespace DataTables.Tests
         {
             // Arrange
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.UseDataSource(new FastMockDataSource());
 
             // Act - 测试内联优化的内部方法
             var table1 = DataTableManager.GetDataTableInternal<MockDataTable>();
@@ -368,7 +366,7 @@ namespace DataTables.Tests
             // 清理测试状态
             DataTableManager.ClearCache();
             DataTableManager.ClearHooks();
-            DataTableManager.DisableMemoryManagement();
+            DataTableManager.DisableEstimatedMemoryBudget();
             DataTableManager.ClearTableRegistrations();
         }
     }

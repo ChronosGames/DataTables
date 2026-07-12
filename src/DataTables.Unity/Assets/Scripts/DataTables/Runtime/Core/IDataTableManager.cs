@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace DataTables
 {
     /// <summary>
     /// 数据表管理器接口。
     /// </summary>
+    [Obsolete("Compatibility callback API. Use IDataTableContext instead.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public interface IDataTableManager
     {
         /// <summary>

@@ -18,6 +18,51 @@ namespace DataTables.Tests
             action.Should().Throw<ArgumentOutOfRangeException>();
         }
 
+        [Fact]
+        public void LRUCache_ShouldUseInjectedSizeProviderForEstimatedBudget()
+        {
+            var cache = new LRUDataTableCache(10, _ => 6);
+            var firstKey = new TypeNamePair(typeof(MockDataTable), "first");
+            var secondKey = new TypeNamePair(typeof(MockDataTable), "second");
+
+            cache.TrySet(firstKey, CreateMockTable("first", 1)).Should().BeTrue();
+            cache.TrySet(secondKey, CreateMockTable("second", 1)).Should().BeTrue();
+
+            cache.Contains(firstKey).Should().BeFalse("the injected estimate requires eviction");
+            cache.Contains(secondKey).Should().BeTrue();
+            cache.EstimatedMemoryBudgetBytes.Should().Be(10);
+            cache.EstimatedMemoryUsageBytes.Should().Be(6);
+            cache.GetStats().EstimatedMemoryUsageBytes.Should().Be(6);
+        }
+
+        [Fact]
+        public void LRUCache_ShouldRejectOversizedTableWithoutEvictingExistingEntries()
+        {
+            var cache = new LRUDataTableCache(10, table => table.Name == "oversized" ? 11 : 6);
+            var existingKey = new TypeNamePair(typeof(MockDataTable), "existing");
+            var oversizedKey = new TypeNamePair(typeof(MockDataTable), "oversized");
+            cache.Set(existingKey, CreateMockTable("existing", 1));
+
+            cache.TrySet(oversizedKey, CreateMockTable("oversized", 1)).Should().BeFalse();
+            cache.Set(oversizedKey, CreateMockTable("oversized", 1));
+
+            cache.Contains(existingKey).Should().BeTrue("a rejected item must not disturb the current LRU set");
+            cache.Contains(oversizedKey).Should().BeFalse("Set preserves compatibility by silently skipping oversized items");
+            cache.EstimatedMemoryUsageBytes.Should().Be(6);
+        }
+
+        [Fact]
+        public void LRUCache_ShouldRejectInvalidSizeProviderResults()
+        {
+            var cache = new LRUDataTableCache(10, _ => 0);
+
+            Action action = () => cache.TrySet(
+                new TypeNamePair(typeof(MockDataTable), "invalid"),
+                CreateMockTable("invalid", 1));
+
+            action.Should().Throw<InvalidOperationException>().WithMessage("*positive byte count*");
+        }
+
         /// <summary>
         /// 测试LRU缓存基本功能
         /// </summary>
@@ -41,7 +86,7 @@ namespace DataTables.Tests
             // 统计信息
             var stats = cache.GetStats();
             stats.TotalItems.Should().Be(1);
-            stats.MemoryUsage.Should().BeGreaterThan(0);
+            stats.EstimatedMemoryUsageBytes.Should().BeGreaterThan(0);
             stats.HitRate.Should().Be(0.5f); // 1次命中，1次未命中
         }
 
@@ -125,7 +170,7 @@ namespace DataTables.Tests
             cache.TryGet<MockDataTable>(key, out _).Should().BeFalse();
             var stats = cache.GetStats();
             stats.TotalItems.Should().Be(0);
-            stats.MemoryUsage.Should().Be(0);
+            stats.EstimatedMemoryUsageBytes.Should().Be(0);
         }
 
         /// <summary>
@@ -136,11 +181,11 @@ namespace DataTables.Tests
         {
             // Arrange - ensure clean state and verify memory management works
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.UseDataSource(new FastMockDataSource());
             
             // Test the core functionality: enable memory management and load tables
-            DataTableManager.EnableMemoryManagement(10); // 10MB限制
-            DataTableManager.IsMemoryManagementEnabled.Should().BeTrue();
+            DataTableManager.EnableEstimatedMemoryBudget(10); // 10MB估算预算
+            DataTableManager.IsEstimatedMemoryBudgetEnabled.Should().BeTrue();
 
             // Act - load tables which should work regardless of cache implementation details
             var table1 = await DataTableManager.LoadAsync<MockDataTable>();
@@ -151,7 +196,7 @@ namespace DataTables.Tests
             table2.Should().NotBeNull();
             
             // Verify memory management is still enabled (main requirement)
-            DataTableManager.IsMemoryManagementEnabled.Should().BeTrue();
+            DataTableManager.IsEstimatedMemoryBudgetEnabled.Should().BeTrue();
             
             // Verify we can get the same tables again (caching behavior)
             var cachedTable1 = DataTableManager.GetCached<MockDataTable>();
@@ -162,33 +207,35 @@ namespace DataTables.Tests
 
             // Cleanup
             DataTableManager.ClearCache();
-            DataTableManager.DisableMemoryManagement();
+            DataTableManager.DisableEstimatedMemoryBudget();
         }
 
         [Fact]
-        public async Task MemoryManager_Eviction_ShouldNotReturnTheEvictedTable()
+        public async Task MemoryManager_ShouldNotCacheTablesLargerThanEstimatedBudget()
         {
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new SizedMockDataSource(5000));
-            DataTableManager.EnableMemoryManagement(1);
+            DataTableManager.UseDataSource(new SizedMockDataSource(5000));
+            DataTableManager.EnableEstimatedMemoryBudget(1);
 
             await DataTableManager.LoadAsync<MockDataTable>();
             var latestTable = await DataTableManager.LoadAsync<MockDataTable2>();
 
-            DataTableManager.GetCached<MockDataTable>().Should().BeNull("LRU 淘汰后不应从另一份缓存返回已关闭表");
-            DataTableManager.GetCached<MockDataTable2>().Should().BeSameAs(latestTable);
-            DataTableManager.Count.Should().Be(1);
+            latestTable.Should().NotBeNull("oversized tables can still be used by the loading caller");
+            DataTableManager.GetCached<MockDataTable>().Should().BeNull();
+            DataTableManager.GetCached<MockDataTable2>().Should().BeNull();
+            DataTableManager.Count.Should().Be(0);
+            DataTableManager.GetCacheStats()!.Value.EstimatedMemoryUsageBytes.Should().Be(0);
 
             DataTableManager.ClearCache();
-            DataTableManager.DisableMemoryManagement();
+            DataTableManager.DisableEstimatedMemoryBudget();
         }
 
         [Fact]
         public async Task DestroyDataTable_ShouldRemoveTheMemoryManagedEntry()
         {
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
-            DataTableManager.EnableMemoryManagement(10);
+            DataTableManager.UseDataSource(new FastMockDataSource());
+            DataTableManager.EnableEstimatedMemoryBudget(10);
             await DataTableManager.LoadAsync<MockDataTable>();
 
             DataTableManager.DestroyDataTable<MockDataTable>().Should().BeTrue();
@@ -198,15 +245,15 @@ namespace DataTables.Tests
             DataTableManager.GetCacheStats()!.Value.TotalItems.Should().Be(0);
 
             DataTableManager.ClearCache();
-            DataTableManager.DisableMemoryManagement();
+            DataTableManager.DisableEstimatedMemoryBudget();
         }
 
         [Fact]
         public async Task ClearCache_ShouldNotReturnMemoryManagedTables()
         {
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
-            DataTableManager.EnableMemoryManagement(10);
+            DataTableManager.UseDataSource(new FastMockDataSource());
+            DataTableManager.EnableEstimatedMemoryBudget(10);
             await DataTableManager.LoadAsync<MockDataTable>();
 
             DataTableManager.ClearCache();
@@ -214,7 +261,7 @@ namespace DataTables.Tests
             DataTableManager.GetCached<MockDataTable>().Should().BeNull();
             DataTableManager.Count.Should().Be(0);
 
-            DataTableManager.DisableMemoryManagement();
+            DataTableManager.DisableEstimatedMemoryBudget();
         }
 
         /// <summary>
@@ -238,11 +285,11 @@ namespace DataTables.Tests
 
             // Assert
             stats.TotalItems.Should().Be(1);
-            stats.MemoryUsage.Should().BeGreaterThan(0);
+            stats.EstimatedMemoryUsageBytes.Should().BeGreaterThan(0);
             stats.AccessCount.Should().Be(3); // 3次访问
             stats.HitCount.Should().Be(1);    // 1次命中
             stats.HitRate.Should().Be(1.0f / 3.0f); // 33%命中率
-            stats.MemoryUsageRate.Should().BeLessThan(1.0f); // 未满
+            stats.EstimatedBudgetUsageRate.Should().BeLessThan(1.0f); // 未满
         }
 
         private MockDataTable CreateMockTable(string name, int capacity)
@@ -254,7 +301,7 @@ namespace DataTables.Tests
         {
             // 清理测试状态 - 使用公共API来确保状态一致性
             DataTableManager.ClearCache();
-            DataTableManager.DisableMemoryManagement();
+            DataTableManager.DisableEstimatedMemoryBudget();
         }
 
         private sealed class SizedMockDataSource : IDataSource

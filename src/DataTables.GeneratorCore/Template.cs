@@ -44,6 +44,17 @@ public partial class DataTableTemplate
         return DataTableProcessor.GetDeserializeMethodString(GenerationContext, property);
     }
 
+    internal string GetTableNameParameter(IReadOnlyList<string> fields)
+    {
+        var parameterName = "dataTableName";
+        var fieldParameters = new HashSet<string>(fields.Select(GenerationContext.ToCamelCase), StringComparer.Ordinal);
+        while (fieldParameters.Contains(parameterName))
+        {
+            parameterName = "_" + parameterName;
+        }
+        return parameterName;
+    }
+
     internal string BuildSummary(string summary)
     {
         var text = System.Security.SecurityElement.Escape(summary.Trim());

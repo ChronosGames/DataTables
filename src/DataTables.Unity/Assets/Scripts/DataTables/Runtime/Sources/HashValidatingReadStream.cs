@@ -15,6 +15,7 @@ namespace DataTables
         private readonly string m_Name;
         private readonly string m_Source;
         private bool m_Validated;
+        private InvalidDataException? m_ValidationError;
 
         public HashValidatingReadStream(Stream inner, string expected, string name, string source)
         {
@@ -34,14 +35,14 @@ namespace DataTables
         public override int Read(byte[] buffer, int offset, int count)
         {
             var read = m_Inner.Read(buffer, offset, count);
-            Observe(buffer, offset, read);
+            if (count != 0) Observe(buffer, offset, read);
             return read;
         }
 
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             var read = await m_Inner.ReadAsync(buffer, offset, count, cancellationToken);
-            Observe(buffer, offset, read);
+            if (count != 0) Observe(buffer, offset, read);
             return read;
         }
 
@@ -66,7 +67,11 @@ namespace DataTables
                 m_Hash.TransformBlock(buffer, offset, count, buffer, offset);
                 return;
             }
-            if (m_Validated) return;
+            if (m_Validated)
+            {
+                if (m_ValidationError != null) throw m_ValidationError;
+                return;
+            }
 
             m_Hash.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
             var builder = new StringBuilder(m_Hash.Hash!.Length * 2);
@@ -75,7 +80,8 @@ namespace DataTables
             m_Validated = true;
             if (!string.Equals(actual, m_Expected, StringComparison.Ordinal))
             {
-                throw new InvalidDataException($"Hash validation failed for '{m_Name}' from '{m_Source}': expected {m_Expected}, actual {actual} ({HashValidatedDataSource.Algorithm} {HashValidatedDataSource.HashFormat}).");
+                m_ValidationError = new InvalidDataException($"Hash validation failed for '{m_Name}' from '{m_Source}': expected {m_Expected}, actual {actual} ({HashValidatedDataSource.Algorithm} {HashValidatedDataSource.HashFormat}).");
+                throw m_ValidationError;
             }
         }
     }

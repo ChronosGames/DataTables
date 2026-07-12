@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,12 +23,35 @@ public sealed class DataTableGenerator
         m_Locks = new();
     }
 
-    public async Task<GenerationResult> GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string dataRowClassPrefix, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger, ParseOptions? options = null, string? diagnosticsJsonOutput = null)
+    public Task<GenerationResult> GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string dataRowClassPrefix, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger, ParseOptions? options = null, string? diagnosticsJsonOutput = null)
+    {
+        var generationMode = string.IsNullOrWhiteSpace(codeOutputDir)
+            ? GenerationMode.DataOnly
+            : GenerationMode.CodeAndData;
+        return GenerateFile(inputDirectories, searchPatterns, codeOutputDir, dataOutputDir, usingNamespace, dataRowClassPrefix, importNamespaces, filterColumnTags, forceOverwrite, logger, generationMode, options, diagnosticsJsonOutput);
+    }
+
+    public async Task<GenerationResult> GenerateFile(string[] inputDirectories, string[] searchPatterns, string codeOutputDir, string dataOutputDir, string usingNamespace, string dataRowClassPrefix, string importNamespaces, string filterColumnTags, bool forceOverwrite, Action<string> logger, GenerationMode generationMode, ParseOptions? options = null, string? diagnosticsJsonOutput = null)
     {
         // By default, ExcelDataReader throws a NotSupportedException "No data is available for encoding 1252." on .NET Core.
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
         dataRowClassPrefix ??= string.Empty;
+        if (generationMode is not GenerationMode.CodeAndData and not GenerationMode.DataOnly)
+        {
+            throw new ArgumentOutOfRangeException(nameof(generationMode), generationMode, "Unknown generation mode.");
+        }
+
+        var generateCode = generationMode == GenerationMode.CodeAndData;
+        if (generateCode && string.IsNullOrWhiteSpace(codeOutputDir))
+        {
+            throw new ArgumentException("Code output directory is required in code-and-data generation mode.", nameof(codeOutputDir));
+        }
+        if (!generateCode)
+        {
+            codeOutputDir = string.Empty;
+        }
+
         var list = new ConcurrentBag<GenerationContext>();
         var failures = new ConcurrentBag<GenerationFailure>();
         var parseOptions = options ?? new ParseOptions { FilterColumnTags = filterColumnTags };
@@ -83,8 +107,13 @@ public sealed class DataTableGenerator
             }
         }
 
-        var manifestPath = Path.Combine(dataOutputDir, IncrementalGenerationManifest.FileName);
-        var previousManifest = IncrementalGenerationManifest.Load(manifestPath, logger);
+        var codeAndDataManifestPath = Path.Combine(dataOutputDir, IncrementalGenerationManifest.FileName);
+        var manifestPath = generationMode == GenerationMode.DataOnly
+            ? Path.Combine(dataOutputDir, IncrementalGenerationManifest.DataOnlyFileName)
+            : codeAndDataManifestPath;
+        var previousManifest = generationMode == GenerationMode.DataOnly && !File.Exists(manifestPath)
+            ? IncrementalGenerationManifest.Load(codeAndDataManifestPath, logger)
+            : IncrementalGenerationManifest.Load(manifestPath, logger);
         if (filePaths.Count == 0 && previousManifest.Inputs.Count == 0)
         {
             throw new InvalidOperationException("Not found Excel files, inputDir: " + inputDirectories.Length);
@@ -95,7 +124,7 @@ public sealed class DataTableGenerator
             dataRowClassPrefix,
             importNamespaces,
             parseOptions,
-            generateCode: !string.IsNullOrEmpty(codeOutputDir));
+            generateCode);
         var canReuseManifest = !forceOverwrite && previousManifest.GeneratorFingerprint == generatorFingerprint;
         var contentHashes = new ConcurrentDictionary<string, string>(IncrementalGenerationManifest.PathComparer);
         await Parallel.ForEachAsync(filePaths, (pair, _) =>
@@ -126,7 +155,7 @@ public sealed class DataTableGenerator
         using var transaction = new GenerationTransaction();
         var stagingCodeOutputDir = string.IsNullOrEmpty(codeOutputDir) ? string.Empty : transaction.GetStagingDirectory(codeOutputDir);
         var stagingDataOutputDir = transaction.GetStagingDirectory(dataOutputDir);
-        if (!string.IsNullOrEmpty(previousManifest.CodeOutputDirectory) && Directory.Exists(previousManifest.CodeOutputDirectory))
+        if (generateCode && !string.IsNullOrEmpty(previousManifest.CodeOutputDirectory) && Directory.Exists(previousManifest.CodeOutputDirectory))
         {
             transaction.GetStagingDirectory(previousManifest.CodeOutputDirectory);
         }
@@ -138,6 +167,21 @@ public sealed class DataTableGenerator
         var allDiagnostics = new System.Collections.Concurrent.ConcurrentBag<Diagnostic>();
         var allMetrics = new System.Collections.Concurrent.ConcurrentBag<DiagnosticsMetrics>();
         var contextsByInput = new ConcurrentDictionary<string, ConcurrentBag<GenerationContext>>(IncrementalGenerationManifest.PathComparer);
+        var outputClaims = new OutputClaimRegistry();
+        if (generateCode)
+        {
+            outputClaims.ReserveGeneratedManager();
+        }
+        foreach (var inputId in unchangedInputIds)
+        {
+            foreach (var output in previousManifest.Inputs[inputId].Outputs)
+            {
+                if (!outputClaims.TrySeed(output, inputId, out var conflict))
+                {
+                    failures.Add(new GenerationFailure(inputId, null, new InvalidOperationException(conflict)));
+                }
+            }
+        }
 
         await Parallel.ForEachAsync(changedFiles, (pair, cancellationToken) => new ValueTask(GenerateExcel(pair.Value,
             usingNamespace: usingNamespace,
@@ -154,13 +198,15 @@ public sealed class DataTableGenerator
             collectDiagnostic: d => allDiagnostics.Add(d),
             collectMetrics: m => allMetrics.Add(m),
             collectContext: context => contextsByInput.GetOrAdd(pair.Key, _ => new ConcurrentBag<GenerationContext>()).Add(context),
+            generateCode: generateCode,
+            outputClaims: outputClaims,
             failures: failures,
             log: logger)));
 
         var nextManifest = new IncrementalGenerationManifest
         {
             GeneratorFingerprint = generatorFingerprint,
-            CodeOutputDirectory = string.IsNullOrEmpty(codeOutputDir) ? string.Empty : Path.GetFullPath(codeOutputDir),
+            CodeOutputDirectory = generateCode ? Path.GetFullPath(codeOutputDir) : string.Empty,
             DataOutputDirectory = Path.GetFullPath(dataOutputDir),
             Inputs = new Dictionary<string, IncrementalInputEntry>(IncrementalGenerationManifest.PathComparer),
         };
@@ -173,7 +219,7 @@ public sealed class DataTableGenerator
             }
 
             contextsByInput.TryGetValue(pair.Key, out var contexts);
-            nextManifest.Inputs.Add(pair.Key, CreateInputEntry(contentHashes[pair.Key], contexts ?? [], !string.IsNullOrEmpty(codeOutputDir)));
+            nextManifest.Inputs.Add(pair.Key, CreateInputEntry(contentHashes[pair.Key], contexts ?? [], generateCode));
         }
 
         logger("Generate Manager Files:");
@@ -188,7 +234,7 @@ public sealed class DataTableGenerator
             .ToDictionary(g => g.Key, g => g.First().Priority);
 
         // 生成DataTableManagerExtension代码文件(放在未尾确保类名前缀会正确附加)
-        if (!string.IsNullOrEmpty(codeOutputDir))
+        if (generateCode)
         {
             var dataTableManagerExtensionTemplate = new DataTableManagerExtensionTemplate()
             {
@@ -217,25 +263,40 @@ public sealed class DataTableGenerator
             }
         }
 
-        // 输出诊断报告（可选）
+        var diagnosticList = allDiagnostics
+            .OrderBy(x => x.File, StringComparer.Ordinal)
+            .ThenBy(x => x.Sheet, StringComparer.Ordinal)
+            .ThenBy(x => x.Cell, StringComparer.Ordinal)
+            .ThenBy(x => x.Message, StringComparer.Ordinal)
+            .ToArray();
+        foreach (var diagnostic in diagnosticList.Where(x => x.Severity == DiagnosticSeverity.Error))
+        {
+            var location = string.IsNullOrEmpty(diagnostic.Cell) ? string.Empty : $" ({diagnostic.Cell})";
+            failures.Add(new GenerationFailure(
+                diagnostic.File,
+                diagnostic.Sheet,
+                new InvalidDataException($"Generator diagnostic error{location}: {diagnostic.Message}")));
+        }
+
+        // 输出诊断报告（可选）。诊断报告不属于生成事务，即使生成失败也必须可用。
         if (!string.IsNullOrEmpty(diagnosticsJsonOutput))
         {
             var report = new DiagnosticsReport
             {
-                InfoCount = allDiagnostics.Count(x => x.Severity == DiagnosticSeverity.Info),
-                WarningCount = allDiagnostics.Count(x => x.Severity == DiagnosticSeverity.Warning),
-                ErrorCount = allDiagnostics.Count(x => x.Severity == DiagnosticSeverity.Error),
-                Items = allDiagnostics.ToList(),
+                InfoCount = diagnosticList.Count(x => x.Severity == DiagnosticSeverity.Info),
+                WarningCount = diagnosticList.Count(x => x.Severity == DiagnosticSeverity.Warning),
+                ErrorCount = diagnosticList.Count(x => x.Severity == DiagnosticSeverity.Error),
+                Items = diagnosticList.ToList(),
                 Metrics = metricsList
             };
             var json = System.Text.Json.JsonSerializer.Serialize(report, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(transaction.GetStagingFile(diagnosticsJsonOutput), json);
+            WriteDiagnosticsReport(diagnosticsJsonOutput, json);
             logger($"Diagnostics report saved: {diagnosticsJsonOutput}");
         }
 
         PopulateOutputHashes(nextManifest, stagingCodeOutputDir, codeOutputDir, stagingDataOutputDir, dataOutputDir);
         File.WriteAllText(transaction.GetStagingFile(manifestPath), nextManifest.Serialize());
-        ScheduleRemovedOutputs(transaction, previousManifest, nextManifest);
+        ScheduleRemovedOutputs(transaction, previousManifest, nextManifest, generationMode);
 
         logger(string.Empty);
         logger("===========================================================");
@@ -249,7 +310,7 @@ public sealed class DataTableGenerator
         }
         logger($"数据表导出完成: {succeededCount} 成功，{failureList.Length} 失败，{skippedCount} 已跳过");
 
-        return new GenerationResult(succeededCount, skippedCount, failureList);
+        return new GenerationResult(succeededCount, skippedCount, failureList, diagnosticList);
     }
 
     private static IncrementalInputEntry CreateInputEntry(string contentHash, IEnumerable<GenerationContext> contexts, bool generateCode)
@@ -315,7 +376,7 @@ public sealed class DataTableGenerator
         }
     }
 
-    private static void ScheduleRemovedOutputs(GenerationTransaction transaction, IncrementalGenerationManifest previousManifest, IncrementalGenerationManifest nextManifest)
+    private static void ScheduleRemovedOutputs(GenerationTransaction transaction, IncrementalGenerationManifest previousManifest, IncrementalGenerationManifest nextManifest, GenerationMode generationMode)
     {
         var nextOutputKeys = nextManifest.Inputs.Values
             .SelectMany(entry => entry.Outputs)
@@ -324,6 +385,11 @@ public sealed class DataTableGenerator
 
         foreach (var output in previousManifest.Inputs.Values.SelectMany(entry => entry.Outputs))
         {
+            if (generationMode == GenerationMode.DataOnly && output.Kind != "data")
+            {
+                continue;
+            }
+
             if (nextOutputKeys.Contains(GetOutputKey(output)))
             {
                 continue;
@@ -368,7 +434,7 @@ public sealed class DataTableGenerator
         return fullPath;
     }
 
-    private async Task GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string finalCodeOutputDir, string dataOutputDir, string finalDataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log, ParseOptions options, Action<Diagnostic> collectDiagnostic, Action<DiagnosticsMetrics> collectMetrics, Action<GenerationContext> collectContext, ConcurrentBag<GenerationFailure> failures)
+    private async Task GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string finalCodeOutputDir, string dataOutputDir, string finalDataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log, ParseOptions options, Action<Diagnostic> collectDiagnostic, Action<DiagnosticsMetrics> collectMetrics, Action<GenerationContext> collectContext, bool generateCode, OutputClaimRegistry outputClaims, ConcurrentBag<GenerationFailure> failures)
     {
         using (var logger = new ILogger(log))
         {
@@ -431,10 +497,21 @@ public sealed class DataTableGenerator
                             continue;
                         }
 
-                        // 生成代码文件
-                        if (!string.IsNullOrEmpty(codeOutputDir))
+                        var codeContent = generateCode ? RenderCodeFile(context) : null;
+                        var codeContentHash = codeContent == null ? null : ComputeContentHash(codeContent);
+                        if (!outputClaims.TryReserve(context, filePath, codeContentHash, out var writeCode, out var conflict))
                         {
-                            GenerateCodeFile(context, codeOutputDir, finalCodeOutputDir, forceOverwrite, logger);
+                            var exception = new InvalidOperationException(conflict);
+                            context.Failed = true;
+                            failures.Add(new GenerationFailure(filePath, context.SheetName, exception));
+                            logger.Error("  > {0}.", exception);
+                            continue;
+                        }
+
+                        // 生成代码文件。分表生成的代码内容相同时只写入一次。
+                        if (writeCode)
+                        {
+                            GenerateCodeFile(context, codeOutputDir, finalCodeOutputDir, codeContent!, forceOverwrite, logger);
                         }
 
                         // 生成数据文件
@@ -493,14 +570,19 @@ public sealed class DataTableGenerator
         return true;
     }
 
-    void GenerateCodeFile(GenerationContext context, string outputDir, string comparisonOutputDir, bool forceOverwrite, ILogger logger)
+    private static string RenderCodeFile(GenerationContext context)
     {
         if (!s_CodeTemplateRendererRegistry.TryGetRenderer(context.DataSetType, out var renderer))
         {
             throw new InvalidOperationException($"未注册 DTGen={context.DataSetType} 的代码生成模板。");
         }
 
-        logger.Debug(WriteToFile(outputDir, comparisonOutputDir, context.DataRowClassName + ".cs", renderer.TransformText(context), forceOverwrite));
+        return renderer.TransformText(context);
+    }
+
+    void GenerateCodeFile(GenerationContext context, string outputDir, string comparisonOutputDir, string content, bool forceOverwrite, ILogger logger)
+    {
+        logger.Debug(WriteToFile(outputDir, comparisonOutputDir, context.DataRowClassName + ".cs", content, forceOverwrite));
     }
 
     static string NormalizeNewLines(string content)
@@ -508,6 +590,31 @@ public sealed class DataTableGenerator
         // The T4 generated code may be text with mixed line ending types. (CR + CRLF)
         // We need to normalize the line ending type in each Operating Systems. (e.g. Windows=CRLF, Linux/macOS=LF)
         return content.Replace("\r\n", "\n");
+    }
+
+    private static string ComputeContentHash(string content)
+    {
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(NormalizeNewLines(content))));
+    }
+
+    private static void WriteDiagnosticsReport(string outputFile, string content)
+    {
+        var fullPath = Path.GetFullPath(outputFile);
+        var directory = Path.GetDirectoryName(fullPath) ?? throw new InvalidOperationException($"Output file has no directory: {outputFile}");
+        Directory.CreateDirectory(directory);
+        var temporaryPath = Path.Combine(directory, $".{Path.GetFileName(fullPath)}.{Guid.NewGuid():N}.tmp");
+        try
+        {
+            File.WriteAllText(temporaryPath, content);
+            File.Move(temporaryPath, fullPath, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath))
+            {
+                File.Delete(temporaryPath);
+            }
+        }
     }
 
     string WriteToFile(string directory, string comparisonDirectory, string fileName, string content, bool forceOverwrite)
@@ -534,5 +641,92 @@ public sealed class DataTableGenerator
         m_Locks.TryRemove(fileName, out _);
 
         return $"  > Generate {fileName} to: {comparisonPath} - {Environment.TickCount - startTickCount}ms";
+    }
+
+    private sealed class OutputClaimRegistry
+    {
+        private readonly Dictionary<string, OutputClaim> m_Claims = new(IncrementalGenerationManifest.PathComparer);
+
+        public void ReserveGeneratedManager()
+        {
+            var output = new IncrementalOutput { Kind = "code", Path = "DataTableManagerExtension.cs" };
+            m_Claims.Add(GetOutputKey(output), new OutputClaim("generated manager", string.Empty, AllowEquivalentContent: false));
+        }
+
+        public bool TrySeed(IncrementalOutput output, string inputId, out string conflict)
+        {
+            lock (m_Claims)
+            {
+                var key = GetOutputKey(output);
+                var owner = $"incremental input '{inputId}'";
+                if (!m_Claims.TryGetValue(key, out var existing))
+                {
+                    m_Claims.Add(key, new OutputClaim(owner, output.ContentHash, output.Kind == "code"));
+                    conflict = string.Empty;
+                    return true;
+                }
+
+                if (output.Kind == "code"
+                    && existing.AllowEquivalentContent
+                    && existing.ContentHash == output.ContentHash)
+                {
+                    conflict = string.Empty;
+                    return true;
+                }
+
+                conflict = CreateConflictMessage(output.Kind, output.Path, owner, existing.Owner);
+                return false;
+            }
+        }
+
+        public bool TryReserve(GenerationContext context, string filePath, string? codeContentHash, out bool writeCode, out string conflict)
+        {
+            var owner = $"'{filePath}' ({context.SheetName})";
+            var dataOutput = new IncrementalOutput { Kind = "data", Path = context.GetDataOutputFilePath() };
+            var dataKey = GetOutputKey(dataOutput);
+            var codeOutput = codeContentHash == null
+                ? null
+                : new IncrementalOutput { Kind = "code", Path = context.DataRowClassName + ".cs" };
+            var codeKey = codeOutput == null ? null : GetOutputKey(codeOutput);
+
+            lock (m_Claims)
+            {
+                if (m_Claims.TryGetValue(dataKey, out var existingData))
+                {
+                    writeCode = false;
+                    conflict = CreateConflictMessage(dataOutput.Kind, dataOutput.Path, owner, existingData.Owner);
+                    return false;
+                }
+
+                writeCode = codeOutput != null;
+                if (codeOutput != null && m_Claims.TryGetValue(codeKey!, out var existingCode))
+                {
+                    if (!existingCode.AllowEquivalentContent || existingCode.ContentHash != codeContentHash)
+                    {
+                        writeCode = false;
+                        conflict = CreateConflictMessage(codeOutput.Kind, codeOutput.Path, owner, existingCode.Owner);
+                        return false;
+                    }
+
+                    writeCode = false;
+                }
+
+                m_Claims.Add(dataKey, new OutputClaim(owner, string.Empty, AllowEquivalentContent: false));
+                if (codeOutput != null && writeCode)
+                {
+                    m_Claims.Add(codeKey!, new OutputClaim(owner, codeContentHash!, AllowEquivalentContent: true));
+                }
+
+                conflict = string.Empty;
+                return true;
+            }
+        }
+
+        private static string CreateConflictMessage(string kind, string path, string owner, string existingOwner)
+        {
+            return $"Generated {kind} output conflict for '{path}': {owner} conflicts with {existingOwner}.";
+        }
+
+        private sealed record OutputClaim(string Owner, string ContentHash, bool AllowEquivalentContent);
     }
 }

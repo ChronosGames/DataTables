@@ -20,7 +20,7 @@ namespace DataTables.Tests
         {
             // Arrange
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.UseDataSource(new FastMockDataSource());
 
             const int concurrentCount = 50;
             var tasks = new List<ValueTask<MockDataTable?>>();
@@ -30,7 +30,7 @@ namespace DataTables.Tests
 
             for (int i = 0; i < concurrentCount; i++)
             {
-                tasks.Add(DataTableManager.GetOrCreateDataTableAsync<MockDataTable>());
+                tasks.Add(DataTableManager.LoadAsync<MockDataTable>());
             }
 
             var results = await Task.WhenAll(tasks.Select(t => t.AsTask()));
@@ -55,7 +55,7 @@ namespace DataTables.Tests
         {
             // Arrange
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.UseDataSource(new FastMockDataSource());
 
             const int loadCount = 10;
             MockDataTable? firstTable = null;
@@ -65,7 +65,7 @@ namespace DataTables.Tests
 
             for (int i = 0; i < loadCount; i++)
             {
-                var table = await DataTableManager.GetOrCreateDataTableAsync<MockDataTable>();
+                var table = await DataTableManager.LoadAsync<MockDataTable>();
                 table.Should().NotBeNull();
                 firstTable ??= table;
                 table.Should().BeSameAs(firstTable);
@@ -84,14 +84,14 @@ namespace DataTables.Tests
         {
             // Arrange
             ResetDataTableManager();
-            DataTableManager.UseCustomSource(new FastMockDataSource());
+            DataTableManager.UseDataSource(new FastMockDataSource());
 
             var memoryBefore = GC.GetTotalMemory(true);
 
             // Act - 加载多个数据表
-            var table1 = await DataTableManager.GetOrCreateDataTableAsync<MockDataTable>();
-            var table2 = await DataTableManager.GetOrCreateDataTableAsync<MockDataTable2>();
-            var table3 = await DataTableManager.GetOrCreateDataTableAsync<MockDataTable3>();
+            var table1 = await DataTableManager.LoadAsync<MockDataTable>();
+            var table2 = await DataTableManager.LoadAsync<MockDataTable2>();
+            var table3 = await DataTableManager.LoadAsync<MockDataTable3>();
 
             var memoryAfter = GC.GetTotalMemory(false);
             var memoryUsed = memoryAfter - memoryBefore;
@@ -158,7 +158,7 @@ namespace DataTables.Tests
         private void ResetDataTableManager()
         {
             DataTableManager.ClearCache();
-            DataTableManager.DisableMemoryManagement();
+            DataTableManager.DisableEstimatedMemoryBudget();
             DataTableManager.ClearTableRegistrations();
             DataTableManager.ClearHooks();
         }

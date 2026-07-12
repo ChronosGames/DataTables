@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using DataTables.GeneratorCore;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
@@ -26,7 +27,31 @@ public class DataTableTemplateTests
         var code = new DataTableTemplate(context).TransformText();
 
         code.Should().Contain("public static IReadOnlyList<UnlockSkill>? GetManyBySkillPos(int skillPos)");
+        code.Should().Contain("public static IReadOnlyList<UnlockSkill>? GetManyBySkillPos(string dataTableName, int skillPos)");
+        code.Should().Contain("[Obsolete(\"Use GetManyBySkillPos instead.\")]");
+        code.Should().Contain("[EditorBrowsable(EditorBrowsableState.Never)]");
+        code.Should().Contain("m_Dict1.Clear();");
+        code.Should().Contain("m_Dict2.Clear();");
+        Regex.IsMatch(code, @"}\r?\n\z").Should().BeTrue("generated files should end with one line break, not a blank line");
         AssertCompiles("GeneratedGroupedIndex", code);
+    }
+
+    [Fact]
+    public void CompoundIndex_WithTableNameField_Should_GenerateUnambiguousNamedTableOverload()
+    {
+        var context = new GenerationContext { ClassName = "NamedEntry" };
+        context.Fields =
+        [
+            new XField(0) { Name = "Id", TypeName = "int" },
+            new XField(1) { Name = "DataTableName", TypeName = "string" },
+        ];
+        context.AddIndex(["Id", "DataTableName"]);
+
+        var code = new DataTableTemplate(context).TransformText();
+
+        code.Should().Contain("GetByIdAndDataTableName(string _dataTableName, int id, string dataTableName)");
+        code.Should().Contain("GetDataTableInternal<DTNamedEntry>(_dataTableName)");
+        AssertCompiles("GeneratedCompoundNamedIndex", code);
     }
 
     [Fact]
@@ -44,6 +69,8 @@ public class DataTableTemplateTests
         new DataTableTemplate(context).TransformText().Should().Contain(expected);
         var kvCode = new KvTableTemplate(context).TransformText();
         kvCode.Should().Contain(expected);
+        kvCode.Should().Contain("GetVersion(string dataTableName)");
+        kvCode.Should().Contain("GetDataTableInternal<DTGameConfig>(dataTableName)");
         AssertCompiles("GeneratedKvCustomUsing", kvCode);
     }
 
@@ -61,7 +88,11 @@ public class DataTableTemplateTests
         context.AddGroup(["From"]);
         context.AddGroup(["To"]);
 
-        AssertCompiles("GeneratedGraphIndex", new GraphTableTemplate(context).TransformText());
+        var code = new GraphTableTemplate(context).TransformText();
+
+        code.Should().Contain("GetEdgeStatic(string dataTableName, string edgeId)");
+        code.Should().Contain("GetGraphTableStatic(dataTableName)");
+        AssertCompiles("GeneratedGraphIndex", code);
     }
 
     [Fact]
@@ -76,7 +107,11 @@ public class DataTableTemplateTests
         context.AddIndex(["Id"]);
         context.AddGroup(["ParentId"]);
 
-        AssertCompiles("GeneratedTreeIndex", new TreeTableTemplate(context).TransformText());
+        var code = new TreeTableTemplate(context).TransformText();
+
+        code.Should().Contain("GetChildrenStatic(string dataTableName, string id)");
+        code.Should().Contain("GetDataTableInternal<DTNode>(dataTableName)");
+        AssertCompiles("GeneratedTreeIndex", code);
     }
 
     [Fact]
@@ -95,7 +130,11 @@ public class DataTableTemplateTests
             ],
         };
 
-        AssertCompiles("GeneratedFlagMatrix", new DataMatrixTemplate(context).TransformText(), allowWarnings: false);
+        var code = new DataMatrixTemplate(context).TransformText();
+
+        code.Should().Contain("GetRow(string dataTableName, short key1, long key2)");
+        code.Should().Contain("GetDataTableInternal<DTFlagMatrix>(dataTableName)");
+        AssertCompiles("GeneratedFlagMatrix", code, allowWarnings: false);
     }
 
     [Fact]

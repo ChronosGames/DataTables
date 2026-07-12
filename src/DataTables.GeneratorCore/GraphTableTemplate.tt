@@ -7,8 +7,7 @@
     GenerationEnvironment.Clear();
     var text = base.TransformText();
     GenerationEnvironment.Clear();
-    var marker = "    #endregion" + Environment.NewLine + "}";
-    var idx = text.IndexOf(marker, StringComparison.Ordinal);
+    var idx = text.IndexOf("    #endregion\r\n}", StringComparison.Ordinal);
     if (idx < 0)
     {
         idx = text.IndexOf("    #endregion\n}", StringComparison.Ordinal);

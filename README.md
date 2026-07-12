@@ -1,3 +1,24 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+## Table of Contents
+
+- [DataTables](#datatables)
+  - [文档](#%E6%96%87%E6%A1%A3)
+  - [快速开始](#%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B)
+    - [.NET Core 项目](#net-core-%E9%A1%B9%E7%9B%AE)
+    - [Unity项目](#unity%E9%A1%B9%E7%9B%AE)
+  - [推荐运行时 API](#%E6%8E%A8%E8%8D%90%E8%BF%90%E8%A1%8C%E6%97%B6-api)
+    - [独立上下文](#%E7%8B%AC%E7%AB%8B%E4%B8%8A%E4%B8%8B%E6%96%87)
+    - [I/O 与解析线程](#io-%E4%B8%8E%E8%A7%A3%E6%9E%90%E7%BA%BF%E7%A8%8B)
+  - [代码生成器](#%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90%E5%99%A8)
+  - [表格式与生成物](#%E8%A1%A8%E6%A0%BC%E5%BC%8F%E4%B8%8E%E7%94%9F%E6%88%90%E7%89%A9)
+  - [数据源与缓存边界](#%E6%95%B0%E6%8D%AE%E6%BA%90%E4%B8%8E%E7%BC%93%E5%AD%98%E8%BE%B9%E7%95%8C)
+  - [升级与兼容](#%E5%8D%87%E7%BA%A7%E4%B8%8E%E5%85%BC%E5%AE%B9)
+  - [开发与验证](#%E5%BC%80%E5%8F%91%E4%B8%8E%E9%AA%8C%E8%AF%81)
+  - [License](#license)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # DataTables
 
 [![GitHub Actions](https://github.com/ChronosGames/DataTables/workflows/Build-Debug/badge.svg)](https://github.com/ChronosGames/DataTables/actions)

@@ -9,6 +9,7 @@ internal sealed class GenerationTransaction : IDisposable
 {
     private readonly string m_Id = Guid.NewGuid().ToString("N");
     private readonly Dictionary<string, OutputRoot> m_Roots = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> m_FilesToDelete = new(StringComparer.OrdinalIgnoreCase);
     private bool m_Committed;
 
     public string GetStagingDirectory(string outputDirectory)
@@ -38,6 +39,17 @@ internal sealed class GenerationTransaction : IDisposable
         return Path.Combine(GetStagingDirectory(directory), Path.GetFileName(fullPath));
     }
 
+    public void DeleteFile(string outputFile)
+    {
+        var fullPath = Path.GetFullPath(outputFile);
+        if (!m_Roots.Values.Any(root => IsWithinRoot(root.FinalDirectory, fullPath)))
+        {
+            throw new InvalidOperationException($"Delete target is outside generation output directories: {outputFile}");
+        }
+
+        m_FilesToDelete.Add(fullPath);
+    }
+
     public void Commit()
     {
         if (m_Committed)
@@ -54,6 +66,7 @@ internal sealed class GenerationTransaction : IDisposable
             .OrderBy(item => item.FinalFile, StringComparer.OrdinalIgnoreCase)
             .ToArray();
         var committed = new List<CommitItem>(items.Length);
+        var deleted = new List<DeleteItem>();
 
         try
         {
@@ -81,10 +94,28 @@ internal sealed class GenerationTransaction : IDisposable
                 }
             }
 
+            foreach (var finalFile in m_FilesToDelete.OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
+            {
+                if (!File.Exists(finalFile))
+                {
+                    continue;
+                }
+
+                var root = m_Roots.Values
+                    .Where(candidate => IsWithinRoot(candidate.FinalDirectory, finalFile))
+                    .OrderByDescending(candidate => candidate.FinalDirectory.Length)
+                    .First();
+                var backupFile = Path.Combine(root.StagingDirectory, ".deleted", Path.GetRelativePath(root.FinalDirectory, finalFile));
+                Directory.CreateDirectory(Path.GetDirectoryName(backupFile)!);
+                File.Move(finalFile, backupFile);
+                deleted.Add(new DeleteItem(finalFile, backupFile));
+            }
+
             m_Committed = true;
         }
         catch
         {
+            RestoreDeletedFiles(deleted);
             RollBack(committed);
             throw;
         }
@@ -125,6 +156,24 @@ internal sealed class GenerationTransaction : IDisposable
         }
     }
 
+    private static void RestoreDeletedFiles(List<DeleteItem> deleted)
+    {
+        for (var index = deleted.Count - 1; index >= 0; index--)
+        {
+            var item = deleted[index];
+            Directory.CreateDirectory(Path.GetDirectoryName(item.FinalFile)!);
+            File.Move(item.BackupFile, item.FinalFile, overwrite: true);
+        }
+    }
+
+    private static bool IsWithinRoot(string root, string path)
+    {
+        var relativePath = Path.GetRelativePath(root, path);
+        return !Path.IsPathRooted(relativePath)
+            && relativePath != ".."
+            && !relativePath.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal);
+    }
+
     private void CleanupStagingDirectories()
     {
         foreach (var root in m_Roots.Values)
@@ -144,4 +193,6 @@ internal sealed class GenerationTransaction : IDisposable
     private sealed record OutputRoot(string FinalDirectory, string StagingDirectory);
 
     private sealed record CommitItem(string StagedFile, string FinalFile, string BackupFile, bool ReplacedExisting = false);
+
+    private sealed record DeleteItem(string FinalFile, string BackupFile);
 }

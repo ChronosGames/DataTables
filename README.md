@@ -10,6 +10,7 @@
   - [🆕 新API指南](#-%E6%96%B0api%E6%8C%87%E5%8D%97)
     - [核心API对比](#%E6%A0%B8%E5%BF%83api%E5%AF%B9%E6%AF%94)
     - [现代异步模式](#%E7%8E%B0%E4%BB%A3%E5%BC%82%E6%AD%A5%E6%A8%A1%E5%BC%8F)
+    - [独立 DataTableContext](#%E7%8B%AC%E7%AB%8B-datatablecontext)
     - [智能配置系统](#%E6%99%BA%E8%83%BD%E9%85%8D%E7%BD%AE%E7%B3%BB%E7%BB%9F)
     - [可组合数据源配置示例](#%E5%8F%AF%E7%BB%84%E5%90%88%E6%95%B0%E6%8D%AE%E6%BA%90%E9%85%8D%E7%BD%AE%E7%A4%BA%E4%BE%8B)
       - [本地包 / StreamingAssets](#%E6%9C%AC%E5%9C%B0%E5%8C%85--streamingassets)

@@ -118,6 +118,7 @@ src/MasterMemory.UnityClient/Temp/*
 # OTHER
 nuget/tools/*
 *.nupkg
+.dtgen-manifest.json
 
 .vs
 

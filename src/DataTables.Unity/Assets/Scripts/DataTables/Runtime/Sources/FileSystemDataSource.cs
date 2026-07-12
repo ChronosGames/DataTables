@@ -31,7 +31,7 @@ namespace DataTables
             }
 
             Stream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
-            return ValueTask.FromResult(stream);
+            return new ValueTask<Stream>(stream);
         }
 
         public ValueTask<bool> ExistsAsync(string name, CancellationToken cancellationToken)

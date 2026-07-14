@@ -113,7 +113,7 @@ jobs:
           path: ./publish
       - uses: ChronosGames/Actions/.github/actions/setup-dotnet@main
       - name: Push to NuGet.org
-        run: dotnet nuget push ./publish/*.nupkg --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push ./publish/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
 
   cleanup:
     if: ${{ needs.update-packagejson.outputs.is-branch-created == 'true' }}

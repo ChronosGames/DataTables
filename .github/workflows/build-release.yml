@@ -97,28 +97,19 @@ jobs:
       release-asset-path: ./DataTables.Unity.${{ inputs.tag }}.unitypackage/DataTables.Unity.${{ inputs.tag }}.unitypackage
     secrets: inherit
 
-  # publish to NuGet.org using trusted publishing (OIDC)
   publish-nuget:
     needs: [build-dotnet, create-release]
     if: ${{ inputs.dry-run == false }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    permissions:
-      id-token: write
-      contents: read
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: nuget
           path: ./publish
       - uses: ChronosGames/Actions/.github/actions/setup-dotnet@main
-      - name: NuGet Login (Trusted Publishing via OIDC)
-        id: login
-        uses: NuGet/login@v1
-        with:
-          user: ${{ vars.NUGET_USER }}
       - name: Push to NuGet.org
-        run: dotnet nuget push ./publish/*.nupkg --source https://api.nuget.org/v3/index.json --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --skip-duplicate
+        run: dotnet nuget push ./publish/*.nupkg --source https://api.nuget.org/v3/index.json --api-key "${{ secrets.NUGET_API_KEY }}" --skip-duplicate
 
   cleanup:
     if: ${{ needs.update-packagejson.outputs.is-branch-created == 'true' }}

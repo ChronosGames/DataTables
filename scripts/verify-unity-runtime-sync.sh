@@ -27,7 +27,7 @@ map_unity_path() {
     LRUDataTableCache.cs)
       printf './Runtime/Caching/%s\n' "$file_name"
       ;;
-    DataSourceDecorators.cs|FileSystemDataSource.cs|HashValidatingReadStream.cs|IDataSource.cs|NetworkDataSource.cs|OwnedReadStream.cs|UnityDataSourceAdapters.cs)
+    DataSourceDecorators.cs|DataSourceException.cs|DataSourceManifestJson.cs|FileSystemDataSource.cs|HashValidatingReadStream.cs|IDataSource.cs|NetworkDataSource.cs|OwnedReadStream.cs|UnityDataSourceAdapters.cs)
       printf './Runtime/Sources/%s\n' "$file_name"
       ;;
     DataTableBinaryFormat.cs|DataTableBinaryLoader.cs|DataTableBinaryProtocol.cs)

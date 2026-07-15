@@ -46,17 +46,17 @@ DTGen=tree,class=QuestTree,namespace=Game.DataTables
 当前实现生成节点类型和树表查询 API：
 
 ```csharp
-var rootNodes = DTQuestTree.Roots;
-var node = DTQuestTree.GetById("Quest001");
-var children = DTQuestTree.GetChildrenStatic("Chapter01");
-var parent = DTQuestTree.GetParentStatic("Quest001");
-DTQuestTree.TryGetById("Quest002", out var questNode);
+var rootNodes = DTQuestTree.GetRoots(context);
+var node = DTQuestTree.GetById(context, "Quest001");
+var children = DTQuestTree.GetChildren(context, "Chapter01");
+var parent = DTQuestTree.GetParent(context, "Quest001");
+DTQuestTree.TryGetById(context, "Quest002", out var questNode);
 ```
 
 当前实现也会生成深度优先遍历 API：
 
 ```csharp
-foreach (var node in DTQuestTree.TraverseDepthFirstStatic("Root"))
+foreach (var node in DTQuestTree.TraverseDepthFirst(context, "Root"))
 {
     // visit node
 }

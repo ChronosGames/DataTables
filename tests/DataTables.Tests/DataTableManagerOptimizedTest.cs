@@ -209,7 +209,7 @@ namespace DataTables.Tests
             DataTableManager.UseDataSource(new FastMockDataSource());
 
             // Act
-            var stats = await DataTableManager.PreheatAsync(Priority.Critical);
+            var stats = (await DataTableManager.PreheatAsync(Priority.Critical)).Stats;
 
             // Assert
             stats.TableCount.Should().BeGreaterOrEqualTo(0, "应该有统计信息");
@@ -237,7 +237,7 @@ namespace DataTables.Tests
             });
 
             // Act
-            var stats = await DataTableManager.PreheatAsync(Priority.Critical);
+            var stats = (await DataTableManager.PreheatAsync(Priority.Critical)).Stats;
 
             // Assert
             stats.TableCount.Should().Be(1);
@@ -266,7 +266,7 @@ namespace DataTables.Tests
             });
 
             // Act
-            var stats = await DataTableManager.PreheatAsync(Priority.Critical);
+            var stats = (await DataTableManager.PreheatAsync(Priority.Critical)).Stats;
 
             // Assert
             stats.TableCount.Should().Be(3);
@@ -285,7 +285,7 @@ namespace DataTables.Tests
             ResetDataTableManager();
 
             // Act
-            var stats = await DataTableManager.PreheatAsync(Priority.Critical);
+            var stats = (await DataTableManager.PreheatAsync(Priority.Critical)).Stats;
 
             // Assert
             stats.TableCount.Should().Be(0);

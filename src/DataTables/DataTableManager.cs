@@ -50,6 +50,7 @@ namespace DataTables
         public readonly int CacheHitCount;
         public readonly int LoadedCount;
         public readonly int CanceledCount;
+        public readonly int NotStartedCount;
         public readonly int UnregisteredCount;
 
         public LoadStats(long loadTime, int tableCount, long memoryUsed)
@@ -63,6 +64,11 @@ namespace DataTables
         }
 
         public LoadStats(long loadTime, int tableCount, long memoryUsed, int successCount, int failureCount, int cacheHitCount, int loadedCount, int canceledCount, int unregisteredCount)
+            : this(loadTime, tableCount, memoryUsed, successCount, failureCount, cacheHitCount, loadedCount, canceledCount, 0, unregisteredCount)
+        {
+        }
+
+        public LoadStats(long loadTime, int tableCount, long memoryUsed, int successCount, int failureCount, int cacheHitCount, int loadedCount, int canceledCount, int notStartedCount, int unregisteredCount)
         {
             LoadTime = loadTime;
             TableCount = tableCount;
@@ -72,8 +78,75 @@ namespace DataTables
             CacheHitCount = cacheHitCount;
             LoadedCount = loadedCount;
             CanceledCount = canceledCount;
+            NotStartedCount = notStartedCount;
             UnregisteredCount = unregisteredCount;
         }
+    }
+
+    public sealed class PreheatOptions
+    {
+        public static PreheatOptions Default { get; } = new PreheatOptions();
+
+        public PreheatOptions(int maxConcurrency = 4, bool failFast = false)
+        {
+            if (maxConcurrency <= 0) throw new ArgumentOutOfRangeException(nameof(maxConcurrency));
+            MaxConcurrency = maxConcurrency;
+            FailFast = failFast;
+        }
+
+        public int MaxConcurrency { get; }
+        public bool FailFast { get; }
+    }
+
+    public enum PreheatTableStatus
+    {
+        CacheHit,
+        Loaded,
+        Failed,
+        Canceled,
+        NotStarted
+    }
+
+    public enum PreheatStopReason
+    {
+        None,
+        FailFast,
+        Canceled
+    }
+
+    public sealed class PreheatTableResult
+    {
+        public PreheatTableResult(Type tableType, string name, Priority priority, PreheatTableStatus status, long elapsedMilliseconds, Exception? exception = null)
+        {
+            TableType = tableType ?? throw new ArgumentNullException(nameof(tableType));
+            Name = name ?? string.Empty;
+            Priority = priority;
+            Status = status;
+            ElapsedMilliseconds = elapsedMilliseconds;
+            Exception = exception;
+        }
+
+        public Type TableType { get; }
+        public string Name { get; }
+        public Priority Priority { get; }
+        public PreheatTableStatus Status { get; }
+        public long ElapsedMilliseconds { get; }
+        public Exception? Exception { get; }
+    }
+
+    public sealed class PreheatResult
+    {
+        public PreheatResult(LoadStats stats, IReadOnlyList<PreheatTableResult> tables, PreheatStopReason stopReason)
+        {
+            Stats = stats;
+            Tables = tables ?? throw new ArgumentNullException(nameof(tables));
+            StopReason = stopReason;
+        }
+
+        public LoadStats Stats { get; }
+        public IReadOnlyList<PreheatTableResult> Tables { get; }
+        public PreheatStopReason StopReason { get; }
+        public bool StoppedEarly => StopReason != PreheatStopReason.None;
     }
 
     public readonly struct TableRegistration
@@ -141,7 +214,7 @@ namespace DataTables
             where TFactory : IDataTableFactory<TTable, TRow>, new()
             => DataTableFactoryManager.RegisterFactory<TTable, TRow, TFactory>();
 
-        public static async ValueTask<LoadStats> PreheatAsync(Priority priority = Priority.Critical | Priority.Normal, CancellationToken cancellationToken = default)
+        public static async ValueTask<PreheatResult> PreheatAsync(Priority priority = Priority.Critical | Priority.Normal, CancellationToken cancellationToken = default)
         {
             EnsureDefaultContextInitialized();
             if (!s_DefaultContext.HasTableRegistrations)
@@ -151,8 +224,21 @@ namespace DataTables
             return await s_DefaultContext.PreheatAsync(priority, cancellationToken);
         }
 
-        public static ValueTask<LoadStats> PreloadAllAsync(CancellationToken cancellationToken = default)
+        public static async ValueTask<PreheatResult> PreheatAsync(Priority priority, PreheatOptions options, CancellationToken cancellationToken = default)
+        {
+            EnsureDefaultContextInitialized();
+            if (!s_DefaultContext.HasTableRegistrations)
+            {
+                s_DefaultContext.RegisterTables(GetGeneratedTableRegistrations());
+            }
+            return await s_DefaultContext.PreheatAsync(priority, options, cancellationToken);
+        }
+
+        public static ValueTask<PreheatResult> PreloadAllAsync(CancellationToken cancellationToken = default)
             => PreheatAsync(Priority.All, cancellationToken);
+
+        public static ValueTask<PreheatResult> PreloadAllAsync(PreheatOptions options, CancellationToken cancellationToken = default)
+            => PreheatAsync(Priority.All, options, cancellationToken);
 
         public static ValueTask<T?> LoadAsync<T>(string name = "", CancellationToken cancellationToken = default) where T : DataTableBase
         {

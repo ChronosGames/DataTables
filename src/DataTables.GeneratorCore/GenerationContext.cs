@@ -40,6 +40,11 @@ public class GenerationContext
     public bool DisableTagsFilter { get; set; }
 
     /// <summary>
+    /// A1 中通过 tags= 声明的工作表/逻辑表标签集合。
+    /// </summary>
+    public string TableTags { get; set; } = string.Empty;
+
+    /// <summary>
     /// 表预热优先级：Critical/Normal/Lazy（默认Normal）
     /// </summary>
     public string Priority { get; set; } = "Normal";

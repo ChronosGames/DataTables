@@ -28,9 +28,9 @@ using DataTables;<# if (!string.IsNullOrEmpty(Using)) { #><#= Environment.NewLin
     {
 #>
     /// <summary><#= BuildSummary(item.Title) #></summary>
-    public static <#= GetPropertyTypeString(item) #> <#= item.Name #> => Get<#= item.Name #>(string.Empty);
+    public static <#= GetPropertyTypeString(item) #> Get<#= item.Name #>(DataTableContext context) => Get<#= item.Name #>(context, string.Empty);
 
-    public static <#= GetPropertyTypeString(item) #> Get<#= item.Name #>(string dataTableName) => DataTableManager.GetCached<<#= GenerationContext.DataTableClassName #>>(dataTableName)![0].<#= item.Name #>;
+    public static <#= GetPropertyTypeString(item) #> Get<#= item.Name #>(DataTableContext context, string dataTableName) => context.GetCached<<#= GenerationContext.DataTableClassName #>>(dataTableName)![0].<#= item.Name #>;
 
 <#
     }
@@ -81,8 +81,8 @@ public sealed partial class <#= GenerationContext.DataRowClassName #> : DataRowB
 <# if (!string.IsNullOrEmpty(Namespace)) { #>
 }
 <# } #>
-<#+
-    public KvTableTemplate(GenerationContext context) : base(context)
-    {
-    }
+<#
+    var normalizedKvOutput = GenerationEnvironment.ToString().TrimEnd('\r', '\n');
+    GenerationEnvironment.Clear();
+    Write(normalizedKvOutput);
 #>

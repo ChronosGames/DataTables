@@ -134,6 +134,13 @@ public sealed class DTScene : DataTables.DataTableBase
     public override System.Type Type => typeof(object);
     public override int Count => 0;
     public override bool ParseDataRow(int index, System.IO.BinaryReader reader) => true;
+    public static DocumentationSceneRow? GetById(DataTables.DataTableContext context, int id) => null;
+    public static DocumentationSceneRow? GetById(DataTables.DataTableContext context, string dataTableName, int id) => null;
+}
+
+public sealed class DocumentationSceneRow
+{
+    public string Name { get; init; } = string.Empty;
 }
 
 public sealed class DTItem : DataTables.DataTableBase
@@ -163,6 +170,7 @@ namespace UnityEngine
 public static class DataTableManagerExtension
 {
     public static void Preload(System.Action onLoaded) => onLoaded();
+    public static void Register(DataTables.DataTableContext context) { }
 }
 """;
 

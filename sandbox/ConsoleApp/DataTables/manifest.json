@@ -1,0 +1,36 @@
+{
+  "formatVersion": 1,
+  "version": "dffbf5b90eab68780d02910d57a581d59af6f2769fc454238793f2124554091b",
+  "entries": [
+    {
+      "name": "ConsoleApp.DTColumnTableSample",
+      "length": 109,
+      "version": "7106b815e15e282e68dd49fafd3f5db295220386b7a88103935f2d2bf555ac3f",
+      "hash": "7106b815e15e282e68dd49fafd3f5db295220386b7a88103935f2d2bf555ac3f"
+    },
+    {
+      "name": "ConsoleApp.DTDataTableSample",
+      "length": 259,
+      "version": "2707417dda8978df60093eaba75af1e252ca90d847179a4a3367582ae4a31ebf",
+      "hash": "2707417dda8978df60093eaba75af1e252ca90d847179a4a3367582ae4a31ebf"
+    },
+    {
+      "name": "ConsoleApp.DTDataTableSplitSample.x001",
+      "length": 308,
+      "version": "802407e73cbb25866c8b1da5f26d53d3b6f15781cebfc805a2a21a58d670b245",
+      "hash": "802407e73cbb25866c8b1da5f26d53d3b6f15781cebfc805a2a21a58d670b245"
+    },
+    {
+      "name": "ConsoleApp.DTDataTableSplitSample.x002",
+      "length": 308,
+      "version": "802407e73cbb25866c8b1da5f26d53d3b6f15781cebfc805a2a21a58d670b245",
+      "hash": "802407e73cbb25866c8b1da5f26d53d3b6f15781cebfc805a2a21a58d670b245"
+    },
+    {
+      "name": "ConsoleApp.DTMatrixSample",
+      "length": 107,
+      "version": "8cfd58fc8a231a98e192db04c3b8c738c6ddb1e3433f96f516bee45bc1d6eb32",
+      "hash": "8cfd58fc8a231a98e192db04c3b8c738c6ddb1e3433f96f516bee45bc1d6eb32"
+    }
+  ]
+}

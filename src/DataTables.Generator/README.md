@@ -8,6 +8,11 @@
 - RowTable: `dtgen=table` 行为记录，列为字段（默认）
 - MatrixTable: `dtgen=matrix` 二维键值矩阵
 - ColumnTable: `dtgen=column` 列为记录，行为字段
+- Kv/Graph/Tree: `dtgen=kv|graph|tree`
+
+## 表级标签
+
+A1 可声明 `tags=`，例如 `dtgen=table,class=Item,tags=S&C`。命令行 `-t` 是布尔表达式，例如 `C && !S`；未声明标签的表始终导出，每个 Sheet/child 独立判断。`disabletagsfilter` 会同时关闭表级标签和字段 `@tag` 过滤。非法声明定位到 A1，非法全局表达式在导出和 `validate` 中都会产生 Error diagnostic。
 
 ### ColumnTable 规范
 
@@ -25,3 +30,5 @@
 ```bash
 dotnet dtgen validate -i ./Tables -patterns "*.xlsx" -n MyGame -p DR --diagnostics-json-output ./artifacts/diagnostics.json
 ```
+
+普通导出与 `data` 子命令会在数据目录事务性写出运行时 `manifest.json`。部署时把它和 `.bytes` 一起复制；生成失败或输出提交冲突时保留上一版。生成器自己的 `.dtgen-manifest.json` / `.dtgen-data-manifest.json` 使用 v2 稳定相对标识，不应作为运行时资源。

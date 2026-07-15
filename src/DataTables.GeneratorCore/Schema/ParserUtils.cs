@@ -70,7 +70,7 @@ internal static class ParserUtils
 				return string.Empty;
 			case CellType.Numeric:
 				return DateUtil.IsCellDateFormatted(cell)
-					? ((DateTime)cell.DateCellValue).ToString("yyyy-MM-dd HH:mm:ss")
+					? (cell.DateCellValue?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty)
 					: cell.NumericCellValue.ToString();
 			case CellType.String:
 				return cell.StringCellValue.Trim();
@@ -93,7 +93,7 @@ internal static class ParserUtils
 				return string.Empty;
 			case CellType.Numeric:
 				return DateUtil.IsCellDateFormatted(cell)
-					? ((DateTime)cell.DateCellValue).ToString("yyyy-MM-dd HH:mm:ss")
+					? (cell.DateCellValue?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty)
 					: cell.NumericCellValue.ToString();
 			case CellType.String:
 				return cell.StringCellValue.Trim();

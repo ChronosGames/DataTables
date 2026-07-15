@@ -74,11 +74,13 @@ public sealed class DataTableGenerator
 
         // Collect
         var filePaths = new Dictionary<string, string>(IncrementalGenerationManifest.PathComparer);
-        foreach (var dir in inputDirectories)
+        var seenInputPaths = new HashSet<string>(IncrementalGenerationManifest.PathComparer);
+        for (var rootIndex = 0; rootIndex < inputDirectories.Length; rootIndex++)
         {
+            var dir = Path.GetFullPath(inputDirectories[rootIndex]);
             foreach (var searchPattern in searchPatterns)
             {
-                foreach (var filePath in Directory.EnumerateFiles(dir, searchPattern, SearchOption.AllDirectories))
+                foreach (var filePath in Directory.EnumerateFiles(dir, searchPattern, SearchOption.AllDirectories).OrderBy(path => path, IncrementalGenerationManifest.PathComparer))
                 {
                     var fileName = Path.GetFileName(filePath);
                     if (fileName.StartsWith('~'))
@@ -97,14 +99,15 @@ public sealed class DataTableGenerator
                         continue;
                     }
 
-                    var id = IncrementalGenerationManifest.GetInputId(filePath);
-                    if (filePaths.ContainsKey(id))
+                    var fullPath = Path.GetFullPath(filePath);
+                    if (!seenInputPaths.Add(fullPath))
                     {
-                        logger($"Repeated file: {id}");
+                        logger($"Repeated file: {fullPath}");
                         continue;
                     }
 
-                    filePaths.Add(id, filePath);
+                    var id = IncrementalGenerationManifest.GetInputId(rootIndex, dir, fullPath);
+                    filePaths.Add(id, fullPath);
                 }
             }
         }
@@ -163,19 +166,16 @@ public sealed class DataTableGenerator
         using var transaction = new GenerationTransaction();
         var stagingCodeOutputDir = string.IsNullOrEmpty(codeOutputDir) ? string.Empty : transaction.GetStagingDirectory(codeOutputDir);
         var stagingDataOutputDir = validateOnly ? string.Empty : transaction.GetStagingDirectory(dataOutputDir);
-        if (generateCode && !string.IsNullOrEmpty(previousManifest.CodeOutputDirectory) && Directory.Exists(previousManifest.CodeOutputDirectory))
-        {
-            transaction.GetStagingDirectory(previousManifest.CodeOutputDirectory);
-        }
-        if (!string.IsNullOrEmpty(previousManifest.DataOutputDirectory) && Directory.Exists(previousManifest.DataOutputDirectory))
-        {
-            transaction.GetStagingDirectory(previousManifest.DataOutputDirectory);
-        }
 
         var allDiagnostics = new System.Collections.Concurrent.ConcurrentBag<Diagnostic>();
         var allMetrics = new System.Collections.Concurrent.ConcurrentBag<DiagnosticsMetrics>();
         var contextsByInput = new ConcurrentDictionary<string, ConcurrentBag<GenerationContext>>(IncrementalGenerationManifest.PathComparer);
         var outputClaims = new OutputClaimRegistry();
+        var hasValidTagFilter = TagFilterUtils.TryValidateExpression(parseOptions.FilterColumnTags, out var tagFilterError);
+        if (!hasValidTagFilter)
+        {
+            allDiagnostics.Add(new Diagnostic(DiagnosticSeverity.Error, string.Empty, string.Empty, string.Empty, tagFilterError));
+        }
         if (generateCode)
         {
             outputClaims.ReserveGeneratedManager();
@@ -191,33 +191,33 @@ public sealed class DataTableGenerator
             }
         }
 
-        await Parallel.ForEachAsync(changedFiles, (pair, cancellationToken) => new ValueTask(GenerateExcel(pair.Value,
-            usingNamespace: usingNamespace,
-            forceOverwrite: forceOverwrite,
-            dataOutputDir: stagingDataOutputDir,
-            finalDataOutputDir: dataOutputDir,
-            codeOutputDir: stagingCodeOutputDir,
-            finalCodeOutputDir: codeOutputDir,
-            list: list,
-            prefixClassName: dataRowClassPrefix,
-            usingStrings: usingStrings,
-            filterColumnTags: filterColumnTags,
-            options: parseOptions,
-            collectDiagnostic: d => allDiagnostics.Add(d),
-            collectMetrics: m => allMetrics.Add(m),
-            collectContext: context => contextsByInput.GetOrAdd(pair.Key, _ => new ConcurrentBag<GenerationContext>()).Add(context),
-            generateCode: generateCode,
-            renderCode: renderCode,
-            validateOnly: validateOnly,
-            outputClaims: outputClaims,
-            failures: failures,
-            log: logger)));
+        if (hasValidTagFilter)
+        {
+            await Parallel.ForEachAsync(changedFiles, (pair, cancellationToken) => new ValueTask(GenerateExcel(pair.Value,
+                usingNamespace: usingNamespace,
+                forceOverwrite: forceOverwrite,
+                dataOutputDir: stagingDataOutputDir,
+                finalDataOutputDir: dataOutputDir,
+                codeOutputDir: stagingCodeOutputDir,
+                finalCodeOutputDir: codeOutputDir,
+                list: list,
+                prefixClassName: dataRowClassPrefix,
+                usingStrings: usingStrings,
+                options: parseOptions,
+                collectDiagnostic: d => allDiagnostics.Add(d),
+                collectMetrics: m => allMetrics.Add(m),
+                collectContext: context => contextsByInput.GetOrAdd(pair.Key, _ => new ConcurrentBag<GenerationContext>()).Add(context),
+                generateCode: generateCode,
+                renderCode: renderCode,
+                validateOnly: validateOnly,
+                outputClaims: outputClaims,
+                failures: failures,
+                log: logger)));
+        }
 
         var nextManifest = new IncrementalGenerationManifest
         {
             GeneratorFingerprint = generatorFingerprint,
-            CodeOutputDirectory = generateCode ? Path.GetFullPath(codeOutputDir) : string.Empty,
-            DataOutputDirectory = validateOnly ? string.Empty : Path.GetFullPath(dataOutputDir),
             Inputs = new Dictionary<string, IncrementalInputEntry>(IncrementalGenerationManifest.PathComparer),
         };
         foreach (var pair in filePaths.OrderBy(x => x.Key, IncrementalGenerationManifest.PathComparer))
@@ -273,13 +273,13 @@ public sealed class DataTableGenerator
             }
         }
 
-        var diagnosticList = allDiagnostics
+        var parserDiagnostics = allDiagnostics
             .OrderBy(x => x.File, StringComparer.Ordinal)
             .ThenBy(x => x.Sheet, StringComparer.Ordinal)
             .ThenBy(x => x.Cell, StringComparer.Ordinal)
             .ThenBy(x => x.Message, StringComparer.Ordinal)
             .ToArray();
-        foreach (var diagnostic in diagnosticList.Where(x => x.Severity == DiagnosticSeverity.Error))
+        foreach (var diagnostic in parserDiagnostics.Where(x => x.Severity == DiagnosticSeverity.Error))
         {
             var location = string.IsNullOrEmpty(diagnostic.Cell) ? string.Empty : $" ({diagnostic.Cell})";
             failures.Add(new GenerationFailure(
@@ -288,7 +288,52 @@ public sealed class DataTableGenerator
                 new InvalidDataException($"Generator diagnostic error{location}: {diagnostic.Message}")));
         }
 
-        // 输出诊断报告（可选）。诊断报告不属于生成事务，即使生成失败也必须可用。
+        if (!validateOnly && failures.IsEmpty)
+        {
+            try
+            {
+                PopulateOutputHashes(nextManifest, stagingCodeOutputDir, codeOutputDir, stagingDataOutputDir, dataOutputDir);
+                File.WriteAllText(
+                    transaction.GetStagingFile(Path.Combine(dataOutputDir, RuntimeDataManifest.FileName)),
+                    CreateRuntimeManifest(nextManifest, stagingDataOutputDir, dataOutputDir));
+                File.WriteAllText(transaction.GetStagingFile(manifestPath), nextManifest.Serialize());
+                ScheduleRemovedOutputs(transaction, previousManifest, nextManifest, generationMode, codeOutputDir, dataOutputDir);
+                transaction.Commit();
+            }
+            catch (Exception exception)
+            {
+                failures.Add(new GenerationFailure(
+                    dataOutputDir,
+                    null,
+                    new InvalidOperationException($"Generation transaction failed for code root '{codeOutputDir}' and data root '{dataOutputDir}': {exception.Message}", exception)));
+            }
+        }
+        transaction.Dispose();
+
+        logger(string.Empty);
+        logger("===========================================================");
+        var failureList = failures
+            .OrderBy(failure => failure.FilePath, StringComparer.Ordinal)
+            .ThenBy(failure => failure.SheetName, StringComparer.Ordinal)
+            .ThenBy(failure => failure.Exception.Message, StringComparer.Ordinal)
+            .ToArray();
+        var synthesizedDiagnostics = failureList
+            .Where(failure => !failure.Exception.Message.StartsWith("Generator diagnostic error", StringComparison.Ordinal))
+            .Select(failure => new Diagnostic(
+                DiagnosticSeverity.Error,
+                failure.FilePath,
+                failure.SheetName ?? string.Empty,
+                string.Empty,
+                failure.Exception.Message));
+        var diagnosticList = parserDiagnostics
+            .Concat(synthesizedDiagnostics)
+            .OrderBy(x => x.File, StringComparer.Ordinal)
+            .ThenBy(x => x.Sheet, StringComparer.Ordinal)
+            .ThenBy(x => x.Cell, StringComparer.Ordinal)
+            .ThenBy(x => x.Message, StringComparer.Ordinal)
+            .ToArray();
+
+        // 诊断报告不属于生成事务，即使提交失败或回滚也必须可用。
         if (!string.IsNullOrEmpty(diagnosticsJsonOutput))
         {
             var report = new DiagnosticsReport
@@ -304,23 +349,9 @@ public sealed class DataTableGenerator
             logger($"Diagnostics report saved: {diagnosticsJsonOutput}");
         }
 
-        if (!validateOnly)
-        {
-            PopulateOutputHashes(nextManifest, stagingCodeOutputDir, codeOutputDir, stagingDataOutputDir, dataOutputDir);
-            File.WriteAllText(transaction.GetStagingFile(manifestPath), nextManifest.Serialize());
-            ScheduleRemovedOutputs(transaction, previousManifest, nextManifest, generationMode);
-        }
-
-        logger(string.Empty);
-        logger("===========================================================");
-        var failureList = failures.ToArray();
         var succeededCount = list.Count(x => !x.Skiped);
         var skippedCount = list.Count(x => x.Skiped)
             + unchangedInputIds.Sum(id => previousManifest.Inputs[id].Registrations.Count);
-        if (!validateOnly && failureList.Length == 0)
-        {
-            transaction.Commit();
-        }
         logger(validateOnly
             ? $"数据表校验完成: {succeededCount} 成功，{failureList.Length} 失败，{skippedCount} 已跳过"
             : $"数据表导出完成: {succeededCount} 成功，{failureList.Length} 失败，{skippedCount} 已跳过");
@@ -391,7 +422,24 @@ public sealed class DataTableGenerator
         }
     }
 
-    private static void ScheduleRemovedOutputs(GenerationTransaction transaction, IncrementalGenerationManifest previousManifest, IncrementalGenerationManifest nextManifest, GenerationMode generationMode)
+    private static string CreateRuntimeManifest(IncrementalGenerationManifest manifest, string stagingDataOutputDir, string finalDataOutputDir)
+    {
+        var inputs = manifest.Inputs.Values
+            .SelectMany(entry => entry.Outputs)
+            .Where(output => output.Kind == "data")
+            .Select(output =>
+            {
+                var stagingPath = ResolveOutputPath(output, string.Empty, stagingDataOutputDir);
+                var finalPath = ResolveOutputPath(output, string.Empty, finalDataOutputDir);
+                var path = stagingPath != null && File.Exists(stagingPath) ? stagingPath : finalPath;
+                if (path == null || !File.Exists(path)) throw new InvalidOperationException($"Generated data output was not found: {output.Path}");
+                var name = Path.ChangeExtension(output.Path, null)!.Replace('\\', '/');
+                return new RuntimeDataManifestInput(name, path);
+            });
+        return RuntimeDataManifest.Create(inputs);
+    }
+
+    private static void ScheduleRemovedOutputs(GenerationTransaction transaction, IncrementalGenerationManifest previousManifest, IncrementalGenerationManifest nextManifest, GenerationMode generationMode, string codeOutputDir, string dataOutputDir)
     {
         var nextOutputKeys = nextManifest.Inputs.Values
             .SelectMany(entry => entry.Outputs)
@@ -410,7 +458,7 @@ public sealed class DataTableGenerator
                 continue;
             }
 
-            var path = ResolveOutputPath(output, previousManifest.CodeOutputDirectory, previousManifest.DataOutputDirectory);
+            var path = ResolveOutputPath(output, codeOutputDir, dataOutputDir);
             if (path != null)
             {
                 transaction.DeleteFile(path);
@@ -449,7 +497,7 @@ public sealed class DataTableGenerator
         return fullPath;
     }
 
-    private async Task GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string finalCodeOutputDir, string dataOutputDir, string finalDataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log, ParseOptions options, Action<Diagnostic> collectDiagnostic, Action<DiagnosticsMetrics> collectMetrics, Action<GenerationContext> collectContext, bool generateCode, bool renderCode, bool validateOnly, OutputClaimRegistry outputClaims, ConcurrentBag<GenerationFailure> failures)
+    private async Task GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string codeOutputDir, string finalCodeOutputDir, string dataOutputDir, string finalDataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log, ParseOptions options, Action<Diagnostic> collectDiagnostic, Action<DiagnosticsMetrics> collectMetrics, Action<GenerationContext> collectContext, bool generateCode, bool renderCode, bool validateOnly, OutputClaimRegistry outputClaims, ConcurrentBag<GenerationFailure> failures)
     {
         using (var logger = new ILogger(log))
         {
@@ -496,6 +544,18 @@ public sealed class DataTableGenerator
                     {
                         // 初始化GenerateContext；若 A1 未声明 DTGen= 则内部静默返回
                         processor.CreateGenerationContext(sheet);
+                        if (context.Failed)
+                        {
+                            continue;
+                        }
+
+                        if (context.Skiped)
+                        {
+                            list.Add(context);
+                            logger.Debug("  > (skip by table tags).");
+                            continue;
+                        }
+
                         if (!processor.ValidateGenerationContext())
                         {
                             if (!string.IsNullOrEmpty(context.DataSetType) && string.IsNullOrEmpty(context.ClassName))

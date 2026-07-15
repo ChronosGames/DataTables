@@ -17,12 +17,8 @@
         idx = text.IndexOf(marker, StringComparison.Ordinal);
     }
     Write(idx < 0 ? text : text.Insert(idx, insert));
-#><#+
-    public TreeTableTemplate(GenerationContext generationContext) : base(generationContext)
-    {
-    }
-
-    private string BuildTreeApi()
+#><#
+    string BuildTreeApi()
     {
         var row = GenerationContext.DataRowClassName;
         var table = GenerationContext.DataTableClassName;
@@ -65,17 +61,20 @@
         WL("        }");
         WL("    }");
         WL();
-        WL($"    public static IReadOnlyList<{row}> Roots => GetRootsStatic(string.Empty);");
-        WL($"    public static IReadOnlyList<{row}> StaticRoots => Roots;");
-        WL($"    public static IReadOnlyList<{row}> RootsStatic => Roots;");
-        WL($"    public static IReadOnlyList<{row}> GetRootsStatic(string dataTableName) => DataTableManager.GetCached<{table}>(dataTableName)?.GetRoots() ?? Array.Empty<{row}>();");
-        WL($"    public static IReadOnlyList<{row}>? GetChildrenStatic(string id) => GetChildrenStatic(string.Empty, id);");
-        WL($"    public static IReadOnlyList<{row}>? GetChildrenStatic(string dataTableName, string id) => DataTableManager.GetCached<{table}>(dataTableName)?.GetChildren(id);");
-        WL($"    public static {row}? GetParentStatic(string id) => GetParentStatic(string.Empty, id);");
-        WL($"    public static {row}? GetParentStatic(string dataTableName, string id) => DataTableManager.GetCached<{table}>(dataTableName)?.GetParent(id);");
-        WL($"    public static IEnumerable<{row}> TraverseDepthFirstStatic(string id) => TraverseDepthFirstStatic(string.Empty, id);");
-        WL($"    public static IEnumerable<{row}> TraverseDepthFirstStatic(string dataTableName, string id) => DataTableManager.GetCached<{table}>(dataTableName)?.TraverseDepthFirst(id) ?? Array.Empty<{row}>();");
+        WL($"    public static IReadOnlyList<{row}> GetRoots(DataTableContext context) => GetRoots(context, string.Empty);");
+        WL($"    public static IReadOnlyList<{row}> GetRoots(DataTableContext context, string dataTableName) => context.GetCached<{table}>(dataTableName)?.GetRoots() ?? Array.Empty<{row}>();");
+        WL($"    public static IReadOnlyList<{row}>? GetChildren(DataTableContext context, string id) => GetChildren(context, string.Empty, id);");
+        WL($"    public static IReadOnlyList<{row}>? GetChildren(DataTableContext context, string dataTableName, string id) => context.GetCached<{table}>(dataTableName)?.GetChildren(id);");
+        WL($"    public static {row}? GetParent(DataTableContext context, string id) => GetParent(context, string.Empty, id);");
+        WL($"    public static {row}? GetParent(DataTableContext context, string dataTableName, string id) => context.GetCached<{table}>(dataTableName)?.GetParent(id);");
+        WL($"    public static IEnumerable<{row}> TraverseDepthFirst(DataTableContext context, string id) => TraverseDepthFirst(context, string.Empty, id);");
+        WL($"    public static IEnumerable<{row}> TraverseDepthFirst(DataTableContext context, string dataTableName, string id) => context.GetCached<{table}>(dataTableName)?.TraverseDepthFirst(id) ?? Array.Empty<{row}>();");
         WL("    #endregion");
         return sb.ToString();
     }
+#>
+<#
+    var normalizedTreeOutput = GenerationEnvironment.ToString().TrimEnd('\r', '\n');
+    GenerationEnvironment.Clear();
+    Write(normalizedTreeOutput);
 #>

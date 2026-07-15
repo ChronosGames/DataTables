@@ -54,8 +54,14 @@ public class MyCommands
     /// <param name="prefixClassName">-p, Prefix of class names.</param>
     /// <param name="filterColumnTags">-t, Tags of filter columns.</param>
     /// <param name="forceOverwrite">-f, Overwrite generated files if the content is unchanged.</param>
+    /// <param name="strictNameValidation">Validate generated identifiers strictly.</param>
+    /// <param name="validateFormulaConsistency">Validate formula results against cached values.</param>
+    /// <param name="formulaPolicy">Formula evaluation policy: Off, ValidateOnly, or ForceEvaluate.</param>
+    /// <param name="columnCommentMarkerText">Marker used for comment columns.</param>
+    /// <param name="rowCommentMarkerText">Marker used for comment rows.</param>
     /// <param name="skipCellMarker">-skipCellMarker, Skip cell marker text.</param>
     /// <param name="arrayNestedSeparators">-arrayNestedSeparators, Separators per array nesting depth for plain-text arrays (e.g. "#|-" means depth1='#', depth2='|', depth3='-'). Empty keeps legacy behavior (prefer '|' else '#').</param>
+    /// <param name="diagnosticsJsonOutput">Optional JSON diagnostics output path.</param>
     [Command("")]
     public async Task ExportAll(
         string[] inputDirectories,
@@ -109,6 +115,14 @@ public class MyCommands
     /// <param name="usingNamespace">-n, Namespace of generated files.</param>
     /// <param name="prefixClassName">-p, Prefix of class names.</param>
     /// <param name="filterColumnTags">-t, Tags of filter columns.</param>
+    /// <param name="strictNameValidation">Validate generated identifiers strictly.</param>
+    /// <param name="validateFormulaConsistency">Validate formula results against cached values.</param>
+    /// <param name="formulaPolicy">Formula evaluation policy: Off, ValidateOnly, or ForceEvaluate.</param>
+    /// <param name="columnCommentMarkerText">Marker used for comment columns.</param>
+    /// <param name="rowCommentMarkerText">Marker used for comment rows.</param>
+    /// <param name="skipCellMarker">Skip cell marker text.</param>
+    /// <param name="arrayNestedSeparators">Separators per array nesting depth for plain-text arrays.</param>
+    /// <param name="diagnosticsJsonOutput">Optional JSON diagnostics output path.</param>
     [Command("data")]
     public async Task ExportOne(
         string[] inputDirectories,
@@ -164,6 +178,14 @@ public class MyCommands
     /// <param name="usingNamespace">-n, Namespace of generated files.</param>
     /// <param name="prefixClassName">-p, Prefix of class names.</param>
     /// <param name="filterColumnTags">-t, Tags of filter columns.</param>
+    /// <param name="strictNameValidation">Validate generated identifiers strictly.</param>
+    /// <param name="validateFormulaConsistency">Validate formula results against cached values.</param>
+    /// <param name="formulaPolicy">Formula evaluation policy: Off, ValidateOnly, or ForceEvaluate.</param>
+    /// <param name="columnCommentMarkerText">Marker used for comment columns.</param>
+    /// <param name="rowCommentMarkerText">Marker used for comment rows.</param>
+    /// <param name="skipCellMarker">Skip cell marker text.</param>
+    /// <param name="arrayNestedSeparators">Separators per array nesting depth for plain-text arrays.</param>
+    /// <param name="diagnosticsJsonOutput">Optional JSON diagnostics output path.</param>
     [Command("validate")]
     public async Task Validate(
         string[] inputDirectories,

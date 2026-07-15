@@ -36,7 +36,7 @@
         <TargetFiles1 Update="$(ProjectDir)LRUDataTableCache.cs">
             <UnitySubdirectory>Runtime\Caching\</UnitySubdirectory>
         </TargetFiles1>
-        <TargetFiles1 Update="$(ProjectDir)DataSourceDecorators.cs;$(ProjectDir)FileSystemDataSource.cs;$(ProjectDir)HashValidatingReadStream.cs;$(ProjectDir)IDataSource.cs;$(ProjectDir)NetworkDataSource.cs;$(ProjectDir)OwnedReadStream.cs;$(ProjectDir)UnityDataSourceAdapters.cs">
+        <TargetFiles1 Update="$(ProjectDir)DataSourceDecorators.cs;$(ProjectDir)DataSourceException.cs;$(ProjectDir)DataSourceManifestJson.cs;$(ProjectDir)FileSystemDataSource.cs;$(ProjectDir)HashValidatingReadStream.cs;$(ProjectDir)IDataSource.cs;$(ProjectDir)NetworkDataSource.cs;$(ProjectDir)OwnedReadStream.cs;$(ProjectDir)UnityDataSourceAdapters.cs">
             <UnitySubdirectory>Runtime\Sources\</UnitySubdirectory>
         </TargetFiles1>
         <TargetFiles1 Update="$(ProjectDir)DataTableBinaryFormat.cs;$(ProjectDir)DataTableBinaryLoader.cs;$(ProjectDir)DataTableBinaryProtocol.cs">

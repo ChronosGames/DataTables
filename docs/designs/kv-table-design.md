@@ -1,12 +1,12 @@
 # kv 表类型设计
 
-`kv` 是已实现的键值配置表类型，面向全局参数、功能开关、少量散列配置和不适合拆成多行记录的小型配置集合。当前生成器会解析 `DTGen=kv`，生成强类型静态属性，并提供 `TryGetValue<T>` / `GetValue<T>` 动态读取 API。
+`kv` 是已实现的键值配置表类型，面向全局参数、功能开关、少量散列配置和不适合拆成多行记录的小型配置集合。当前生成器会解析 `DTGen=kv`，生成 context-first 强类型静态方法，并提供实例 `TryGetValue<T>` / `GetValue<T>` 动态读取 API。
 
 ## 目标
 
 - 用统一格式表达全局参数和功能开关，避免为少量配置创建大量只有一行的数据表。
 - 复用现有 DataTables 类型系统，支持基础类型、枚举、数组、JSON 和自定义类型。
-- 生成强类型只读属性，减少业务代码中的字符串 key 查询。
+- 生成强类型只读方法，减少业务代码中的字符串 key 查询，并显式绑定数据上下文。
 - 在生成期发现重复 key、非法成员名、非法类型和不可写出的非法 value，降低运行时排错成本。
 - 保持 `DataTableProcessor` 编排路径稳定，通过已注册的 parser 和模板扩展实现。
 
@@ -44,23 +44,23 @@ DTGen=kv,class=GameConfig,namespace=Game.DataTables
 
 ## 生成代码形态
 
-当前实现会为每个 key 生成同名只读静态属性。示例：
+当前实现会为每个 key 生成 context-first 静态方法。示例：
 
 ```csharp
-var maxLevel = DTGameConfig.MaxLevel;
-var enablePvp = DTGameConfig.EnablePvp;
-var rewards = DTGameConfig.DefaultRewards;
+var maxLevel = DTGameConfig.GetMaxLevel(context);
+var enablePvp = DTGameConfig.GetEnablePvp(context);
+var rewards = DTGameConfig.GetDefaultRewards(context, "regional");
 ```
 
 当前实现还会生成动态访问 API：
 
 ```csharp
-var table = DataTableManager.GetCached<DTGameConfig>();
+var table = context.GetCached<DTGameConfig>();
 table?.TryGetValue("MaxLevel", out int? value);
 table?.GetValue<int>("MaxLevel");
 ```
 
-动态访问 API 只作为工具或兼容场景使用；业务代码应优先使用强类型属性。
+动态访问 API 只作为工具或兼容场景使用；业务代码应优先使用强类型方法。
 
 ## 类型与值解析
 

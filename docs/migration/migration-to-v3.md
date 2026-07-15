@@ -2,6 +2,21 @@
 
 DataTables v3 is a forced migration. Do not mix old `.bytes` files with newly generated C# code, and do not mix newly exported `.bytes` files with old runtime packages.
 
+## 2026 context-first generator update
+
+Projects already using binary format v3 do not need a binary protocol migration for this update: the `.bytes` format and version remain unchanged. The generated C# surface and preheat return contract are source-breaking, so consumers must regenerate code and rebuild:
+
+- `DTItem.GetById(id)` becomes `DTItem.GetById(context, id)`;
+- named queries become `DTItem.GetById(context, dataTableName, id)`;
+- KV static properties become `GetXxx(context[, name])` methods;
+- Matrix table/status properties become context methods;
+- graph/tree `*Static` aliases are removed;
+- `PreheatAsync`, `PreloadAllAsync` and generated `PreloadAsync` now return `PreheatResult`, whose aggregate values are under `.Stats`.
+
+The static `DataTableManager` facade and generated parameterless `DataTableManagerExtension.Register()` remain available, but generated queries never use the default Manager implicitly. Use an explicit `DataTableContext` for generated static queries or call the loaded table's instance query API.
+
+Generation now writes `manifest.json` next to `.bytes` in CodeAndData/DataOnly modes. Add this file to packaging and deployment rules. It is transactional with the data outputs; `validate` still writes nothing. Existing v1 incremental manifests are intentionally invalidated once and replaced by portable v2 manifests.
+
 ## Required steps
 
 1. Upgrade the DataTables runtime and generator package together.

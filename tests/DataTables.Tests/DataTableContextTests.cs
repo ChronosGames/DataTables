@@ -90,7 +90,7 @@ public sealed class DataTableContextTests
                 async (target, cancellationToken) => await target.LoadAsync<MockDataTable>(string.Empty, cancellationToken))
         });
 
-        var stats = await context.PreheatAsync(Priority.Critical);
+        var stats = (await context.PreheatAsync(Priority.Critical)).Stats;
 
         stats.TableCount.Should().Be(1);
         stats.LoadedCount.Should().Be(1);

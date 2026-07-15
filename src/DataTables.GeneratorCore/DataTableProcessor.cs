@@ -120,7 +120,7 @@ public sealed partial class DataTableProcessor : IDisposable
                 // 如果单元格为数字类型，根据单元格的样式格式化成字符串
                 if (DateUtil.IsCellDateFormatted(cell))
                 {
-                    return ((DateTime)cell.DateCellValue).ToString("yyyy-MM-dd HH:mm:ss");
+                    return cell.DateCellValue?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty;
                 }
                 else
                 {
@@ -162,7 +162,7 @@ public sealed partial class DataTableProcessor : IDisposable
         {
             result = m_FormulaEvaluator.Evaluate(cell);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             return;
         }

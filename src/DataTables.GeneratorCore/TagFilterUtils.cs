@@ -7,6 +7,38 @@ namespace DataTables.GeneratorCore;
 internal static class TagFilterUtils
 {
 	private static readonly Regex TokenRegex = new Regex(@"[A-Za-z0-9_]+|\(|\)|&&|\|\||!|AND|OR|NOT", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+	private static readonly Regex TagSetRegex = new Regex(@"^(?:[A-Za-z0-9_]+(?:[\s&|/;]+[A-Za-z0-9_]+)*)?$", RegexOptions.Compiled);
+
+	public static bool TryValidateTagSet(string tagText, out string error)
+	{
+		if (TagSetRegex.IsMatch(tagText?.Trim() ?? string.Empty))
+		{
+			error = string.Empty;
+			return true;
+		}
+
+		error = $"无效的表标签声明: '{tagText}'。tags= 仅接受字母、数字、下划线及 &、|、/、; 分隔符。";
+		return false;
+	}
+
+	public static bool TryValidateExpression(string expression, out string error)
+	{
+		try
+		{
+			if (!string.IsNullOrWhiteSpace(expression))
+			{
+				EvaluateExpression(new HashSet<string>(StringComparer.OrdinalIgnoreCase), expression);
+			}
+
+			error = string.Empty;
+			return true;
+		}
+		catch (FormatException exception)
+		{
+			error = $"无效的标签过滤表达式 '{expression}': {exception.Message}";
+			return false;
+		}
+	}
 
 	public static bool Evaluate(string columnTagText, string filterExpression)
 	{
@@ -55,8 +87,15 @@ internal static class TagFilterUtils
 		// Shunting-yard 转后缀表达式
 		var output = new List<string>();
 		var ops = new Stack<string>();
+		var position = 0;
 		foreach (Match m in TokenRegex.Matches(expr))
 		{
+			if (!string.IsNullOrWhiteSpace(expr.Substring(position, m.Index - position)))
+			{
+				throw new FormatException($"Unexpected token near '{expr.Substring(position, m.Index - position).Trim()}'");
+			}
+
+			position = m.Index + m.Length;
 			var tok = NormalizeToken(m.Value);
 			if (tok.Length == 0) continue;
 			if (IsIdentifier(tok))
@@ -83,6 +122,10 @@ internal static class TagFilterUtils
 				}
 				ops.Push(tok);
 			}
+		}
+		if (!string.IsNullOrWhiteSpace(expr.Substring(position)))
+		{
+			throw new FormatException($"Unexpected token near '{expr.Substring(position).Trim()}'");
 		}
 		while (ops.Count > 0)
 		{

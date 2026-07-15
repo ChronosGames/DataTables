@@ -49,20 +49,20 @@ DTGen=graph,class=LevelGraph,namespace=Game.DataTables
 推荐生成节点、边和图查询 API：
 
 ```csharp
-var nodes = DTLevelGraph.GetNodesStatic();
-var nodeId = DTLevelGraph.GetNodeStatic("Battle01");
-var outgoing = DTLevelGraph.GetOutgoingEdgesStatic("Battle01");
-var incoming = DTLevelGraph.GetIncomingEdgesStatic("Battle01");
-var incident = DTLevelGraph.GetIncidentEdgesStatic("Battle01");
-var successors = DTLevelGraph.GetSuccessorsStatic("Battle01");
-var predecessors = DTLevelGraph.GetPredecessorsStatic("Battle01");
-var neighbors = DTLevelGraph.GetNeighborsStatic("Battle01");
-var edges = DTLevelGraph.GetEdgesBetweenStatic("Start", "Battle01");
-var hasEdge = DTLevelGraph.HasEdgeStatic("Start", "Battle01");
-var hasPath = DTLevelGraph.HasPathStatic("Start", "Reward01");
-var path = DTLevelGraph.FindPathStatic("Start", "Reward01");
-var bfs = DTLevelGraph.TraverseBreadthFirstStatic("Start");
-DTLevelGraph.TryGetEdgeStatic("E001", out var edge);
+var nodes = DTLevelGraph.GetNodes(context);
+var nodeId = DTLevelGraph.GetNode(context, "Battle01");
+var outgoing = DTLevelGraph.GetOutgoingEdges(context, "Battle01");
+var incoming = DTLevelGraph.GetIncomingEdges(context, "Battle01");
+var incident = DTLevelGraph.GetIncidentEdges(context, "Battle01");
+var successors = DTLevelGraph.GetSuccessors(context, "Battle01");
+var predecessors = DTLevelGraph.GetPredecessors(context, "Battle01");
+var neighbors = DTLevelGraph.GetNeighbors(context, "Battle01");
+var edges = DTLevelGraph.GetEdgesBetween(context, "Start", "Battle01");
+var hasEdge = DTLevelGraph.HasEdge(context, "Start", "Battle01");
+var hasPath = DTLevelGraph.HasPath(context, "Start", "Reward01");
+var path = DTLevelGraph.FindPath(context, "Start", "Reward01");
+var bfs = DTLevelGraph.TraverseBreadthFirst(context, "Start");
+DTLevelGraph.TryGetEdge(context, "E001", out var edge);
 ```
 
 路径 API 使用广度优先搜索返回节点 id 路径；如果起点或终点不存在，或没有可达路径，则返回空列表。

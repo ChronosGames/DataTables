@@ -288,10 +288,11 @@ public sealed class GenerationTransactionTests
         var input = Directory.CreateDirectory(Path.Combine(root, "input")).FullName;
         var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
         var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
+        var reportPath = Path.Combine(root, "diagnostics", "validate-conflict.json");
         await CreateValidWorkbookAsync(Path.Combine(input, "items-a.xlsx"), id: 1);
         await CreateValidWorkbookAsync(Path.Combine(input, "items-b.xlsx"), id: 2);
 
-        var result = await GenerateAsync(input, code, data, generationMode: GenerationMode.ValidateOnly);
+        var result = await GenerateAsync(input, code, data, generationMode: GenerationMode.ValidateOnly, diagnosticsJsonOutput: reportPath);
 
         result.Succeeded.Should().BeFalse();
         result.Failures.Should().ContainSingle(x =>
@@ -299,6 +300,7 @@ public sealed class GenerationTransactionTests
             && x.Exception.Message.Contains("DataTables.Tests.Generated.DTItem.bytes"));
         Directory.GetFiles(code, "*", SearchOption.AllDirectories).Should().BeEmpty();
         Directory.GetFiles(data, "*", SearchOption.AllDirectories).Should().BeEmpty();
+        await AssertDiagnosticsHasErrorsAsync(reportPath, "Generated data output conflict");
     }
 
     [Fact]
@@ -402,6 +404,7 @@ public sealed class GenerationTransactionTests
         var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
         var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
         var workbookPath = Path.Combine(input, "split.xlsx");
+        var reportPath = Path.Combine(root, "diagnostics", "same-output-conflict.json");
         await CreateWorkbookAsync(workbookPath, workbook =>
         {
             AddTableSheet(workbook, "Split1", "SplitItem", 1, child: "x001");
@@ -411,17 +414,19 @@ public sealed class GenerationTransactionTests
         var managerCode = Path.Combine(code, "DataTableManagerExtension.cs");
         var dataFile = Path.Combine(data, "DataTables.Tests.Generated.DTSplitItem.x001.bytes");
         var manifest = Path.Combine(data, ".dtgen-manifest.json");
+        var runtimeManifest = Path.Combine(data, "manifest.json");
         var rowCodeText = await File.ReadAllTextAsync(rowCode);
         var managerCodeText = await File.ReadAllTextAsync(managerCode);
         var dataBytes = await File.ReadAllBytesAsync(dataFile);
         var manifestText = await File.ReadAllTextAsync(manifest);
+        var runtimeManifestText = await File.ReadAllTextAsync(runtimeManifest);
         await CreateWorkbookAsync(workbookPath, workbook =>
         {
             AddTableSheet(workbook, "Split1", "SplitItem", 1, child: "x001");
             AddTableSheet(workbook, "Split2", "SplitItem", 2, child: "x002", includeName: true);
         });
 
-        var result = await GenerateAsync(input, code, data, forceOverwrite: false);
+        var result = await GenerateAsync(input, code, data, forceOverwrite: false, diagnosticsJsonOutput: reportPath);
 
         result.Succeeded.Should().BeFalse();
         result.Failures.Should().ContainSingle(x =>
@@ -431,9 +436,11 @@ public sealed class GenerationTransactionTests
         (await File.ReadAllTextAsync(managerCode)).Should().Be(managerCodeText);
         (await File.ReadAllBytesAsync(dataFile)).Should().Equal(dataBytes);
         (await File.ReadAllTextAsync(manifest)).Should().Be(manifestText);
+        (await File.ReadAllTextAsync(runtimeManifest)).Should().Be(runtimeManifestText);
         File.Exists(Path.Combine(data, "DataTables.Tests.Generated.DTSplitItem.x002.bytes")).Should().BeFalse();
         Directory.EnumerateDirectories(code, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
         Directory.EnumerateDirectories(data, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+        await AssertDiagnosticsHasErrorsAsync(reportPath, "Generated code output conflict", "DRSplitItem.cs", "Split1", "Split2");
     }
 
     [Fact]
@@ -443,19 +450,22 @@ public sealed class GenerationTransactionTests
         var input = Directory.CreateDirectory(Path.Combine(root, "input")).FullName;
         var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
         var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
+        var reportPath = Path.Combine(root, "diagnostics", "old-new-owner-conflict.json");
         await CreateValidWorkbookAsync(Path.Combine(input, "items-a.xlsx"), id: 1);
         (await GenerateAsync(input, code, data)).Succeeded.Should().BeTrue();
         var rowCode = Path.Combine(code, "DRItem.cs");
         var managerCode = Path.Combine(code, "DataTableManagerExtension.cs");
         var dataFile = Path.Combine(data, "DataTables.Tests.Generated.DTItem.bytes");
         var manifest = Path.Combine(data, ".dtgen-manifest.json");
+        var runtimeManifest = Path.Combine(data, "manifest.json");
         var rowCodeText = await File.ReadAllTextAsync(rowCode);
         var managerCodeText = await File.ReadAllTextAsync(managerCode);
         var dataBytes = await File.ReadAllBytesAsync(dataFile);
         var manifestText = await File.ReadAllTextAsync(manifest);
+        var runtimeManifestText = await File.ReadAllTextAsync(runtimeManifest);
         await CreateValidWorkbookAsync(Path.Combine(input, "items-b.xlsx"), id: 2);
 
-        var result = await GenerateAsync(input, code, data, forceOverwrite: false);
+        var result = await GenerateAsync(input, code, data, forceOverwrite: false, diagnosticsJsonOutput: reportPath);
 
         result.Succeeded.Should().BeFalse();
         result.Failures.Should().ContainSingle(x =>
@@ -465,8 +475,55 @@ public sealed class GenerationTransactionTests
         (await File.ReadAllTextAsync(managerCode)).Should().Be(managerCodeText);
         (await File.ReadAllBytesAsync(dataFile)).Should().Equal(dataBytes);
         (await File.ReadAllTextAsync(manifest)).Should().Be(manifestText);
+        (await File.ReadAllTextAsync(runtimeManifest)).Should().Be(runtimeManifestText);
         Directory.EnumerateDirectories(code, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
         Directory.EnumerateDirectories(data, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+        await AssertDiagnosticsHasErrorsAsync(reportPath, "Generated data output conflict", "items-a", "items-b");
+    }
+
+    [Fact]
+    public async Task CommitFailure_ShouldRollbackAllOutputsAndReportTransactionDiagnostic()
+    {
+        var root = CreateTempDirectory();
+        var input = Directory.CreateDirectory(Path.Combine(root, "input")).FullName;
+        var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
+        var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
+        var workbookPath = Path.Combine(input, "items.xlsx");
+        var reportPath = Path.Combine(root, "diagnostics", "commit-failure.json");
+        await CreateValidWorkbookAsync(workbookPath, id: 1);
+        (await GenerateAsync(input, code, data)).Succeeded.Should().BeTrue();
+        var rowCode = Path.Combine(code, "DRItem.cs");
+        var managerCode = Path.Combine(code, "DataTableManagerExtension.cs");
+        var dataFile = Path.Combine(data, "DataTables.Tests.Generated.DTItem.bytes");
+        var incrementalManifest = Path.Combine(data, ".dtgen-manifest.json");
+        var runtimeManifest = Path.Combine(data, "manifest.json");
+        var rowCodeText = await File.ReadAllTextAsync(rowCode);
+        var managerCodeText = await File.ReadAllTextAsync(managerCode);
+        var dataBytes = await File.ReadAllBytesAsync(dataFile);
+        var incrementalManifestText = await File.ReadAllTextAsync(incrementalManifest);
+        var runtimeManifestText = await File.ReadAllTextAsync(runtimeManifest);
+        await CreateWorkbookAsync(workbookPath, workbook =>
+        {
+            AddTableSheet(workbook, "Items", "Item", 2);
+            AddTableSheet(workbook, "Blocked", "Blocked", 3);
+        });
+        var blockedOutput = Path.Combine(data, "DataTables.Tests.Generated.DTBlocked.bytes");
+        Directory.CreateDirectory(blockedOutput);
+
+        var result = await GenerateAsync(input, code, data, forceOverwrite: false, diagnosticsJsonOutput: reportPath);
+
+        result.Succeeded.Should().BeFalse();
+        result.Failures.Should().ContainSingle(failure => failure.Exception.Message.Contains("Generation transaction failed", StringComparison.Ordinal));
+        (await File.ReadAllTextAsync(rowCode)).Should().Be(rowCodeText);
+        (await File.ReadAllTextAsync(managerCode)).Should().Be(managerCodeText);
+        (await File.ReadAllBytesAsync(dataFile)).Should().Equal(dataBytes);
+        (await File.ReadAllTextAsync(incrementalManifest)).Should().Be(incrementalManifestText);
+        (await File.ReadAllTextAsync(runtimeManifest)).Should().Be(runtimeManifestText);
+        File.Exists(Path.Combine(code, "DRBlocked.cs")).Should().BeFalse();
+        Directory.Exists(blockedOutput).Should().BeTrue();
+        Directory.EnumerateDirectories(code, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+        Directory.EnumerateDirectories(data, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+        await AssertDiagnosticsHasErrorsAsync(reportPath, "Generation transaction failed", code, data);
     }
 
     private static Task<GenerationResult> GenerateAsync(string input, string code, string data, bool forceOverwrite = true, Action<string>? logger = null, string dataRowClassPrefix = "DR", string? diagnosticsJsonOutput = null, GenerationMode? generationMode = null)
@@ -550,5 +607,19 @@ public sealed class GenerationTransactionTests
         var path = Path.Combine(Path.GetTempPath(), "dt_generation_transaction_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(path);
         return path;
+    }
+
+    private static async Task AssertDiagnosticsHasErrorsAsync(string reportPath, params string[] expectedFragments)
+    {
+        File.Exists(reportPath).Should().BeTrue();
+        using var report = JsonDocument.Parse(await File.ReadAllTextAsync(reportPath));
+        report.RootElement.GetProperty("ErrorCount").GetInt32().Should().BeGreaterThan(0);
+        var messages = report.RootElement.GetProperty("Items").EnumerateArray()
+            .Select(item => item.GetProperty("Message").GetString() ?? string.Empty)
+            .ToArray();
+        foreach (var fragment in expectedFragments)
+        {
+            messages.Should().Contain(message => message.Contains(fragment, StringComparison.Ordinal));
+        }
     }
 }

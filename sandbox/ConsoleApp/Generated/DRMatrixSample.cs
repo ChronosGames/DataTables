@@ -64,17 +64,14 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
     /// <summary>
     /// 获取数据矩阵实例 - 便于访问基类方法 (静态方法)
     /// </summary>
-    public static DTMatrixSample Table
-    {
-        get => GetTable(string.Empty);
-    }
+    public static DTMatrixSample GetTable(DataTableContext context) => GetTable(context, string.Empty);
 
-    public static DTMatrixSample GetTable(string dataTableName)
+    public static DTMatrixSample GetTable(DataTableContext context, string dataTableName)
     {
-        var table = DataTableManager.GetCached<DTMatrixSample>(dataTableName);
+        var table = context.GetCached<DTMatrixSample>(dataTableName);
         if (table == null)
         {
-            throw new InvalidOperationException($"DTMatrixSample '{dataTableName}' is not loaded. Call DataTableManager.LoadAsync<DTMatrixSample>(dataTableName) first.");
+            throw new InvalidOperationException($"DTMatrixSample '{dataTableName}' is not loaded. Call context.LoadAsync<DTMatrixSample>(dataTableName) first.");
         }
         return table;
     }
@@ -82,27 +79,27 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
     /// <summary>
     /// 安全获取数据矩阵实例 - 返回null如果未加载 (静态方法)
     /// </summary>
-    public static DTMatrixSample? TableOrNull => GetTableOrNull(string.Empty);
+    public static DTMatrixSample? GetTableOrNull(DataTableContext context) => GetTableOrNull(context, string.Empty);
 
-    public static DTMatrixSample? GetTableOrNull(string dataTableName) => DataTableManager.GetCached<DTMatrixSample>(dataTableName);
+    public static DTMatrixSample? GetTableOrNull(DataTableContext context, string dataTableName) => context.GetCached<DTMatrixSample>(dataTableName);
 
     /// <summary>
     /// 检查数据矩阵是否已加载 (静态方法)
     /// </summary>
-    public static bool IsLoaded => IsTableLoaded(string.Empty);
+    public static bool IsLoaded(DataTableContext context) => IsLoaded(context, string.Empty);
 
-    public static bool IsTableLoaded(string dataTableName) => DataTableManager.IsLoaded<DTMatrixSample>(dataTableName);
+    public static bool IsLoaded(DataTableContext context, string dataTableName) => context.IsLoaded<DTMatrixSample>(dataTableName);
 
     /// <summary>
     /// 根据Key1和Key2获取数据值 (静态方法)
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool? GetRow(short key1, long key2) => GetRow(string.Empty, key1, key2);
+    public static bool? GetRow(DataTableContext context, short key1, long key2) => GetRow(context, string.Empty, key1, key2);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool? GetRow(string dataTableName, short key1, long key2)
+    public static bool? GetRow(DataTableContext context, string dataTableName, short key1, long key2)
     {
-        var table = DataTableManager.GetCached<DTMatrixSample>(dataTableName);
+        var table = context.GetCached<DTMatrixSample>(dataTableName);
         return table?.Get(key1, key2);
     }
 
@@ -110,12 +107,12 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
     /// 根据Key1和Key2获取数据值，如果不存在则返回默认值 (静态方法)
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool GetRowOrDefault(short key1, long key2) => GetRowOrDefault(string.Empty, key1, key2);
+    public static bool GetRowOrDefault(DataTableContext context, short key1, long key2) => GetRowOrDefault(context, string.Empty, key1, key2);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool GetRowOrDefault(string dataTableName, short key1, long key2)
+    public static bool GetRowOrDefault(DataTableContext context, string dataTableName, short key1, long key2)
     {
-        var table = DataTableManager.GetCached<DTMatrixSample>(dataTableName);
+        var table = context.GetCached<DTMatrixSample>(dataTableName);
         return table != null ? table.Get(key1, key2)! : default!;
     }
 
@@ -175,5 +172,6 @@ public sealed class DRMatrixSample : MatrixDataRowBase<short, long, bool>
         return true;
     }
 }
+
 
 }

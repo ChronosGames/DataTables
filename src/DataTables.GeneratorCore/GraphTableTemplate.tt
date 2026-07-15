@@ -13,12 +13,8 @@
         idx = text.IndexOf("    #endregion\n}", StringComparison.Ordinal);
     }
     Write(idx < 0 ? text : text.Insert(idx, BuildGraphApi()));
-#><#+
-    public GraphTableTemplate(GenerationContext generationContext) : base(generationContext)
-    {
-    }
-
-    private string BuildGraphApi()
+#><#
+    string BuildGraphApi()
     {
         var row = GenerationContext.DataRowClassName;
         var table = GenerationContext.DataTableClassName;
@@ -181,49 +177,54 @@
         WL("    public bool ContainsNode(string nodeId) => GetDataRowsGroupByFrom(nodeId) != null || GetDataRowsGroupByTo(nodeId) != null;");
         WL("    public string? GetNode(string nodeId) => ContainsNode(nodeId) ? nodeId : null;");
         WL();
-        WL($"    private static {table}? GetGraphTableStatic(string dataTableName) => DataTableManager.GetCached<{table}>(dataTableName);");
-        WL($"    public static int EdgeCountStatic => GetEdgeCountStatic(string.Empty);");
-        WL($"    public static int GetEdgeCountStatic(string dataTableName) => GetGraphTableStatic(dataTableName)?.EdgeCount ?? 0;");
-        WL($"    public static int NodeCountStatic => GetNodeCountStatic(string.Empty);");
-        WL($"    public static int GetNodeCountStatic(string dataTableName) => GetGraphTableStatic(dataTableName)?.NodeCount ?? 0;");
-        WL($"    public static IReadOnlyList<string> GetNodesStatic() => GetNodesStatic(string.Empty);");
-        WL($"    public static IReadOnlyList<string> GetNodesStatic(string dataTableName) => GetGraphTableStatic(dataTableName)?.GetNodes() ?? Array.Empty<string>();");
-        WL($"    public static {row}? GetEdgeStatic(string edgeId) => GetEdgeStatic(string.Empty, edgeId);");
-        WL($"    public static {row}? GetEdgeStatic(string dataTableName, string edgeId) => GetGraphTableStatic(dataTableName)?.GetEdge(edgeId);");
-        WL($"    public static bool TryGetEdgeStatic(string edgeId, out {row}? edge) => TryGetEdgeStatic(string.Empty, edgeId, out edge);");
-        WL($"    public static bool TryGetEdgeStatic(string dataTableName, string edgeId, out {row}? edge)");
+        WL($"    private static {table}? GetGraphTable(DataTableContext context, string dataTableName) => context.GetCached<{table}>(dataTableName);");
+        WL($"    public static int GetEdgeCount(DataTableContext context) => GetEdgeCount(context, string.Empty);");
+        WL($"    public static int GetEdgeCount(DataTableContext context, string dataTableName) => GetGraphTable(context, dataTableName)?.EdgeCount ?? 0;");
+        WL($"    public static int GetNodeCount(DataTableContext context) => GetNodeCount(context, string.Empty);");
+        WL($"    public static int GetNodeCount(DataTableContext context, string dataTableName) => GetGraphTable(context, dataTableName)?.NodeCount ?? 0;");
+        WL($"    public static IReadOnlyList<string> GetNodes(DataTableContext context) => GetNodes(context, string.Empty);");
+        WL($"    public static IReadOnlyList<string> GetNodes(DataTableContext context, string dataTableName) => GetGraphTable(context, dataTableName)?.GetNodes() ?? Array.Empty<string>();");
+        WL($"    public static {row}? GetEdge(DataTableContext context, string edgeId) => GetEdge(context, string.Empty, edgeId);");
+        WL($"    public static {row}? GetEdge(DataTableContext context, string dataTableName, string edgeId) => GetGraphTable(context, dataTableName)?.GetEdge(edgeId);");
+        WL($"    public static bool TryGetEdge(DataTableContext context, string edgeId, out {row}? edge) => TryGetEdge(context, string.Empty, edgeId, out edge);");
+        WL($"    public static bool TryGetEdge(DataTableContext context, string dataTableName, string edgeId, out {row}? edge)");
         WL("    {");
-        WL("        var table = GetGraphTableStatic(dataTableName);");
+        WL("        var table = GetGraphTable(context, dataTableName);");
         WL("        edge = null;");
         WL("        return table != null && table.TryGetEdge(edgeId, out edge);");
         WL("    }");
-        WL($"    public static IReadOnlyList<{row}> GetOutgoingEdgesStatic(string nodeId) => GetOutgoingEdgesStatic(string.Empty, nodeId);");
-        WL($"    public static IReadOnlyList<{row}> GetOutgoingEdgesStatic(string dataTableName, string nodeId) => GetGraphTableStatic(dataTableName)?.GetOutgoingEdges(nodeId) ?? Array.Empty<{row}>();");
-        WL($"    public static IReadOnlyList<{row}> GetIncomingEdgesStatic(string nodeId) => GetIncomingEdgesStatic(string.Empty, nodeId);");
-        WL($"    public static IReadOnlyList<{row}> GetIncomingEdgesStatic(string dataTableName, string nodeId) => GetGraphTableStatic(dataTableName)?.GetIncomingEdges(nodeId) ?? Array.Empty<{row}>();");
-        WL($"    public static IReadOnlyList<{row}> GetIncidentEdgesStatic(string nodeId) => GetIncidentEdgesStatic(string.Empty, nodeId);");
-        WL($"    public static IReadOnlyList<{row}> GetIncidentEdgesStatic(string dataTableName, string nodeId) => GetGraphTableStatic(dataTableName)?.GetIncidentEdges(nodeId) ?? Array.Empty<{row}>();");
-        WL($"    public static IReadOnlyList<string> GetSuccessorsStatic(string nodeId) => GetSuccessorsStatic(string.Empty, nodeId);");
-        WL($"    public static IReadOnlyList<string> GetSuccessorsStatic(string dataTableName, string nodeId) => GetGraphTableStatic(dataTableName)?.GetSuccessors(nodeId) ?? Array.Empty<string>();");
-        WL($"    public static IReadOnlyList<string> GetPredecessorsStatic(string nodeId) => GetPredecessorsStatic(string.Empty, nodeId);");
-        WL($"    public static IReadOnlyList<string> GetPredecessorsStatic(string dataTableName, string nodeId) => GetGraphTableStatic(dataTableName)?.GetPredecessors(nodeId) ?? Array.Empty<string>();");
-        WL($"    public static IReadOnlyList<string> GetNeighborsStatic(string nodeId) => GetNeighborsStatic(string.Empty, nodeId);");
-        WL($"    public static IReadOnlyList<string> GetNeighborsStatic(string dataTableName, string nodeId) => GetGraphTableStatic(dataTableName)?.GetNeighbors(nodeId) ?? Array.Empty<string>();");
-        WL($"    public static IReadOnlyList<{row}> GetEdgesBetweenStatic(string from, string to) => GetEdgesBetweenStatic(string.Empty, from, to);");
-        WL($"    public static IReadOnlyList<{row}> GetEdgesBetweenStatic(string dataTableName, string from, string to) => GetGraphTableStatic(dataTableName)?.GetEdgesBetween(from, to) ?? Array.Empty<{row}>();");
-        WL($"    public static bool HasEdgeStatic(string from, string to) => HasEdgeStatic(string.Empty, from, to);");
-        WL($"    public static bool HasEdgeStatic(string dataTableName, string from, string to) => GetGraphTableStatic(dataTableName)?.HasEdge(from, to) == true;");
-        WL($"    public static bool HasPathStatic(string from, string to) => HasPathStatic(string.Empty, from, to);");
-        WL($"    public static bool HasPathStatic(string dataTableName, string from, string to) => GetGraphTableStatic(dataTableName)?.HasPath(from, to) == true;");
-        WL($"    public static IReadOnlyList<string> FindPathStatic(string from, string to) => FindPathStatic(string.Empty, from, to);");
-        WL($"    public static IReadOnlyList<string> FindPathStatic(string dataTableName, string from, string to) => GetGraphTableStatic(dataTableName)?.FindPath(from, to) ?? Array.Empty<string>();");
-        WL($"    public static IEnumerable<string> TraverseBreadthFirstStatic(string startNodeId) => TraverseBreadthFirstStatic(string.Empty, startNodeId);");
-        WL($"    public static IEnumerable<string> TraverseBreadthFirstStatic(string dataTableName, string startNodeId) => GetGraphTableStatic(dataTableName)?.TraverseBreadthFirst(startNodeId) ?? Array.Empty<string>();");
-        WL($"    public static bool ContainsNodeStatic(string nodeId) => ContainsNodeStatic(string.Empty, nodeId);");
-        WL($"    public static bool ContainsNodeStatic(string dataTableName, string nodeId) => GetGraphTableStatic(dataTableName)?.ContainsNode(nodeId) == true;");
-        WL($"    public static string? GetNodeStatic(string nodeId) => GetNodeStatic(string.Empty, nodeId);");
-        WL($"    public static string? GetNodeStatic(string dataTableName, string nodeId) => GetGraphTableStatic(dataTableName)?.GetNode(nodeId);");
+        WL($"    public static IReadOnlyList<{row}> GetOutgoingEdges(DataTableContext context, string nodeId) => GetOutgoingEdges(context, string.Empty, nodeId);");
+        WL($"    public static IReadOnlyList<{row}> GetOutgoingEdges(DataTableContext context, string dataTableName, string nodeId) => GetGraphTable(context, dataTableName)?.GetOutgoingEdges(nodeId) ?? Array.Empty<{row}>();");
+        WL($"    public static IReadOnlyList<{row}> GetIncomingEdges(DataTableContext context, string nodeId) => GetIncomingEdges(context, string.Empty, nodeId);");
+        WL($"    public static IReadOnlyList<{row}> GetIncomingEdges(DataTableContext context, string dataTableName, string nodeId) => GetGraphTable(context, dataTableName)?.GetIncomingEdges(nodeId) ?? Array.Empty<{row}>();");
+        WL($"    public static IReadOnlyList<{row}> GetIncidentEdges(DataTableContext context, string nodeId) => GetIncidentEdges(context, string.Empty, nodeId);");
+        WL($"    public static IReadOnlyList<{row}> GetIncidentEdges(DataTableContext context, string dataTableName, string nodeId) => GetGraphTable(context, dataTableName)?.GetIncidentEdges(nodeId) ?? Array.Empty<{row}>();");
+        WL($"    public static IReadOnlyList<string> GetSuccessors(DataTableContext context, string nodeId) => GetSuccessors(context, string.Empty, nodeId);");
+        WL($"    public static IReadOnlyList<string> GetSuccessors(DataTableContext context, string dataTableName, string nodeId) => GetGraphTable(context, dataTableName)?.GetSuccessors(nodeId) ?? Array.Empty<string>();");
+        WL($"    public static IReadOnlyList<string> GetPredecessors(DataTableContext context, string nodeId) => GetPredecessors(context, string.Empty, nodeId);");
+        WL($"    public static IReadOnlyList<string> GetPredecessors(DataTableContext context, string dataTableName, string nodeId) => GetGraphTable(context, dataTableName)?.GetPredecessors(nodeId) ?? Array.Empty<string>();");
+        WL($"    public static IReadOnlyList<string> GetNeighbors(DataTableContext context, string nodeId) => GetNeighbors(context, string.Empty, nodeId);");
+        WL($"    public static IReadOnlyList<string> GetNeighbors(DataTableContext context, string dataTableName, string nodeId) => GetGraphTable(context, dataTableName)?.GetNeighbors(nodeId) ?? Array.Empty<string>();");
+        WL($"    public static IReadOnlyList<{row}> GetEdgesBetween(DataTableContext context, string from, string to) => GetEdgesBetween(context, string.Empty, from, to);");
+        WL($"    public static IReadOnlyList<{row}> GetEdgesBetween(DataTableContext context, string dataTableName, string from, string to) => GetGraphTable(context, dataTableName)?.GetEdgesBetween(from, to) ?? Array.Empty<{row}>();");
+        WL($"    public static bool HasEdge(DataTableContext context, string from, string to) => HasEdge(context, string.Empty, from, to);");
+        WL($"    public static bool HasEdge(DataTableContext context, string dataTableName, string from, string to) => GetGraphTable(context, dataTableName)?.HasEdge(from, to) == true;");
+        WL($"    public static bool HasPath(DataTableContext context, string from, string to) => HasPath(context, string.Empty, from, to);");
+        WL($"    public static bool HasPath(DataTableContext context, string dataTableName, string from, string to) => GetGraphTable(context, dataTableName)?.HasPath(from, to) == true;");
+        WL($"    public static IReadOnlyList<string> FindPath(DataTableContext context, string from, string to) => FindPath(context, string.Empty, from, to);");
+        WL($"    public static IReadOnlyList<string> FindPath(DataTableContext context, string dataTableName, string from, string to) => GetGraphTable(context, dataTableName)?.FindPath(from, to) ?? Array.Empty<string>();");
+        WL($"    public static IEnumerable<string> TraverseBreadthFirst(DataTableContext context, string startNodeId) => TraverseBreadthFirst(context, string.Empty, startNodeId);");
+        WL($"    public static IEnumerable<string> TraverseBreadthFirst(DataTableContext context, string dataTableName, string startNodeId) => GetGraphTable(context, dataTableName)?.TraverseBreadthFirst(startNodeId) ?? Array.Empty<string>();");
+        WL($"    public static bool ContainsNode(DataTableContext context, string nodeId) => ContainsNode(context, string.Empty, nodeId);");
+        WL($"    public static bool ContainsNode(DataTableContext context, string dataTableName, string nodeId) => GetGraphTable(context, dataTableName)?.ContainsNode(nodeId) == true;");
+        WL($"    public static string? GetNode(DataTableContext context, string nodeId) => GetNode(context, string.Empty, nodeId);");
+        WL($"    public static string? GetNode(DataTableContext context, string dataTableName, string nodeId) => GetGraphTable(context, dataTableName)?.GetNode(nodeId);");
         WL("    #endregion");
         return sb.ToString();
     }
+#>
+<#
+    var normalizedGraphOutput = GenerationEnvironment.ToString().TrimEnd('\r', '\n');
+    GenerationEnvironment.Clear();
+    Write(normalizedGraphOutput);
 #>

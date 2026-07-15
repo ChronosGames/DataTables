@@ -208,51 +208,137 @@ namespace DataTables
             m_TableRegistrations.Clear();
         }
 
-        public async ValueTask<LoadStats> PreheatAsync(Priority priorities = Priority.Critical | Priority.Normal, CancellationToken cancellationToken = default)
+        public ValueTask<PreheatResult> PreheatAsync(Priority priorities = Priority.Critical | Priority.Normal, CancellationToken cancellationToken = default)
+            => PreheatAsync(priorities, PreheatOptions.Default, cancellationToken);
+
+        public async ValueTask<PreheatResult> PreheatAsync(Priority priorities, PreheatOptions options, CancellationToken cancellationToken = default)
         {
+            if (options == null) throw new ArgumentNullException(nameof(options));
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
             var started = System.Diagnostics.Stopwatch.GetTimestamp();
             var memoryBefore = GC.GetTotalMemory(false);
             var registrations = m_TableRegistrations.Values
                 .Where(registration => (priorities & registration.Priority) != 0)
+                .OrderBy(registration => registration.TableType.FullName ?? registration.TableType.Name, StringComparer.Ordinal)
+                .ThenBy(registration => registration.Name, StringComparer.Ordinal)
                 .ToArray();
 
             if (registrations.Length == 0)
             {
-                return new LoadStats(0, 0, 0, 0, 0, 0, 0, 0, 1);
+                return new PreheatResult(new LoadStats(0, 0, 0, 0, 0, 0, 0, 0, 0, 1), Array.Empty<PreheatTableResult>(), PreheatStopReason.None);
             }
 
-            var tasks = registrations.Select(async registration =>
+            var results = new PreheatTableResult?[registrations.Length];
+            var schedulerGate = new object();
+            var nextIndex = 0;
+            var stopReason = PreheatStopReason.None;
+
+            async Task RunWorkerAsync()
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (IsLoaded(new TypeNamePair(registration.TableType, registration.Name))) return (CacheHit: true, Loaded: false, Canceled: false);
-                try
+                while (true)
                 {
-                    var table = await registration.LoadAsync(this, cancellationToken);
-                    return (CacheHit: false, Loaded: table != null, Canceled: false);
+                    int index;
+                    lock (schedulerGate)
+                    {
+                        if (stopReason != PreheatStopReason.None || nextIndex >= registrations.Length)
+                        {
+                            return;
+                        }
+
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            stopReason = PreheatStopReason.Canceled;
+                            return;
+                        }
+
+                        index = nextIndex++;
+                    }
+
+                    var result = await PreheatTableAsync(registrations[index], cancellationToken);
+                    results[index] = result;
+                    lock (schedulerGate)
+                    {
+                        if (result.Status == PreheatTableStatus.Canceled)
+                        {
+                            stopReason = PreheatStopReason.Canceled;
+                        }
+                        else if (result.Status == PreheatTableStatus.Failed && options.FailFast && stopReason == PreheatStopReason.None)
+                        {
+                            stopReason = PreheatStopReason.FailFast;
+                        }
+                    }
                 }
-                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                {
-                    return (CacheHit: false, Loaded: false, Canceled: true);
-                }
-                catch
-                {
-                    return (CacheHit: false, Loaded: false, Canceled: false);
-                }
-            });
-            var results = await Task.WhenAll(tasks);
-            var cacheHits = results.Count(result => result.CacheHit);
-            var loaded = results.Count(result => result.Loaded);
-            var canceled = results.Count(result => result.Canceled);
-            var failures = results.Length - cacheHits - loaded - canceled;
+            }
+
+            var workerCount = Math.Min(options.MaxConcurrency, registrations.Length);
+            var workers = new Task[workerCount];
+            for (var i = 0; i < workers.Length; i++) workers[i] = RunWorkerAsync();
+            await Task.WhenAll(workers);
+
+            if (cancellationToken.IsCancellationRequested
+                && stopReason == PreheatStopReason.None
+                && nextIndex < registrations.Length)
+            {
+                stopReason = PreheatStopReason.Canceled;
+            }
+
+            for (var i = 0; i < results.Length; i++)
+            {
+                results[i] ??= new PreheatTableResult(
+                    registrations[i].TableType,
+                    registrations[i].Name,
+                    registrations[i].Priority,
+                    PreheatTableStatus.NotStarted,
+                    0);
+            }
+
+            var tableResults = results.Select(result => result!).ToArray();
+            var cacheHits = tableResults.Count(result => result.Status == PreheatTableStatus.CacheHit);
+            var loaded = tableResults.Count(result => result.Status == PreheatTableStatus.Loaded);
+            var canceled = tableResults.Count(result => result.Status == PreheatTableStatus.Canceled);
+            var failures = tableResults.Count(result => result.Status == PreheatTableStatus.Failed);
+            var notStarted = tableResults.Count(result => result.Status == PreheatTableStatus.NotStarted);
             var elapsed = (long)((System.Diagnostics.Stopwatch.GetTimestamp() - started) * 1000.0 / System.Diagnostics.Stopwatch.Frequency);
-            var stats = new LoadStats(elapsed, results.Length, GC.GetTotalMemory(false) - memoryBefore, cacheHits + loaded, failures, cacheHits, loaded, canceled, 0);
+            var stats = new LoadStats(elapsed, tableResults.Length, GC.GetTotalMemory(false) - memoryBefore, cacheHits + loaded, failures, cacheHits, loaded, canceled, notStarted, 0);
             m_ProfilingHook?.Invoke(stats);
-            return stats;
+            return new PreheatResult(stats, tableResults, stopReason);
         }
 
-        public ValueTask<LoadStats> PreloadAllAsync(CancellationToken cancellationToken = default) => PreheatAsync(Priority.All, cancellationToken);
+        public ValueTask<PreheatResult> PreloadAllAsync(CancellationToken cancellationToken = default) => PreheatAsync(Priority.All, cancellationToken);
+
+        public ValueTask<PreheatResult> PreloadAllAsync(PreheatOptions options, CancellationToken cancellationToken = default) => PreheatAsync(Priority.All, options, cancellationToken);
+
+        private async ValueTask<PreheatTableResult> PreheatTableAsync(TableRegistration registration, CancellationToken cancellationToken)
+        {
+            var started = System.Diagnostics.Stopwatch.GetTimestamp();
+            PreheatTableResult CreateResult(PreheatTableStatus status, Exception? exception = null)
+            {
+                var elapsed = (long)((System.Diagnostics.Stopwatch.GetTimestamp() - started) * 1000.0 / System.Diagnostics.Stopwatch.Frequency);
+                return new PreheatTableResult(registration.TableType, registration.Name, registration.Priority, status, elapsed, exception);
+            }
+
+            if (IsLoaded(new TypeNamePair(registration.TableType, registration.Name)))
+            {
+                return CreateResult(PreheatTableStatus.CacheHit);
+            }
+
+            try
+            {
+                var table = await registration.LoadAsync(this, cancellationToken);
+                return table != null
+                    ? CreateResult(PreheatTableStatus.Loaded)
+                    : CreateResult(PreheatTableStatus.Failed, new InvalidOperationException($"Preheat returned null for '{registration.TableType.FullName}' ({registration.Name})."));
+            }
+            catch (OperationCanceledException exception) when (cancellationToken.IsCancellationRequested)
+            {
+                return CreateResult(PreheatTableStatus.Canceled, exception);
+            }
+            catch (Exception exception)
+            {
+                return CreateResult(PreheatTableStatus.Failed, exception);
+            }
+        }
 
         public async ValueTask<T?> LoadAsync<T>(string name = "", CancellationToken cancellationToken = default) where T : DataTableBase
         {

@@ -94,28 +94,31 @@ internal static class Program
             // 尝试加载生成的数据表
             try
             {
-                // 预加载所有表
-                await DataTableManager.PreloadAllAsync();
+                var dataDirectory = Path.Combine(AppContext.BaseDirectory, "DataTables");
+                using var context = new DataTableContext(new FileSystemDataSource(dataDirectory));
 
-                var sampleTable = await DataTableManager.LoadAsync<DTDataTableSample>();
+                // 生成查询显式绑定 context；同一进程可安全加载多套数据。
+                await DataTableManagerExtension.PreloadAsync(context);
+
+                var sampleTable = context.GetCached<DTDataTableSample>();
                 if (sampleTable != null)
                 {
                     Console.WriteLine($"✅ 成功加载数据表: {sampleTable.Count} 行数据");
 
                     // 演示生成的静态查询 API
                     const string sampleName = "示例字符k串1";
-                    var row1 = DTDataTableSample.GetById(1);
-                    var rowsByName = DTDataTableSample.GetManyByName(sampleName);
+                    var row1 = DTDataTableSample.GetById(context, 1);
+                    var rowsByName = DTDataTableSample.GetManyByName(context, sampleName);
                     if (row1?.Name != sampleName || rowsByName?.Count != 1)
                     {
                         Console.Error.WriteLine("❌ 静态查询验证失败：示例数据与生成代码不匹配。");
                         return false;
                     }
 
-                    var split1 = DataTableManager.GetCached<DTDataTableSplitSample>("x001");
-                    var split2 = DataTableManager.GetCached<DTDataTableSplitSample>("x002");
-                    var splitRow1 = DTDataTableSplitSample.GetById("x001", 1);
-                    var splitRow2 = DTDataTableSplitSample.GetById("x002", 1);
+                    var split1 = context.GetCached<DTDataTableSplitSample>("x001");
+                    var split2 = context.GetCached<DTDataTableSplitSample>("x002");
+                    var splitRow1 = DTDataTableSplitSample.GetById(context, "x001", 1);
+                    var splitRow2 = DTDataTableSplitSample.GetById(context, "x002", 1);
                     if (split1?.Name != "x001" || split2?.Name != "x002"
                         || ReferenceEquals(split1, split2) || splitRow1 is null || splitRow2 is null)
                     {

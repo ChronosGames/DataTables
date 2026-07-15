@@ -1,5 +1,24 @@
 # DataTables 激进优化变更日志
 
+## 未发布 - context-first 与可部署 manifest
+
+### Breaking
+
+- 所有生成静态查询改为 context-first；移除无 `DataTableContext` 查询、静态查询属性和 `*Static` 别名。消费者必须重新生成 C#。
+- `PreheatAsync`、`PreloadAllAsync` 与生成的 `PreloadAsync` 返回 `PreheatResult`；原汇总字段位于 `result.Stats`。
+- 二进制数据协议仍为 v3，格式未改变；运行时部署新增同目录 `manifest.json`。
+
+### Added
+
+- A1 `tags=` 工作表/逻辑表标签与布尔包含/排除规则，支持过滤切换时事务清理旧产物。
+- 确定性 runtime manifest，FileSystem 优先读取、Network 实际 GET，以及 Android/WebGL `StreamingAssetsDataSource` 的可取消 UnityWebRequest 实现。
+- 有界并发预热、逐表状态、软 fail-fast 和部分取消结果。
+- 输出碰撞/事务失败 JSON diagnostics，以及不含机器绝对路径的增量 manifest v2。
+
+### Fixed
+
+- 解决 nullable、未使用变量、Benchmark 返回值和 CLI XML 文档警告；解决方案构建目标为 0 警告。
+
 ## 🚀 Version 0.14.0 - 激进优化版 (2025-08-12)
 
 ### ✨ 重大突破性优化

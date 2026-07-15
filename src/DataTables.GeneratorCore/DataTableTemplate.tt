@@ -164,36 +164,37 @@ using DataTables;<# if (!string.IsNullOrEmpty(Using)) { #><#= Environment.NewLin
         var arguments = GenerationContext.BuildCamelCaseParameters(fields);
         var key = fields.Length > 1 ? "(" + GenerationContext.BuildCamelCaseParameters(fields) + ")" : GenerationContext.ToCamelCase(fields[0]);
         var tableNameParameter = GetTableNameParameter(fields);
+        var contextParameter = GetContextParameter(fields);
 #>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= GenerationContext.DataRowClassName #>? GetBy<#= suffix #>(<#= parameters #>) => GetBy<#= suffix #>(string.Empty, <#= arguments #>);
+    public static <#= GenerationContext.DataRowClassName #>? GetBy<#= suffix #>(DataTableContext <#= contextParameter #>, <#= parameters #>) => GetBy<#= suffix #>(<#= contextParameter #>, string.Empty, <#= arguments #>);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= GenerationContext.DataRowClassName #>? GetBy<#= suffix #>(string <#= tableNameParameter #>, <#= parameters #>)
+    public static <#= GenerationContext.DataRowClassName #>? GetBy<#= suffix #>(DataTableContext <#= contextParameter #>, string <#= tableNameParameter #>, <#= parameters #>)
     {
-        var table = DataTableManager.GetCached<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
+        var table = <#= contextParameter #>.GetCached<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
         return table?.m_Index<#= i + 1 #>.TryGetValue(<#= key #>, out var result) == true ? result : null;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetBy<#= suffix #>(<#= parameters #>, out <#= GenerationContext.DataRowClassName #>? result) => TryGetBy<#= suffix #>(string.Empty, <#= arguments #>, out result);
+    public static bool TryGetBy<#= suffix #>(DataTableContext <#= contextParameter #>, <#= parameters #>, out <#= GenerationContext.DataRowClassName #>? result) => TryGetBy<#= suffix #>(<#= contextParameter #>, string.Empty, <#= arguments #>, out result);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetBy<#= suffix #>(string <#= tableNameParameter #>, <#= parameters #>, out <#= GenerationContext.DataRowClassName #>? result)
+    public static bool TryGetBy<#= suffix #>(DataTableContext <#= contextParameter #>, string <#= tableNameParameter #>, <#= parameters #>, out <#= GenerationContext.DataRowClassName #>? result)
     {
-        var table = DataTableManager.GetCached<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
+        var table = <#= contextParameter #>.GetCached<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
         result = null;
         return table != null && table.m_Index<#= i + 1 #>.TryGetValue(<#= key #>, out result);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool Contains<#= suffix #>(<#= parameters #>) => Contains<#= suffix #>(string.Empty, <#= arguments #>);
+    public static bool Contains<#= suffix #>(DataTableContext <#= contextParameter #>, <#= parameters #>) => Contains<#= suffix #>(<#= contextParameter #>, string.Empty, <#= arguments #>);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool Contains<#= suffix #>(string <#= tableNameParameter #>, <#= parameters #>)
+    public static bool Contains<#= suffix #>(DataTableContext <#= contextParameter #>, string <#= tableNameParameter #>, <#= parameters #>)
     {
-        var table = DataTableManager.GetCached<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
+        var table = <#= contextParameter #>.GetCached<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
         return table?.m_Index<#= i + 1 #>.ContainsKey(<#= key #>) == true;
     }
 <#
@@ -207,25 +208,26 @@ using DataTables;<# if (!string.IsNullOrEmpty(Using)) { #><#= Environment.NewLin
         var key = fields.Length > 1 ? "(" + GenerationContext.BuildCamelCaseParameters(fields) + ")" : GenerationContext.ToCamelCase(fields[0]);
         var dictNo = GenerationContext.IndexDefinitions.Count + i + 1;
         var tableNameParameter = GetTableNameParameter(fields);
+        var contextParameter = GetContextParameter(fields);
 #>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static IReadOnlyList<<#= GenerationContext.DataRowClassName #>>? GetManyBy<#= suffix #>(<#= parameters #>) => GetManyBy<#= suffix #>(string.Empty, <#= arguments #>);
+    public static IReadOnlyList<<#= GenerationContext.DataRowClassName #>>? GetManyBy<#= suffix #>(DataTableContext <#= contextParameter #>, <#= parameters #>) => GetManyBy<#= suffix #>(<#= contextParameter #>, string.Empty, <#= arguments #>);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static IReadOnlyList<<#= GenerationContext.DataRowClassName #>>? GetManyBy<#= suffix #>(string <#= tableNameParameter #>, <#= parameters #>)
+    public static IReadOnlyList<<#= GenerationContext.DataRowClassName #>>? GetManyBy<#= suffix #>(DataTableContext <#= contextParameter #>, string <#= tableNameParameter #>, <#= parameters #>)
     {
-        var table = DataTableManager.GetCached<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
+        var table = <#= contextParameter #>.GetCached<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
         return table?.m_Index<#= dictNo #>.TryGetValue(<#= key #>, out var result) == true ? result : null;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool Contains<#= suffix #>(<#= parameters #>) => Contains<#= suffix #>(string.Empty, <#= arguments #>);
+    public static bool Contains<#= suffix #>(DataTableContext <#= contextParameter #>, <#= parameters #>) => Contains<#= suffix #>(<#= contextParameter #>, string.Empty, <#= arguments #>);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool Contains<#= suffix #>(string <#= tableNameParameter #>, <#= parameters #>)
+    public static bool Contains<#= suffix #>(DataTableContext <#= contextParameter #>, string <#= tableNameParameter #>, <#= parameters #>)
     {
-        var table = DataTableManager.GetCached<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
+        var table = <#= contextParameter #>.GetCached<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
         return table?.m_Index<#= dictNo #>.ContainsKey(<#= key #>) == true;
     }
 <#
@@ -264,3 +266,8 @@ public sealed partial class <#= GenerationContext.DataRowClassName #> : DataRowB
 <# if (!string.IsNullOrEmpty(Namespace)) { #>
 }
 <# } #>
+<#
+    var normalizedOutput = GenerationEnvironment.ToString().TrimEnd('\r', '\n');
+    GenerationEnvironment.Clear();
+    Write(normalizedOutput);
+#>

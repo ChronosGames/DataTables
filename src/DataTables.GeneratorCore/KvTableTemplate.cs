@@ -50,19 +50,19 @@ namespace DataTables.GeneratorCore
     foreach (var item in GenerationContext.Fields.Where(x => !x.IsIgnore))
     {
 
-            this.Write("    /// <summary>");
+            this.Write("\n    /// <summary>");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildSummary(item.Title)));
             this.Write("</summary>\n    public static ");
             this.Write(this.ToStringHelper.ToStringWithCulture(GetPropertyTypeString(item)));
-            this.Write(" ");
+            this.Write(" Get");
             this.Write(this.ToStringHelper.ToStringWithCulture(item.Name));
-            this.Write(" => Get");
+            this.Write("(DataTableContext context) => Get");
             this.Write(this.ToStringHelper.ToStringWithCulture(item.Name));
-            this.Write("(string.Empty);\n\n    public static ");
+            this.Write("(context, string.Empty);\n\n    public static ");
             this.Write(this.ToStringHelper.ToStringWithCulture(GetPropertyTypeString(item)));
             this.Write(" Get");
             this.Write(this.ToStringHelper.ToStringWithCulture(item.Name));
-            this.Write("(string dataTableName) => DataTableManager.GetCached<");
+            this.Write("(DataTableContext context, string dataTableName) => context.GetCached<");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataTableClassName));
             this.Write(">(dataTableName)![0].");
             this.Write(this.ToStringHelper.ToStringWithCulture(item.Name));
@@ -118,14 +118,16 @@ namespace DataTables.GeneratorCore
 
             this.Write("        return true;\r\n    }\r\n}\r\n");
  if (!string.IsNullOrEmpty(Namespace)) {
-            this.Write("}\r\n");
+            this.Write("\n}\n");
  }
+            this.Write("\n");
+
+    var normalizedKvOutput = GenerationEnvironment.ToString().TrimEnd('\r', '\n');
+    GenerationEnvironment.Clear();
+    Write(normalizedKvOutput);
+
+            this.Write("\n");
             return this.GenerationEnvironment.ToString();
         }
-
-    public KvTableTemplate(GenerationContext context) : base(context)
-    {
-    }
-
     }
 }

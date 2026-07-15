@@ -10,7 +10,7 @@ namespace DataTables
         private Tuple<TKey1, TKey2, TValue>[] m_DataSet = Array.Empty<Tuple<TKey1, TKey2, TValue>>();
         private readonly Dictionary<ValueTuple<TKey1, TKey2>, TValue> m_Dict1 = new Dictionary<(TKey1, TKey2), TValue>();
 
-        protected virtual TValue DefaultValue => default;
+        protected virtual TValue DefaultValue => default!;
 
         public override Type Type => typeof(TValue);
 

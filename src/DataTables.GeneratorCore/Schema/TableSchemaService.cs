@@ -36,6 +36,30 @@ public sealed class TableSchemaService : ITableSchemaService
             return -1;
         }
 
+        if (!TagFilterUtils.TryValidateTagSet(m_Context.TableTags, out var tagSetError))
+        {
+            m_Context.Failed = true;
+            m_Diagnostics.Error(m_Context.FileName, m_Context.SheetName, "A1", tagSetError);
+            return -1;
+        }
+
+        if (!m_Context.DisableTagsFilter && !string.IsNullOrWhiteSpace(m_Options.FilterColumnTags))
+        {
+            if (!TagFilterUtils.TryValidateExpression(m_Options.FilterColumnTags, out var expressionError))
+            {
+                m_Context.Failed = true;
+                m_Diagnostics.Error(m_Context.FileName, m_Context.SheetName, "A1", expressionError);
+                return -1;
+            }
+
+            if (!string.IsNullOrWhiteSpace(m_Context.TableTags)
+                && !TagFilterUtils.Evaluate(m_Context.TableTags, m_Options.FilterColumnTags))
+            {
+                m_Context.Skiped = true;
+                return -1;
+            }
+        }
+
         if (!s_TableSchemaParserRegistry.TryGetParser(m_Context.DataSetType, out var parser))
         {
             var supportedTypes = string.Join(", ", s_TableSchemaParserRegistry.SupportedDataSetTypes);

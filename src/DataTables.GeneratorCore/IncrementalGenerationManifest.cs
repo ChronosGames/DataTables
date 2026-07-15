@@ -9,17 +9,13 @@ namespace DataTables.GeneratorCore;
 
 internal sealed class IncrementalGenerationManifest
 {
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
     public const string FileName = ".dtgen-manifest.json";
     public const string DataOnlyFileName = ".dtgen-data-manifest.json";
 
     public int Version { get; set; } = CurrentVersion;
 
     public string GeneratorFingerprint { get; set; } = string.Empty;
-
-    public string CodeOutputDirectory { get; set; } = string.Empty;
-
-    public string DataOutputDirectory { get; set; } = string.Empty;
 
     public Dictionary<string, IncrementalInputEntry> Inputs { get; set; } = new();
 
@@ -92,9 +88,18 @@ internal sealed class IncrementalGenerationManifest
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\n', values))));
     }
 
-    public static string GetInputId(string path)
+    public static string GetInputId(int rootIndex, string inputRoot, string path)
     {
-        return Path.GetFullPath(path).Replace(Path.DirectorySeparatorChar, '/');
+        var fullRoot = Path.GetFullPath(inputRoot);
+        var fullPath = Path.GetFullPath(path);
+        var relativePath = Path.GetRelativePath(fullRoot, fullPath);
+        if (Path.IsPathRooted(relativePath)
+            || relativePath == ".."
+            || relativePath.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Input path is outside its configured root: {path}");
+        }
+        return $"root-{rootIndex}/{relativePath.Replace('\\', '/')}";
     }
 
     public static StringComparer PathComparer => OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;

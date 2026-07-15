@@ -55,6 +55,17 @@ public partial class DataTableTemplate
         return parameterName;
     }
 
+    internal string GetContextParameter(IReadOnlyList<string> fields)
+    {
+        var parameterName = "context";
+        var fieldParameters = new HashSet<string>(fields.Select(GenerationContext.ToCamelCase), StringComparer.Ordinal);
+        while (fieldParameters.Contains(parameterName))
+        {
+            parameterName = "_" + parameterName;
+        }
+        return parameterName;
+    }
+
     internal string BuildSummary(string summary)
     {
         var text = System.Security.SecurityElement.Escape(summary.Trim());
@@ -101,4 +112,25 @@ public partial class DataMatrixTemplate
     internal string BuildTypeString(string fieldName) => DataTableProcessor.GetLanguageKeyword(this.GenerationContext.GetField(fieldName)!);
     internal string BuildTypeValueString(string fieldName, string fieldValueString) => DataTableProcessor.GetLanguageValue(this.GenerationContext.GetField(fieldName)!, fieldValueString);
     internal string BuildDeserializeMethodString(string fieldName) => DataTableProcessor.GetDeserializeMethodString(GenerationContext, this.GenerationContext.GetField(fieldName)!);
+}
+
+public partial class KvTableTemplate
+{
+    public KvTableTemplate(GenerationContext context) : base(context)
+    {
+    }
+}
+
+public partial class GraphTableTemplate
+{
+    public GraphTableTemplate(GenerationContext generationContext) : base(generationContext)
+    {
+    }
+}
+
+public partial class TreeTableTemplate
+{
+    public TreeTableTemplate(GenerationContext generationContext) : base(generationContext)
+    {
+    }
 }

@@ -6,6 +6,25 @@
 
 当前代码中的默认解析器注册了 `table`、`matrix`、`column`、`kv`、`tree` 和 `graph`；代码模板也为这些类型提供生成器。
 
+所有类型的生成静态查询都是 context-first。默认表把 `DataTableContext` 放在第一参数；命名表把名称放在第二参数：
+
+```csharp
+var item = DTItem.GetById(context, 1001);
+var shardItem = DTItem.GetById(context, "x001", 1001);
+```
+
+生成查询不会访问默认 `DataTableManager`。无 context 的静态查询、静态查询属性和 `*Static` 兼容别名已删除，实例查询 API 保留。Matrix 使用 `GetTable(context[, name])`、`GetTableOrNull(context[, name])`、`IsLoaded(context[, name])`；KV 强类型值使用 `GetXxx(context[, name])`。
+
+## 表级标签
+
+A1 元信息可声明工作表或子逻辑表标签：
+
+```text
+DTGen=table,class=Item,tags=S&C
+```
+
+`-t` / `FilterColumnTags` 仍是布尔表达式，支持 `NOT`/`!`、`AND`/`&&`、`OR`/`||` 和括号。未声明 `tags=` 的表始终包含；每个 Sheet/child 独立判断。`disabletagsfilter` 会同时关闭表级和字段 `@tag` 过滤。非法 `tags=` 定位到 A1，非法全局表达式在普通导出与 `validate` 中都会产生 Error diagnostic。
+
 ### `table`
 
 面向行的数据表。每一行数据都会生成一个行对象，并且可以参与索引构建。
@@ -38,7 +57,7 @@
 
 ### `kv`
 
-`kv` 已支持用于全局参数、功能开关和少量散列配置。完整说明见 [kv 表类型设计](../designs/kv-table-design.md)。当前实现要求 `Key`、`Type`、`Value` 三列，并可选 `Comment` 列；每条配置会生成一行内部数据，生成表类会暴露同名静态属性以及动态读取 API。推荐 Excel 结构如下：
+`kv` 已支持用于全局参数、功能开关和少量散列配置。完整说明见 [kv 表类型设计](../designs/kv-table-design.md)。当前实现要求 `Key`、`Type`、`Value` 三列，并可选 `Comment` 列；每条配置会生成一行内部数据，生成表类会暴露 context-first 强类型方法以及实例动态读取 API。推荐 Excel 结构如下：
 
 | Key | Type | Value | Comment |
 | --- | --- | --- | --- |
@@ -50,10 +69,10 @@
 已生成的强类型 API 形态：
 
 ```csharp
-DTGameConfig.MaxLevel
-DTGameConfig.EnablePvp
-DataTableManager.GetCached<DTGameConfig>()?.GetValue<int>("MaxLevel")
-DataTableManager.GetCached<DTGameConfig>()?.TryGetValue("EnablePvp", out bool? enablePvp)
+DTGameConfig.GetMaxLevel(context)
+DTGameConfig.GetEnablePvp(context, "regional")
+context.GetCached<DTGameConfig>()?.GetValue<int>("MaxLevel")
+context.GetCached<DTGameConfig>()?.TryGetValue("EnablePvp", out bool? enablePvp)
 ```
 
 当前校验与生成规则：

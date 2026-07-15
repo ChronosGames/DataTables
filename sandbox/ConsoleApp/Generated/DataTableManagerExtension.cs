@@ -60,10 +60,20 @@ public static class DataTableManagerExtension
     /// <summary>
     /// Registers and preloads this generated table set in an independent context.
     /// </summary>
-    public static ValueTask<LoadStats> PreloadAsync(DataTableContext context, Priority priorities = Priority.All, CancellationToken cancellationToken = default)
+    public static ValueTask<PreheatResult> PreloadAsync(DataTableContext context, Priority priorities = Priority.All, CancellationToken cancellationToken = default)
     {
         Register(context);
         return context.PreheatAsync(priorities, cancellationToken);
     }
+
+    /// <summary>
+    /// Registers and preloads this generated table set with explicit preheat options.
+    /// </summary>
+    public static ValueTask<PreheatResult> PreloadAsync(DataTableContext context, Priority priorities, PreheatOptions options, CancellationToken cancellationToken = default)
+    {
+        Register(context);
+        return context.PreheatAsync(priorities, options, cancellationToken);
+    }
 }
+
 }

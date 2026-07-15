@@ -51,11 +51,11 @@ using DataTables;
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey2)));
             this.Write(", ");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kValue)));
-            this.Write(">\n{\n    public override ulong SchemaHash => ");
+            this.Write(">\r\n{\r\n    public override ulong SchemaHash => ");
             this.Write(this.ToStringHelper.ToStringWithCulture(DataTableSchemaHash.Compute(GenerationContext)));
-            this.Write("UL;\n\n    ");
+            this.Write("UL;\r\n\r\n    ");
             this.Write(this.ToStringHelper.ToStringWithCulture(string.IsNullOrEmpty(GenerationContext.MatrixDefaultValue) ? string.Empty : "protected override " + BuildTypeString(kValue) + " DefaultValue => " + BuildTypeValueString(kValue, GenerationContext.MatrixDefaultValue) + ";" + Environment.NewLine));
-            this.Write("\n    public DT");
+            this.Write("\r\n    public DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write("(string name, int capacity) : base(name, capacity)\r\n    { }\r\n\r\n    public overrid" +
                     "e bool ParseDataRow(int index, BinaryReader reader)\r\n    {\r\n        ");
@@ -98,72 +98,78 @@ using DataTables;
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));
             this.Write(" key1, ");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey2)));
-            this.Write(" key2)\n    {\n        return Get(key1, key2)!;\n    }\r\n\r\n    #endregion\r\n\r\n    #reg" +
-                    "ion Static API\r\n\r\n    /// <summary>\r\n    /// 获取数据矩阵实例 - 便于访问基类方法 (静态方法)\r\n    ///" +
-                    " </summary>\r\n    public static DT");
+            this.Write(" key2)\r\n    {\r\n        return Get(key1, key2)!;\r\n    }\r\n\r\n    #endregion\r\n\r\n    #" +
+                    "region Static API\n\n    /// <summary>\n    /// 获取数据矩阵实例 - 便于访问基类方法 (静态方法)\n    /// " +
+                    "</summary>\n    public static DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
-            this.Write(" Table\n    {\n        get => GetTable(string.Empty);\n    }\n\n    public static DT");
+            this.Write(" GetTable(DataTableContext context) => GetTable(context, string.Empty);\n\n    publ" +
+                    "ic static DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
-            this.Write(" GetTable(string dataTableName)\n    {\n        var table = DataTableManager.GetCac" +
-                    "hed<DT");
+            this.Write(" GetTable(DataTableContext context, string dataTableName)\n    {\n        var table" +
+                    " = context.GetCached<DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write(">(dataTableName);\n        if (table == null)\n        {\n            throw new Inva" +
                     "lidOperationException($\"DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
-            this.Write(" \'{dataTableName}\' is not loaded. Call DataTableManager.LoadAsync<DT");
+            this.Write(" \'{dataTableName}\' is not loaded. Call context.LoadAsync<DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
-            this.Write(">(dataTableName) first.\");\n        }\n        return table;\n    }\n\r\n    /// <summa" +
-                    "ry>\r\n    /// 安全获取数据矩阵实例 - 返回null如果未加载 (静态方法)\r\n    /// </summary>\r\n    public sta" +
-                    "tic DT");
+            this.Write(">(dataTableName) first.\");\n        }\n        return table;\n    }\r\n\r\n    /// <summ" +
+                    "ary>\n    /// 安全获取数据矩阵实例 - 返回null如果未加载 (静态方法)\n    /// </summary>\n    public stati" +
+                    "c DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
-            this.Write("? TableOrNull => GetTableOrNull(string.Empty);\n\n    public static DT");
+            this.Write("? GetTableOrNull(DataTableContext context) => GetTableOrNull(context, string.Empt" +
+                    "y);\n\n    public static DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
-            this.Write("? GetTableOrNull(string dataTableName) => DataTableManager.GetCached<D" +
-                    "T");
+            this.Write("? GetTableOrNull(DataTableContext context, string dataTableName) => context.GetCa" +
+                    "ched<DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
-            this.Write(">(dataTableName);\n\r\n    /// <summary>\r\n    /// 检查数据矩阵是否已加载 (静态方法)\r\n    /// </summ" +
-                    "ary>\r\n    public static bool IsLoaded => IsTableLoaded(string.Empty);\n\n    publi" +
-                    "c static bool IsTableLoaded(string dataTableName) => DataTableManager.IsLoaded<D" +
-                    "T");
+            this.Write(@">(dataTableName);
+
+    /// <summary>
+    /// 检查数据矩阵是否已加载 (静态方法)
+    /// </summary>
+    public static bool IsLoaded(DataTableContext context) => IsLoaded(context, string.Empty);
+
+    public static bool IsLoaded(DataTableContext context, string dataTableName) => context.IsLoaded<DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write(">(dataTableName);\n\r\n    /// <summary>\r\n    /// 根据Key1和Key2获取数据值 (静态方法)\r\n    /// <" +
-                    "/summary>\r\n    [MethodImpl(MethodImplOptions.AggressiveInlining)]\n    public sta" +
-                    "tic ");
+                    "/summary>\r\n    [MethodImpl(MethodImplOptions.AggressiveInlining)]\r\n    public st" +
+                    "atic ");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kValue)));
-            this.Write("? GetRow(");
+            this.Write("? GetRow(DataTableContext context, ");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));
             this.Write(" key1, ");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey2)));
-            this.Write(" key2) => GetRow(string.Empty, key1, key2);\n\n    [MethodImpl(MethodImplOptions.Ag" +
-                    "gressiveInlining)]\n    public static ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kValue)));
-            this.Write("? GetRow(string dataTableName, ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));
-            this.Write(" key1, ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey2)));
-            this.Write(" key2)\n    {\n        var table = DataTableManager.GetCached<DT");
-            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
-            this.Write(">(dataTableName);\n        return table?.Get(key1, key2);\n    }\n\r\n    /// <summary" +
-                    ">\r\n    /// 根据Key1和Key2获取数据值，如果不存在则返回默认值 (静态方法)\r\n    /// </summary>\r\n    [MethodI" +
-                    "mpl(MethodImplOptions.AggressiveInlining)]\n    public static ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kValue)));
-            this.Write(" GetRowOrDefault(");
-            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));
-            this.Write(" key1, ");
-            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey2)));
-            this.Write(" key2) => GetRowOrDefault(string.Empty, key1, key2);\n\n    [MethodImpl(MethodImplO" +
+            this.Write(" key2) => GetRow(context, string.Empty, key1, key2);\n\n    [MethodImpl(MethodImplO" +
                     "ptions.AggressiveInlining)]\n    public static ");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kValue)));
-            this.Write(" GetRowOrDefault(string dataTableName, ");
+            this.Write("? GetRow(DataTableContext context, string dataTableName, ");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));
             this.Write(" key1, ");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey2)));
-            this.Write(" key2)\n    {\n        var table = DataTableManager.GetCached<DT");
+            this.Write(" key2)\n    {\n        var table = context.GetCached<DT");
+            this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
+            this.Write(">(dataTableName);\n        return table?.Get(key1, key2);\n    }\r\n\r\n    /// <summar" +
+                    "y>\r\n    /// 根据Key1和Key2获取数据值，如果不存在则返回默认值 (静态方法)\r\n    /// </summary>\r\n    [Method" +
+                    "Impl(MethodImplOptions.AggressiveInlining)]\r\n    public static ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kValue)));
+            this.Write(" GetRowOrDefault(DataTableContext context, ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));
+            this.Write(" key1, ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey2)));
+            this.Write(" key2) => GetRowOrDefault(context, string.Empty, key1, key2);\n\n    [MethodImpl(Me" +
+                    "thodImplOptions.AggressiveInlining)]\n    public static ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kValue)));
+            this.Write(" GetRowOrDefault(DataTableContext context, string dataTableName, ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));
+            this.Write(" key1, ");
+            this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey2)));
+            this.Write(" key2)\n    {\n        var table = context.GetCached<DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write(">(dataTableName);\n        return table != null ? table.Get(key1, key2)! : default" +
-                    "!;\n    }\n\r\n    #endregion\r\n\r\n    #region MatrixDataRow Support\r\n\r\n    /// <summa" +
-                    "ry>\r\n    /// 创建数据行实例\r\n    /// </summary>\r\n    protected override MatrixDataRowBa" +
-                    "se<");
+                    "!;\n    }\r\n\r\n    #endregion\r\n\r\n    #region MatrixDataRow Support\r\n\r\n    /// <summ" +
+                    "ary>\r\n    /// 创建数据行实例\r\n    /// </summary>\r\n    protected override MatrixDataRowB" +
+                    "ase<");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));
             this.Write(", ");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey2)));
@@ -210,8 +216,15 @@ using DataTables;
             this.Write("\r\n\r\n        SetData(rowKey, columnKey, value);\r\n        return true;\r\n    }\r\n}\r\n\r" +
                     "\n");
  if (!string.IsNullOrEmpty(GenerationContext.Namespace)) {
-            this.Write("}\r\n");
+            this.Write("\n}\n");
  }
+            this.Write("\n");
+
+    var normalizedMatrixOutput = GenerationEnvironment.ToString().TrimEnd('\r', '\n');
+    GenerationEnvironment.Clear();
+    Write(normalizedMatrixOutput);
+
+            this.Write("\n");
             return this.GenerationEnvironment.ToString();
         }
     }

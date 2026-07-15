@@ -70,17 +70,14 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
     /// <summary>
     /// 获取数据矩阵实例 - 便于访问基类方法 (静态方法)
     /// </summary>
-    public static DT<#= GenerationContext.ClassName #> Table
-    {
-        get => GetTable(string.Empty);
-    }
+    public static DT<#= GenerationContext.ClassName #> GetTable(DataTableContext context) => GetTable(context, string.Empty);
 
-    public static DT<#= GenerationContext.ClassName #> GetTable(string dataTableName)
+    public static DT<#= GenerationContext.ClassName #> GetTable(DataTableContext context, string dataTableName)
     {
-        var table = DataTableManager.GetCached<DT<#= GenerationContext.ClassName #>>(dataTableName);
+        var table = context.GetCached<DT<#= GenerationContext.ClassName #>>(dataTableName);
         if (table == null)
         {
-            throw new InvalidOperationException($"DT<#= GenerationContext.ClassName #> '{dataTableName}' is not loaded. Call DataTableManager.LoadAsync<DT<#= GenerationContext.ClassName #>>(dataTableName) first.");
+            throw new InvalidOperationException($"DT<#= GenerationContext.ClassName #> '{dataTableName}' is not loaded. Call context.LoadAsync<DT<#= GenerationContext.ClassName #>>(dataTableName) first.");
         }
         return table;
     }
@@ -88,27 +85,27 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
     /// <summary>
     /// 安全获取数据矩阵实例 - 返回null如果未加载 (静态方法)
     /// </summary>
-    public static DT<#= GenerationContext.ClassName #>? TableOrNull => GetTableOrNull(string.Empty);
+    public static DT<#= GenerationContext.ClassName #>? GetTableOrNull(DataTableContext context) => GetTableOrNull(context, string.Empty);
 
-    public static DT<#= GenerationContext.ClassName #>? GetTableOrNull(string dataTableName) => DataTableManager.GetCached<DT<#= GenerationContext.ClassName #>>(dataTableName);
+    public static DT<#= GenerationContext.ClassName #>? GetTableOrNull(DataTableContext context, string dataTableName) => context.GetCached<DT<#= GenerationContext.ClassName #>>(dataTableName);
 
     /// <summary>
     /// 检查数据矩阵是否已加载 (静态方法)
     /// </summary>
-    public static bool IsLoaded => IsTableLoaded(string.Empty);
+    public static bool IsLoaded(DataTableContext context) => IsLoaded(context, string.Empty);
 
-    public static bool IsTableLoaded(string dataTableName) => DataTableManager.IsLoaded<DT<#= GenerationContext.ClassName #>>(dataTableName);
+    public static bool IsLoaded(DataTableContext context, string dataTableName) => context.IsLoaded<DT<#= GenerationContext.ClassName #>>(dataTableName);
 
     /// <summary>
     /// 根据Key1和Key2获取数据值 (静态方法)
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= BuildTypeString(kValue) #>? GetRow(<#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2) => GetRow(string.Empty, key1, key2);
+    public static <#= BuildTypeString(kValue) #>? GetRow(DataTableContext context, <#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2) => GetRow(context, string.Empty, key1, key2);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= BuildTypeString(kValue) #>? GetRow(string dataTableName, <#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2)
+    public static <#= BuildTypeString(kValue) #>? GetRow(DataTableContext context, string dataTableName, <#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2)
     {
-        var table = DataTableManager.GetCached<DT<#= GenerationContext.ClassName #>>(dataTableName);
+        var table = context.GetCached<DT<#= GenerationContext.ClassName #>>(dataTableName);
         return table?.Get(key1, key2);
     }
 
@@ -116,12 +113,12 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
     /// 根据Key1和Key2获取数据值，如果不存在则返回默认值 (静态方法)
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= BuildTypeString(kValue) #> GetRowOrDefault(<#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2) => GetRowOrDefault(string.Empty, key1, key2);
+    public static <#= BuildTypeString(kValue) #> GetRowOrDefault(DataTableContext context, <#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2) => GetRowOrDefault(context, string.Empty, key1, key2);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= BuildTypeString(kValue) #> GetRowOrDefault(string dataTableName, <#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2)
+    public static <#= BuildTypeString(kValue) #> GetRowOrDefault(DataTableContext context, string dataTableName, <#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2)
     {
-        var table = DataTableManager.GetCached<DT<#= GenerationContext.ClassName #>>(dataTableName);
+        var table = context.GetCached<DT<#= GenerationContext.ClassName #>>(dataTableName);
         return table != null ? table.Get(key1, key2)! : default!;
     }
 
@@ -185,3 +182,8 @@ public sealed class DR<#= GenerationContext.ClassName #> : MatrixDataRowBase<<#=
 <# if (!string.IsNullOrEmpty(GenerationContext.Namespace)) { #>
 }
 <# } #>
+<#
+    var normalizedMatrixOutput = GenerationEnvironment.ToString().TrimEnd('\r', '\n');
+    GenerationEnvironment.Clear();
+    Write(normalizedMatrixOutput);
+#>

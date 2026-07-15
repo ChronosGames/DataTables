@@ -163,7 +163,6 @@ dotnet run --project sandbox/ConsoleApp/ConsoleApp.csproj
 Legacy callback and alias APIs remain for compatibility, but new code and docs should not prefer them:
 
 ```csharp
-DataTableManager.SetDataTableHelper(new DefaultDataTableHelper("dataDirectory"));
 DataTableManagerExtension.Preload(() => Console.WriteLine("All loaded"));
 var table = DataTableManager.GetDataTable<DTScene>();
 DataTableManager.CreateDataTable<DTScene>(() => Console.WriteLine("DTScene loaded"));

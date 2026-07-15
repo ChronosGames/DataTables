@@ -117,6 +117,27 @@ Minimum validation:
 dotnet build DataTables.sln
 ```
 
+### Documentation, planning, ADRs, or examples
+
+Read first:
+
+- `README.md` for current user-facing facts.
+- `docs/README.md` for document placement rules.
+- Related guides, references, migration docs, ADRs, or planning records.
+
+Rules:
+
+- Keep `AGENTS.md` focused on stable facts, task routing, constraints, and validation; avoid duplicating long-form design plans here.
+- Put durable decisions in `docs/adr/` and time-bounded plans in `docs/planning/`.
+- Mark planning records as active, completed, or superseded when practical.
+- Prefer current recommended APIs in examples; list obsolete or compatibility APIs only in compatibility sections.
+
+Minimum validation:
+
+```bash
+dotnet build DataTables.sln
+```
+
 If the environment cannot run .NET commands, record the limitation explicitly in the final message and PR body.
 
 ### Unity package work

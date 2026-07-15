@@ -68,13 +68,13 @@
         WL($"    public static IReadOnlyList<{row}> Roots => GetRootsStatic(string.Empty);");
         WL($"    public static IReadOnlyList<{row}> StaticRoots => Roots;");
         WL($"    public static IReadOnlyList<{row}> RootsStatic => Roots;");
-        WL($"    public static IReadOnlyList<{row}> GetRootsStatic(string dataTableName) => DataTableManager.GetDataTableInternal<{table}>(dataTableName)?.GetRoots() ?? Array.Empty<{row}>();");
+        WL($"    public static IReadOnlyList<{row}> GetRootsStatic(string dataTableName) => DataTableManager.GetCached<{table}>(dataTableName)?.GetRoots() ?? Array.Empty<{row}>();");
         WL($"    public static IReadOnlyList<{row}>? GetChildrenStatic(string id) => GetChildrenStatic(string.Empty, id);");
-        WL($"    public static IReadOnlyList<{row}>? GetChildrenStatic(string dataTableName, string id) => DataTableManager.GetDataTableInternal<{table}>(dataTableName)?.GetChildren(id);");
+        WL($"    public static IReadOnlyList<{row}>? GetChildrenStatic(string dataTableName, string id) => DataTableManager.GetCached<{table}>(dataTableName)?.GetChildren(id);");
         WL($"    public static {row}? GetParentStatic(string id) => GetParentStatic(string.Empty, id);");
-        WL($"    public static {row}? GetParentStatic(string dataTableName, string id) => DataTableManager.GetDataTableInternal<{table}>(dataTableName)?.GetParent(id);");
+        WL($"    public static {row}? GetParentStatic(string dataTableName, string id) => DataTableManager.GetCached<{table}>(dataTableName)?.GetParent(id);");
         WL($"    public static IEnumerable<{row}> TraverseDepthFirstStatic(string id) => TraverseDepthFirstStatic(string.Empty, id);");
-        WL($"    public static IEnumerable<{row}> TraverseDepthFirstStatic(string dataTableName, string id) => DataTableManager.GetDataTableInternal<{table}>(dataTableName)?.TraverseDepthFirst(id) ?? Array.Empty<{row}>();");
+        WL($"    public static IEnumerable<{row}> TraverseDepthFirstStatic(string dataTableName, string id) => DataTableManager.GetCached<{table}>(dataTableName)?.TraverseDepthFirst(id) ?? Array.Empty<{row}>();");
         WL("    #endregion");
         return sb.ToString();
     }

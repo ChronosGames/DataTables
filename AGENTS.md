@@ -158,19 +158,6 @@ dotnet run --project sandbox/Benchmark/Benchmark.csproj -c Release
 dotnet run --project sandbox/ConsoleApp/ConsoleApp.csproj
 ```
 
-## Compatibility APIs
-
-Legacy callback and alias APIs remain for compatibility, but new code and docs should not prefer them:
-
-```csharp
-DataTableManagerExtension.Preload(() => Console.WriteLine("All loaded"));
-var table = DataTableManager.GetDataTable<DTScene>();
-DataTableManager.CreateDataTable<DTScene>(() => Console.WriteLine("DTScene loaded"));
-DataTableManager.EnableMemoryManagement(50);
-```
-
-When touching compatibility behavior, preserve existing tests or add migration-focused tests.
-
 ## Hard constraints
 
 - Do not put try/catch blocks around imports.

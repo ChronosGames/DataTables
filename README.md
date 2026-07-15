@@ -156,7 +156,7 @@ var cachedShard = DataTableManager.GetCached<DTScene>("x001");
 var shardIsLoaded = DataTableManager.IsLoaded<DTScene>("x001");
 ```
 
-旧的回调加载、`CreateDataTable*`、`GetDataTable*` 和 `HasDataTable*` 仅作为兼容 API 保留；新代码不要依赖这些别名。
+旧的回调加载、`CreateDataTable*`、`GetDataTable*`、`HasDataTable*`、`EnableMemoryManagement` 等兼容别名已在破坏性清理中移除；代码应直接使用 `LoadAsync` / `GetCached` / `IsLoaded` / `EnableEstimatedMemoryBudget`。
 
 ### 独立上下文
 

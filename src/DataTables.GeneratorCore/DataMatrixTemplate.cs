@@ -104,8 +104,8 @@ using DataTables;
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write(" Table\n    {\n        get => GetTable(string.Empty);\n    }\n\n    public static DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
-            this.Write(" GetTable(string dataTableName)\n    {\n        var table = DataTableManager.GetDat" +
-                    "aTableInternal<DT");
+            this.Write(" GetTable(string dataTableName)\n    {\n        var table = DataTableManager.GetCac" +
+                    "hed<DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write(">(dataTableName);\n        if (table == null)\n        {\n            throw new Inva" +
                     "lidOperationException($\"DT");
@@ -118,7 +118,7 @@ using DataTables;
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write("? TableOrNull => GetTableOrNull(string.Empty);\n\n    public static DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
-            this.Write("? GetTableOrNull(string dataTableName) => DataTableManager.GetDataTableInternal<D" +
+            this.Write("? GetTableOrNull(string dataTableName) => DataTableManager.GetCached<D" +
                     "T");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write(">(dataTableName);\n\r\n    /// <summary>\r\n    /// 检查数据矩阵是否已加载 (静态方法)\r\n    /// </summ" +
@@ -141,7 +141,7 @@ using DataTables;
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));
             this.Write(" key1, ");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey2)));
-            this.Write(" key2)\n    {\n        var table = DataTableManager.GetDataTableInternal<DT");
+            this.Write(" key2)\n    {\n        var table = DataTableManager.GetCached<DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write(">(dataTableName);\n        return table?.Get(key1, key2);\n    }\n\r\n    /// <summary" +
                     ">\r\n    /// 根据Key1和Key2获取数据值，如果不存在则返回默认值 (静态方法)\r\n    /// </summary>\r\n    [MethodI" +
@@ -158,7 +158,7 @@ using DataTables;
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey1)));
             this.Write(" key1, ");
             this.Write(this.ToStringHelper.ToStringWithCulture(BuildTypeString(kKey2)));
-            this.Write(" key2)\n    {\n        var table = DataTableManager.GetDataTableInternal<DT");
+            this.Write(" key2)\n    {\n        var table = DataTableManager.GetCached<DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write(">(dataTableName);\n        return table != null ? table.Get(key1, key2)! : default" +
                     "!;\n    }\n\r\n    #endregion\r\n\r\n    #region MatrixDataRow Support\r\n\r\n    /// <summa" +

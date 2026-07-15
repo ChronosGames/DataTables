@@ -58,9 +58,15 @@ public class DocumentationSmokeTests
     }
 
     [Fact]
-    public void AgentGuide_CSharpBlocks_Should_Compile()
+    public void AgentGuide_ShouldNotDocumentRemovedCompatibilityApis()
     {
-        AssertMarkdownCSharpBlocksCompile(AgentsPath, "AgentGuide");
+        var markdown = File.ReadAllText(AgentsPath);
+
+        markdown.Should().NotContain("Compatibility APIs");
+        markdown.Should().NotContain("EnableMemoryManagement");
+        markdown.Should().NotContain("CreateDataTable<");
+        markdown.Should().NotContain("GetDataTable<");
+        markdown.Should().NotContain("HasDataTable");
     }
 
     [Fact]

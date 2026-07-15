@@ -154,7 +154,7 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static DRDataTableSample? GetById(string dataTableName, int id)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSample>(dataTableName);
         return table?.m_Index1.TryGetValue(id, out var result) == true ? result : null;
     }
 
@@ -164,7 +164,7 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetById(string dataTableName, int id, out DRDataTableSample? result)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSample>(dataTableName);
         result = null;
         return table != null && table.m_Index1.TryGetValue(id, out result);
     }
@@ -175,14 +175,9 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ContainsId(string dataTableName, int id)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSample>(dataTableName);
         return table?.m_Index1.ContainsKey(id) == true;
     }
-
-    [Obsolete("Use GetById instead.")]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static DRDataTableSample? GetRowById(int id) => GetById(id);
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -191,7 +186,7 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static DRDataTableSample? GetByColor(string dataTableName, ConsoleApp.ColorT color)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSample>(dataTableName);
         return table?.m_Index2.TryGetValue(color, out var result) == true ? result : null;
     }
 
@@ -201,7 +196,7 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetByColor(string dataTableName, ConsoleApp.ColorT color, out DRDataTableSample? result)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSample>(dataTableName);
         result = null;
         return table != null && table.m_Index2.TryGetValue(color, out result);
     }
@@ -212,14 +207,9 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ContainsColor(string dataTableName, ConsoleApp.ColorT color)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSample>(dataTableName);
         return table?.m_Index2.ContainsKey(color) == true;
     }
-
-    [Obsolete("Use GetByColor instead.")]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static DRDataTableSample? GetRowByColor(ConsoleApp.ColorT color) => GetByColor(color);
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -228,7 +218,7 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static DRDataTableSample? GetByIdAndInt16Value(string dataTableName, int id, short int16Value)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSample>(dataTableName);
         return table?.m_Index3.TryGetValue((id, int16Value), out var result) == true ? result : null;
     }
 
@@ -238,7 +228,7 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetByIdAndInt16Value(string dataTableName, int id, short int16Value, out DRDataTableSample? result)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSample>(dataTableName);
         result = null;
         return table != null && table.m_Index3.TryGetValue((id, int16Value), out result);
     }
@@ -249,14 +239,9 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ContainsIdAndInt16Value(string dataTableName, int id, short int16Value)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSample>(dataTableName);
         return table?.m_Index3.ContainsKey((id, int16Value)) == true;
     }
-
-    [Obsolete("Use GetByIdAndInt16Value instead.")]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static DRDataTableSample? GetRowByIdAndInt16Value(int id, short int16Value) => GetByIdAndInt16Value(id, int16Value);
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -265,7 +250,7 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IReadOnlyList<DRDataTableSample>? GetManyByNameAndBoolValue(string dataTableName, string name, bool boolValue)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSample>(dataTableName);
         return table?.m_Index4.TryGetValue((name, boolValue), out var result) == true ? result : null;
     }
 
@@ -275,14 +260,9 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ContainsNameAndBoolValue(string dataTableName, string name, bool boolValue)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSample>(dataTableName);
         return table?.m_Index4.ContainsKey((name, boolValue)) == true;
     }
-
-    [Obsolete("Use GetManyByNameAndBoolValue instead.")]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<DRDataTableSample>? GetRowsGroupByNameAndBoolValue(string name, bool boolValue) => GetManyByNameAndBoolValue(name, boolValue) as List<DRDataTableSample>;
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -291,7 +271,7 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IReadOnlyList<DRDataTableSample>? GetManyByName(string dataTableName, string name)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSample>(dataTableName);
         return table?.m_Index5.TryGetValue(name, out var result) == true ? result : null;
     }
 
@@ -301,14 +281,9 @@ public sealed partial class DTDataTableSample : DataTable<DRDataTableSample>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ContainsName(string dataTableName, string name)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSample>(dataTableName);
         return table?.m_Index5.ContainsKey(name) == true;
     }
-
-    [Obsolete("Use GetManyByName instead.")]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<DRDataTableSample>? GetRowsGroupByName(string name) => GetManyByName(name) as List<DRDataTableSample>;
 
     #endregion
 }

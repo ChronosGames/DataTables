@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -12,47 +11,43 @@ namespace DataTables.Tests;
 public sealed class PublicApiMetadataTests
 {
     [Fact]
-    public void CompatibilityMembers_ShouldBeObsoleteAndHiddenFromIntelliSense()
+    public void RemovedCompatibilityMembers_ShouldNotExist()
     {
-        var members = new MemberInfo[]
+        var removedMembers = new (Type Type, string Name)[]
         {
-            FindProperty(typeof(DataTableManager), "IsMemoryManagementEnabled"),
-            FindMethod(typeof(DataTableManager), "UseCustomSource", 1),
-            FindMethod(typeof(DataTableManager), "EnableMemoryManagement", 1),
-            FindMethod(typeof(DataTableManager), "DisableMemoryManagement", 0),
-            FindMethod(typeof(DataTableManager), "LoadAsync", 1, isGeneric: true),
-            FindMethod(typeof(DataTableManager), "HasDataTable", 0, isGeneric: true),
-            FindMethod(typeof(DataTableManager), "GetOrCreateDataTableAsync", 0, isGeneric: true),
-            FindMethod(typeof(DataTableManager), "GetOrCreateDataTableAsync", 2, isGeneric: true),
-            FindMethod(typeof(DataTableManager), "CreateDataTableAsync", 2, isGeneric: true),
-            FindMethod(typeof(DataTableManager), "CreateDataTable", 1, isGeneric: true),
-            FindMethod(typeof(DataTableManager), "CreateDataTable", 2, isGeneric: true),
-            FindMethod(typeof(DataTableManager), "GetDataTable", 0, isGeneric: true),
-            FindProperty(typeof(DataTableContext), "IsMemoryManagementEnabled"),
-            FindMethod(typeof(DataTableContext), "EnableMemoryManagement", 1),
-            FindMethod(typeof(DataTableContext), "DisableMemoryManagement", 0),
-            FindMethod(typeof(DataTableContext), "LoadAsync", 1, isGeneric: true),
-            FindMethod(typeof(DataTableContext), "GetOrCreateDataTableAsync", 2, isGeneric: true),
-            FindMethod(typeof(DataTableContext), "CreateDataTableAsync", 2, isGeneric: true),
-            FindMethod(typeof(DataTableContext), "HasDataTable", 1, isGeneric: true),
-            FindMethod(typeof(DataTableContext), "GetDataTable", 1, isGeneric: true),
-            FindMethod(typeof(DataTableContext), "CreateDataTable", 1, isGeneric: true),
-            FindMethod(typeof(DataTableContext), "CreateDataTable", 2, isGeneric: true),
-            FindMethod(typeof(TableRegistration), "LoadAsync", 1),
-            FindLegacyRegistrationConstructor(),
-            FindField(typeof(CacheStats), "MemoryUsage"),
-            FindField(typeof(CacheStats), "MemoryUsageRate")
+            (typeof(DataTableManager), "IsMemoryManagementEnabled"),
+            (typeof(DataTableManager), "UseCustomSource"),
+            (typeof(DataTableManager), "EnableMemoryManagement"),
+            (typeof(DataTableManager), "DisableMemoryManagement"),
+            (typeof(DataTableManager), "HasDataTable"),
+            (typeof(DataTableManager), "GetOrCreateDataTableAsync"),
+            (typeof(DataTableManager), "CreateDataTableAsync"),
+            (typeof(DataTableManager), "CreateDataTable"),
+            (typeof(DataTableManager), "GetDataTable"),
+            (typeof(DataTableManager), "GetDataTableInternal"),
+            (typeof(DataTableContext), "IsMemoryManagementEnabled"),
+            (typeof(DataTableContext), "EnableMemoryManagement"),
+            (typeof(DataTableContext), "DisableMemoryManagement"),
+            (typeof(DataTableContext), "HasDataTable"),
+            (typeof(DataTableContext), "GetDataTable"),
+            (typeof(DataTableContext), "CreateDataTable"),
+            (typeof(CacheStats), "MemoryUsage"),
+            (typeof(CacheStats), "MemoryUsageRate"),
         };
 
-        foreach (var member in members) AssertCompatibilityMember(member);
+        foreach (var (type, name) in removedMembers)
+        {
+            type.GetMember(name, BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)
+                .Should().BeEmpty($"{type.FullName}.{name} should be removed in the breaking API cleanup");
+        }
 
         var assembly = typeof(DataTableManager).Assembly;
-        AssertCompatibilityMember(assembly.GetType("DataTables.IDataTableManager", throwOnError: true)!);
-        AssertCompatibilityMember(assembly.GetType("DataTables.DataTableStatus", throwOnError: true)!);
+        assembly.GetType("DataTables.IDataTableManager").Should().BeNull();
+        assembly.GetType("DataTables.DataTableStatus").Should().BeNull();
     }
 
     [Fact]
-    public void RecommendedMembers_ShouldNotBeObsolete()
+    public void RecommendedMembers_ShouldRemainPublicAndNotObsolete()
     {
         var members = new MemberInfo[]
         {
@@ -99,19 +94,6 @@ public sealed class PublicApiMetadataTests
         => type.GetProperty(name, BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)
             ?? throw new InvalidOperationException($"Property {type.FullName}.{name} was not found.");
 
-    private static FieldInfo FindField(Type type, string name)
-        => type.GetField(name, BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)
-            ?? throw new InvalidOperationException($"Field {type.FullName}.{name} was not found.");
-
-    private static ConstructorInfo FindLegacyRegistrationConstructor()
-        => typeof(TableRegistration).GetConstructor(new[]
-        {
-            typeof(Type),
-            typeof(string),
-            typeof(Priority),
-            typeof(Func<CancellationToken, ValueTask<DataTableBase?>>)
-        }) ?? throw new InvalidOperationException("Legacy TableRegistration constructor was not found.");
-
     private static ConstructorInfo FindContextAwareRegistrationConstructor()
         => typeof(TableRegistration).GetConstructor(new[]
         {
@@ -120,15 +102,4 @@ public sealed class PublicApiMetadataTests
             typeof(Priority),
             typeof(Func<DataTableContext, CancellationToken, ValueTask<DataTableBase?>>)
         }) ?? throw new InvalidOperationException("Context-aware TableRegistration constructor was not found.");
-
-    private static void AssertCompatibilityMember(MemberInfo member)
-    {
-        member.GetCustomAttribute<ObsoleteAttribute>().Should().NotBeNull(
-            $"{member.DeclaringType?.FullName ?? member.Name}.{member.Name} is a compatibility API");
-        var editorBrowsable = member.GetCustomAttribute<EditorBrowsableAttribute>();
-        editorBrowsable.Should().NotBeNull(
-            $"{member.DeclaringType?.FullName ?? member.Name}.{member.Name} is a compatibility API");
-        editorBrowsable!.State.Should().Be(EditorBrowsableState.Never,
-            $"{member.DeclaringType?.FullName ?? member.Name}.{member.Name} should be hidden from IntelliSense");
-    }
 }

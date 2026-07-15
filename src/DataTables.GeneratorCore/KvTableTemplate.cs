@@ -62,7 +62,7 @@ namespace DataTables.GeneratorCore
             this.Write(this.ToStringHelper.ToStringWithCulture(GetPropertyTypeString(item)));
             this.Write(" Get");
             this.Write(this.ToStringHelper.ToStringWithCulture(item.Name));
-            this.Write("(string dataTableName) => DataTableManager.GetDataTableInternal<");
+            this.Write("(string dataTableName) => DataTableManager.GetCached<");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.DataTableClassName));
             this.Write(">(dataTableName)![0].");
             this.Write(this.ToStringHelper.ToStringWithCulture(item.Name));

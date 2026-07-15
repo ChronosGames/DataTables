@@ -18,15 +18,15 @@ namespace DataTables
 
     public readonly struct CacheStats
     {
-        public readonly int TotalItems;
+        public int TotalItems { get; }
 
-        public readonly long EstimatedMemoryUsageBytes;
-        public readonly long AccessCount;
-        public readonly long HitCount;
-        public readonly float HitRate;
+        public long EstimatedMemoryUsageBytes { get; }
+        public long AccessCount { get; }
+        public long HitCount { get; }
+        public float HitRate { get; }
 
-        public readonly float EstimatedBudgetUsageRate;
-        public readonly DateTime LastAccessed;
+        public float EstimatedBudgetUsageRate { get; }
+        public DateTime LastAccessed { get; }
 
         public CacheStats(int totalItems, long estimatedMemoryUsageBytes, long accessCount, long hitCount, float estimatedBudgetUsageRate, DateTime lastAccessed)
         {

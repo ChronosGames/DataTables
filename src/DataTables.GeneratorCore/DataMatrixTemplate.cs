@@ -104,8 +104,8 @@ using DataTables;
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write(" Table\n    {\n        get => GetTable(string.Empty);\n    }\n\n    public static DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
-            this.Write(" GetTable(string dataTableName)\n    {\n        var table = DataTableManager.GetDat" +
-                    "aTableInternal<DT");
+            this.Write(" GetTable(string dataTableName)\n    {\n        var table = DataTableManager.GetCac" +
+                    "hed<DT");
             this.Write(this.ToStringHelper.ToStringWithCulture(GenerationContext.ClassName));
             this.Write(">(dataTableName);\n        if (table == null)\n        {\n            throw new Inva" +
                     "lidOperationException($\"DT");

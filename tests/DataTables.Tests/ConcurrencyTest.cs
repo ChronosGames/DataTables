@@ -118,11 +118,6 @@ namespace DataTables.Tests
             DataTableManager.GetCached<MockDataTable>().Should().BeNull();
             (await DataTableManager.LoadAsync<MockDataTable>()).Should().NotBeNull("销毁后的新请求应能重新加载");
         }
-            finally
-            {
-                source.Release();
-            }
-        }
 
         /// <summary>
         /// 测试并发加载不同数据表的性能

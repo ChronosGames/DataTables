@@ -254,6 +254,53 @@ public sealed class GenerationTransactionTests
         Directory.EnumerateDirectories(data, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
     }
 
+
+    [Fact]
+    public async Task ValidateOnlyGeneration_ShouldParseAndRenderWithoutWritingOutputs()
+    {
+        var root = CreateTempDirectory();
+        var input = Directory.CreateDirectory(Path.Combine(root, "input")).FullName;
+        var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
+        var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
+        await CreateValidWorkbookAsync(Path.Combine(input, "items.xlsx"));
+        var logs = new System.Collections.Generic.List<string>();
+
+        var result = await GenerateAsync(
+            input,
+            code,
+            data,
+            generationMode: GenerationMode.ValidateOnly,
+            logger: logs.Add);
+
+        result.Succeeded.Should().BeTrue();
+        result.SucceededCount.Should().Be(1);
+        Directory.GetFiles(code, "*", SearchOption.AllDirectories).Should().BeEmpty();
+        Directory.GetFiles(data, "*", SearchOption.AllDirectories).Should().BeEmpty();
+        Directory.EnumerateDirectories(code, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+        Directory.EnumerateDirectories(data, ".dtgen-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+        logs.Should().Contain(message => message.Contains("数据表校验完成"));
+    }
+
+    [Fact]
+    public async Task ValidateOnlyGeneration_ShouldReportTemplateAndSchemaConflictsWithoutTouchingOutputs()
+    {
+        var root = CreateTempDirectory();
+        var input = Directory.CreateDirectory(Path.Combine(root, "input")).FullName;
+        var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
+        var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
+        await CreateValidWorkbookAsync(Path.Combine(input, "items-a.xlsx"), id: 1);
+        await CreateValidWorkbookAsync(Path.Combine(input, "items-b.xlsx"), id: 2);
+
+        var result = await GenerateAsync(input, code, data, generationMode: GenerationMode.ValidateOnly);
+
+        result.Succeeded.Should().BeFalse();
+        result.Failures.Should().ContainSingle(x =>
+            x.Exception.Message.Contains("Generated data output conflict")
+            && x.Exception.Message.Contains("DataTables.Tests.Generated.DTItem.bytes"));
+        Directory.GetFiles(code, "*", SearchOption.AllDirectories).Should().BeEmpty();
+        Directory.GetFiles(data, "*", SearchOption.AllDirectories).Should().BeEmpty();
+    }
+
     [Fact]
     public async Task InvalidGenerationMode_ShouldRejectWithoutTouchingExistingOutputs()
     {

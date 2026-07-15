@@ -14,15 +14,19 @@ public class DocumentationSmokeTests
 {
     private static readonly string RepositoryRoot = FindRepositoryRoot();
     private static readonly string ReadmePath = Path.Combine(RepositoryRoot, "README.md");
+    private static readonly string AgentsPath = Path.Combine(RepositoryRoot, "AGENTS.md");
 
     [Fact]
     public void CliHelp_Should_Expose_KebabCase_LongOptions()
     {
         var result = RunCli("--help");
+        var validateResult = RunCli("validate", "--help");
 
         result.ExitCode.Should().Be(0);
+        validateResult.ExitCode.Should().Be(0);
         result.Errors.Should().BeEmpty();
-        var longOptions = GetLongOptions(result.Output);
+        validateResult.Errors.Should().BeEmpty();
+        var longOptions = GetLongOptions(result.Output + Environment.NewLine + validateResult.Output);
         longOptions.Should().Contain([
             "--strict-name-validation",
             "--validate-formula-consistency",
@@ -33,6 +37,7 @@ public class DocumentationSmokeTests
             "--array-nested-separators",
             "--diagnostics-json-output",
         ]);
+        GetLongOptions(validateResult.Output).Should().Contain("--diagnostics-json-output");
         longOptions.Should().OnlyContain(option => option == option.ToLowerInvariant());
     }
 
@@ -49,14 +54,13 @@ public class DocumentationSmokeTests
     [Fact]
     public void Readme_CSharpBlocks_Should_Compile()
     {
-        var markdown = File.ReadAllText(ReadmePath);
-        var snippets = GetFencedBlocks(markdown, "csharp").ToArray();
+        AssertMarkdownCSharpBlocksCompile(ReadmePath, "ReadmeQuickStart");
+    }
 
-        snippets.Should().NotBeEmpty();
-        for (var index = 0; index < snippets.Length; index++)
-        {
-            AssertCompiles($"ReadmeQuickStart{index + 1}", MakeCompilable(snippets[index]));
-        }
+    [Fact]
+    public void AgentGuide_CSharpBlocks_Should_Compile()
+    {
+        AssertMarkdownCSharpBlocksCompile(AgentsPath, "AgentGuide");
     }
 
     [Fact]
@@ -70,6 +74,7 @@ public class DocumentationSmokeTests
             .ToArray();
         var supportedOptions = GetOptions(RunCli("--help").Output)
             .Concat(GetOptions(RunCli("data", "--help").Output))
+            .Concat(GetOptions(RunCli("validate", "--help").Output))
             .ToHashSet(StringComparer.Ordinal);
 
         documentedOptions.Should().NotBeEmpty();
@@ -99,6 +104,18 @@ public class DocumentationSmokeTests
     {
         var pattern = $@"(?ms)^```{Regex.Escape(language)}\s*\r?\n(?<code>.*?)^```\s*$";
         return Regex.Matches(markdown, pattern).Select(match => match.Groups["code"].Value);
+    }
+
+    private static void AssertMarkdownCSharpBlocksCompile(string markdownPath, string assemblyPrefix)
+    {
+        var markdown = File.ReadAllText(markdownPath);
+        var snippets = GetFencedBlocks(markdown, "csharp").ToArray();
+
+        snippets.Should().NotBeEmpty($"{Path.GetFileName(markdownPath)} should contain compilable C# snippets");
+        for (var index = 0; index < snippets.Length; index++)
+        {
+            AssertCompiles($"{assemblyPrefix}{index + 1}", MakeCompilable(snippets[index]));
+        }
     }
 
     private static string MakeCompilable(string snippet)
@@ -135,6 +152,11 @@ namespace UnityEngine
         public static void Log(object? value) { }
         public static void LogException(System.Exception exception) { }
     }
+}
+
+public static class DataTableManagerExtension
+{
+    public static void Preload(System.Action onLoaded) => onLoaded();
 }
 """;
 

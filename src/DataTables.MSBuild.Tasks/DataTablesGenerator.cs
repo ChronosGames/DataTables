@@ -26,12 +26,15 @@ namespace DataTables.MSBuild.Tasks
 
         public bool ForceOverwrite { get; set; }
 
+        public bool ValidateOnly { get; set; }
+
         public override bool Execute()
         {
             try
             {
                 var searchPatterns = SearchPatterns.Length == 0 ? ["*.*"] : SearchPatterns;
-                var result = new DataTableGenerator().GenerateFile(InputDirectories, searchPatterns, CodeOutputDirectory, DataOutputDirectory, UsingNamespace, PrefixClassName, ImportNamespaces, FilterColumnTags, ForceOverwrite, x => this.Log.LogMessage(x)).GetAwaiter().GetResult();
+                var generationMode = ValidateOnly ? GenerationMode.ValidateOnly : GenerationMode.CodeAndData;
+                var result = new DataTableGenerator().GenerateFile(InputDirectories, searchPatterns, CodeOutputDirectory, DataOutputDirectory, UsingNamespace, PrefixClassName, ImportNamespaces, FilterColumnTags, ForceOverwrite, x => this.Log.LogMessage(x), generationMode).GetAwaiter().GetResult();
                 if (!result.Succeeded)
                 {
                     foreach (var failure in result.Failures)

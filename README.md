@@ -191,6 +191,7 @@ DataTableManager.ParseExecution = DataTableParseExecution.CallingContext;
 ```bash
 dotnet dtgen --help
 dotnet dtgen data --help
+dotnet dtgen validate --help
 ```
 
 完整生成示例：
@@ -229,6 +230,17 @@ dotnet dtgen \
 
 ```bash
 dotnet dtgen data -i ./Tables -patterns "*.xlsx" -do ./Data -p DR
+```
+
+CI 或预提交只校验 Excel/schema、诊断与代码模板可渲染性，不写入 C#、`.bytes` 或 manifest 时，使用 `validate` 子命令：
+
+```bash
+dotnet dtgen validate \
+  -i ./Tables \
+  -patterns "*.xlsx" \
+  -n MyGame \
+  -p DR \
+  --diagnostics-json-output ./artifacts/diagnostics.json
 ```
 
 所有长参数使用 kebab-case。CLI 文档示例由测试与实际 `--help` 输出保持一致。

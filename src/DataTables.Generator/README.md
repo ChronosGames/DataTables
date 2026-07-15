@@ -16,3 +16,12 @@
 - 可选：`#列注释标志` 行，用于按列跳过导出（该行对应列以 `#` 开头即跳过该列）
 
 示例参见 `templates/ColumnTable.Sample.csv`。
+
+
+## Validate-only / CI 校验
+
+使用 `validate` 子命令可以解析 Excel、执行 schema/诊断校验并渲染代码模板，但不写入 C#、`.bytes` 或 manifest，适合 CI 或预提交检查：
+
+```bash
+dotnet dtgen validate -i ./Tables -patterns "*.xlsx" -n MyGame -p DR --diagnostics-json-output ./artifacts/diagnostics.json
+```

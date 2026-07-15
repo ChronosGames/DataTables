@@ -55,7 +55,7 @@ var rewards = DTGameConfig.DefaultRewards;
 当前实现还会生成动态访问 API：
 
 ```csharp
-var table = DataTableManager.GetDataTable<DTGameConfig>();
+var table = DataTableManager.GetCached<DTGameConfig>();
 table?.TryGetValue("MaxLevel", out int? value);
 table?.GetValue<int>("MaxLevel");
 ```
@@ -114,7 +114,7 @@ table?.GetValue<int>("MaxLevel");
 2. 每个条目写出 key、类型签名和 value payload。
 3. 结构化 header 继续使用 v3 header、schema hash、generator version、table full name 和 flags。
 
-如果后续引入独立 kv payload，可保留 key 到 value 的元数据，方便调试工具和兼容 API 查询。
+如果后续引入独立 kv payload，可保留 key 到 value 的元数据，方便调试工具和调试查询。
 
 ## 与索引和预热的关系
 

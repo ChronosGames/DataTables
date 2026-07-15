@@ -155,6 +155,55 @@ public class MyCommands
         Console.OutputEncoding = oldEncoding;
     }
 
+    /// <summary>
+    /// Validate input tables without writing generated code, data, or manifests.
+    /// </summary>
+    /// <param name="inputDirectories">-i, Input file directory(search recursive).</param>
+    /// <param name="searchPattern">-patterns, Input file wildcard.</param>
+    /// <param name="importNamespaces">-ins, Import namespaces of generated files, split with char '&amp;' for multiple namespaces.</param>
+    /// <param name="usingNamespace">-n, Namespace of generated files.</param>
+    /// <param name="prefixClassName">-p, Prefix of class names.</param>
+    /// <param name="filterColumnTags">-t, Tags of filter columns.</param>
+    [Command("validate")]
+    public async Task Validate(
+        string[] inputDirectories,
+        string[] searchPattern,
+        string importNamespaces = "",
+        string usingNamespace = "",
+        string prefixClassName = "",
+        string filterColumnTags = "",
+        // ParseOptions
+        bool strictNameValidation = true,
+        bool validateFormulaConsistency = true,
+        string formulaPolicy = "ValidateOnly",
+        string columnCommentMarkerText = "#列注释标志",
+        string rowCommentMarkerText = "#行注释标志",
+        string skipCellMarker = "#",
+        string arrayNestedSeparators = "",
+        string diagnosticsJsonOutput = "")
+    {
+        var sw = Stopwatch.StartNew();
+        Console.WriteLine("Start DataTables Validation");
+
+        var options = CreateParseOptions(filterColumnTags, strictNameValidation, validateFormulaConsistency, formulaPolicy, columnCommentMarkerText, rowCommentMarkerText, skipCellMarker, arrayNestedSeparators);
+        var result = await new DataTableGenerator().GenerateFile(inputDirectories, searchPattern, string.Empty, string.Empty, usingNamespace, prefixClassName,
+            importNamespaces: importNamespaces,
+            filterColumnTags: filterColumnTags,
+            forceOverwrite: false,
+            Console.WriteLine,
+            GenerationMode.ValidateOnly,
+            options,
+            string.IsNullOrWhiteSpace(diagnosticsJsonOutput) ? null : diagnosticsJsonOutput);
+
+        if (!result.Succeeded)
+        {
+            Environment.ExitCode = 1;
+            return;
+        }
+
+        Console.WriteLine("Complete DataTables Validation, elapsed: " + sw.Elapsed);
+    }
+
     private static ParseOptions CreateParseOptions(string filterColumnTags, bool strictNameValidation, bool validateFormulaConsistency, string formulaPolicy, string columnCommentMarkerText, string rowCommentMarkerText, string skipCellMarker, string arrayNestedSeparators)
     {
         return new ParseOptions

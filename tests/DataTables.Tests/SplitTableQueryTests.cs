@@ -59,7 +59,7 @@ public sealed class SplitQueryTable : DataTable<SplitQueryRow>
 
     public static SplitQueryRow? GetById(string dataTableName, int id)
     {
-        var table = DataTableManager.GetDataTableInternal<SplitQueryTable>(dataTableName);
+        var table = DataTableManager.GetCached<SplitQueryTable>(dataTableName);
         return table?.m_ById.TryGetValue(id, out var row) == true ? row : null;
     }
 }

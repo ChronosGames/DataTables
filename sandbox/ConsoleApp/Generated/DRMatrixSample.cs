@@ -71,7 +71,7 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
 
     public static DTMatrixSample GetTable(string dataTableName)
     {
-        var table = DataTableManager.GetDataTableInternal<DTMatrixSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTMatrixSample>(dataTableName);
         if (table == null)
         {
             throw new InvalidOperationException($"DTMatrixSample '{dataTableName}' is not loaded. Call DataTableManager.LoadAsync<DTMatrixSample>(dataTableName) first.");
@@ -84,7 +84,7 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
     /// </summary>
     public static DTMatrixSample? TableOrNull => GetTableOrNull(string.Empty);
 
-    public static DTMatrixSample? GetTableOrNull(string dataTableName) => DataTableManager.GetDataTableInternal<DTMatrixSample>(dataTableName);
+    public static DTMatrixSample? GetTableOrNull(string dataTableName) => DataTableManager.GetCached<DTMatrixSample>(dataTableName);
 
     /// <summary>
     /// 检查数据矩阵是否已加载 (静态方法)
@@ -102,7 +102,7 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool? GetRow(string dataTableName, short key1, long key2)
     {
-        var table = DataTableManager.GetDataTableInternal<DTMatrixSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTMatrixSample>(dataTableName);
         return table?.Get(key1, key2);
     }
 
@@ -115,7 +115,7 @@ public sealed partial class DTMatrixSample : DataMatrixBase<short, long, bool>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool GetRowOrDefault(string dataTableName, short key1, long key2)
     {
-        var table = DataTableManager.GetDataTableInternal<DTMatrixSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTMatrixSample>(dataTableName);
         return table != null ? table.Get(key1, key2)! : default!;
     }
 

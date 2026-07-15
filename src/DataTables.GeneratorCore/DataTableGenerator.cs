@@ -37,12 +37,14 @@ public sealed class DataTableGenerator
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
         dataRowClassPrefix ??= string.Empty;
-        if (generationMode is not GenerationMode.CodeAndData and not GenerationMode.DataOnly)
+        if (generationMode is not GenerationMode.CodeAndData and not GenerationMode.DataOnly and not GenerationMode.ValidateOnly)
         {
             throw new ArgumentOutOfRangeException(nameof(generationMode), generationMode, "Unknown generation mode.");
         }
 
         var generateCode = generationMode == GenerationMode.CodeAndData;
+        var validateOnly = generationMode == GenerationMode.ValidateOnly;
+        var renderCode = generateCode || validateOnly;
         if (generateCode && string.IsNullOrWhiteSpace(codeOutputDir))
         {
             throw new ArgumentException("Code output directory is required in code-and-data generation mode.", nameof(codeOutputDir));
@@ -107,13 +109,19 @@ public sealed class DataTableGenerator
             }
         }
 
-        var codeAndDataManifestPath = Path.Combine(dataOutputDir, IncrementalGenerationManifest.FileName);
-        var manifestPath = generationMode == GenerationMode.DataOnly
-            ? Path.Combine(dataOutputDir, IncrementalGenerationManifest.DataOnlyFileName)
-            : codeAndDataManifestPath;
-        var previousManifest = generationMode == GenerationMode.DataOnly && !File.Exists(manifestPath)
-            ? IncrementalGenerationManifest.Load(codeAndDataManifestPath, logger)
-            : IncrementalGenerationManifest.Load(manifestPath, logger);
+        var codeAndDataManifestPath = validateOnly || string.IsNullOrWhiteSpace(dataOutputDir)
+            ? string.Empty
+            : Path.Combine(dataOutputDir, IncrementalGenerationManifest.FileName);
+        var manifestPath = validateOnly
+            ? string.Empty
+            : generationMode == GenerationMode.DataOnly
+                ? Path.Combine(dataOutputDir, IncrementalGenerationManifest.DataOnlyFileName)
+                : codeAndDataManifestPath;
+        var previousManifest = validateOnly
+            ? new IncrementalGenerationManifest()
+            : generationMode == GenerationMode.DataOnly && !File.Exists(manifestPath)
+                ? IncrementalGenerationManifest.Load(codeAndDataManifestPath, logger)
+                : IncrementalGenerationManifest.Load(manifestPath, logger);
         if (filePaths.Count == 0 && previousManifest.Inputs.Count == 0)
         {
             throw new InvalidOperationException("Not found Excel files, inputDir: " + inputDirectories.Length);
@@ -124,8 +132,8 @@ public sealed class DataTableGenerator
             dataRowClassPrefix,
             importNamespaces,
             parseOptions,
-            generateCode);
-        var canReuseManifest = !forceOverwrite && previousManifest.GeneratorFingerprint == generatorFingerprint;
+            renderCode);
+        var canReuseManifest = !validateOnly && !forceOverwrite && previousManifest.GeneratorFingerprint == generatorFingerprint;
         var contentHashes = new ConcurrentDictionary<string, string>(IncrementalGenerationManifest.PathComparer);
         await Parallel.ForEachAsync(filePaths, (pair, _) =>
         {
@@ -154,7 +162,7 @@ public sealed class DataTableGenerator
 
         using var transaction = new GenerationTransaction();
         var stagingCodeOutputDir = string.IsNullOrEmpty(codeOutputDir) ? string.Empty : transaction.GetStagingDirectory(codeOutputDir);
-        var stagingDataOutputDir = transaction.GetStagingDirectory(dataOutputDir);
+        var stagingDataOutputDir = validateOnly ? string.Empty : transaction.GetStagingDirectory(dataOutputDir);
         if (generateCode && !string.IsNullOrEmpty(previousManifest.CodeOutputDirectory) && Directory.Exists(previousManifest.CodeOutputDirectory))
         {
             transaction.GetStagingDirectory(previousManifest.CodeOutputDirectory);
@@ -199,6 +207,8 @@ public sealed class DataTableGenerator
             collectMetrics: m => allMetrics.Add(m),
             collectContext: context => contextsByInput.GetOrAdd(pair.Key, _ => new ConcurrentBag<GenerationContext>()).Add(context),
             generateCode: generateCode,
+            renderCode: renderCode,
+            validateOnly: validateOnly,
             outputClaims: outputClaims,
             failures: failures,
             log: logger)));
@@ -207,7 +217,7 @@ public sealed class DataTableGenerator
         {
             GeneratorFingerprint = generatorFingerprint,
             CodeOutputDirectory = generateCode ? Path.GetFullPath(codeOutputDir) : string.Empty,
-            DataOutputDirectory = Path.GetFullPath(dataOutputDir),
+            DataOutputDirectory = validateOnly ? string.Empty : Path.GetFullPath(dataOutputDir),
             Inputs = new Dictionary<string, IncrementalInputEntry>(IncrementalGenerationManifest.PathComparer),
         };
         foreach (var pair in filePaths.OrderBy(x => x.Key, IncrementalGenerationManifest.PathComparer))
@@ -219,7 +229,7 @@ public sealed class DataTableGenerator
             }
 
             contextsByInput.TryGetValue(pair.Key, out var contexts);
-            nextManifest.Inputs.Add(pair.Key, CreateInputEntry(contentHashes[pair.Key], contexts ?? [], generateCode));
+            nextManifest.Inputs.Add(pair.Key, CreateInputEntry(contentHashes[pair.Key], contexts ?? [], renderCode));
         }
 
         logger("Generate Manager Files:");
@@ -294,9 +304,12 @@ public sealed class DataTableGenerator
             logger($"Diagnostics report saved: {diagnosticsJsonOutput}");
         }
 
-        PopulateOutputHashes(nextManifest, stagingCodeOutputDir, codeOutputDir, stagingDataOutputDir, dataOutputDir);
-        File.WriteAllText(transaction.GetStagingFile(manifestPath), nextManifest.Serialize());
-        ScheduleRemovedOutputs(transaction, previousManifest, nextManifest, generationMode);
+        if (!validateOnly)
+        {
+            PopulateOutputHashes(nextManifest, stagingCodeOutputDir, codeOutputDir, stagingDataOutputDir, dataOutputDir);
+            File.WriteAllText(transaction.GetStagingFile(manifestPath), nextManifest.Serialize());
+            ScheduleRemovedOutputs(transaction, previousManifest, nextManifest, generationMode);
+        }
 
         logger(string.Empty);
         logger("===========================================================");
@@ -304,11 +317,13 @@ public sealed class DataTableGenerator
         var succeededCount = list.Count(x => !x.Skiped);
         var skippedCount = list.Count(x => x.Skiped)
             + unchangedInputIds.Sum(id => previousManifest.Inputs[id].Registrations.Count);
-        if (failureList.Length == 0)
+        if (!validateOnly && failureList.Length == 0)
         {
             transaction.Commit();
         }
-        logger($"数据表导出完成: {succeededCount} 成功，{failureList.Length} 失败，{skippedCount} 已跳过");
+        logger(validateOnly
+            ? $"数据表校验完成: {succeededCount} 成功，{failureList.Length} 失败，{skippedCount} 已跳过"
+            : $"数据表导出完成: {succeededCount} 成功，{failureList.Length} 失败，{skippedCount} 已跳过");
 
         return new GenerationResult(succeededCount, skippedCount, failureList, diagnosticList);
     }
@@ -434,7 +449,7 @@ public sealed class DataTableGenerator
         return fullPath;
     }
 
-    private async Task GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string finalCodeOutputDir, string dataOutputDir, string finalDataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log, ParseOptions options, Action<Diagnostic> collectDiagnostic, Action<DiagnosticsMetrics> collectMetrics, Action<GenerationContext> collectContext, bool generateCode, OutputClaimRegistry outputClaims, ConcurrentBag<GenerationFailure> failures)
+    private async Task GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string filterColumnTags, string codeOutputDir, string finalCodeOutputDir, string dataOutputDir, string finalDataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log, ParseOptions options, Action<Diagnostic> collectDiagnostic, Action<DiagnosticsMetrics> collectMetrics, Action<GenerationContext> collectContext, bool generateCode, bool renderCode, bool validateOnly, OutputClaimRegistry outputClaims, ConcurrentBag<GenerationFailure> failures)
     {
         using (var logger = new ILogger(log))
         {
@@ -497,7 +512,7 @@ public sealed class DataTableGenerator
                             continue;
                         }
 
-                        var codeContent = generateCode ? RenderCodeFile(context) : null;
+                        var codeContent = renderCode ? RenderCodeFile(context) : null;
                         var codeContentHash = codeContent == null ? null : ComputeContentHash(codeContent);
                         if (!outputClaims.TryReserve(context, filePath, codeContentHash, out var writeCode, out var conflict))
                         {
@@ -509,13 +524,16 @@ public sealed class DataTableGenerator
                         }
 
                         // 生成代码文件。分表生成的代码内容相同时只写入一次。
-                        if (writeCode)
+                        if (generateCode && writeCode)
                         {
                             GenerateCodeFile(context, codeOutputDir, finalCodeOutputDir, codeContent!, forceOverwrite, logger);
                         }
 
-                        // 生成数据文件
-                        processor.GenerateDataFile(dataOutputDir, finalDataOutputDir, forceOverwrite, sheet, logger);
+                        // 生成数据文件。ValidateOnly 模式只解析、校验并渲染代码模板，不写任何产物。
+                        if (!validateOnly)
+                        {
+                            processor.GenerateDataFile(dataOutputDir, finalDataOutputDir, forceOverwrite, sheet, logger);
+                        }
 
                         if (context.Failed)
                         {

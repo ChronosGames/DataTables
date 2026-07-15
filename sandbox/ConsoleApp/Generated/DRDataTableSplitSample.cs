@@ -154,7 +154,7 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static DRDataTableSplitSample? GetById(string dataTableName, int id)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSplitSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSplitSample>(dataTableName);
         return table?.m_Index1.TryGetValue(id, out var result) == true ? result : null;
     }
 
@@ -164,7 +164,7 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetById(string dataTableName, int id, out DRDataTableSplitSample? result)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSplitSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSplitSample>(dataTableName);
         result = null;
         return table != null && table.m_Index1.TryGetValue(id, out result);
     }
@@ -175,14 +175,9 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ContainsId(string dataTableName, int id)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSplitSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSplitSample>(dataTableName);
         return table?.m_Index1.ContainsKey(id) == true;
     }
-
-    [Obsolete("Use GetById instead.")]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static DRDataTableSplitSample? GetRowById(int id) => GetById(id);
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -191,7 +186,7 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static DRDataTableSplitSample? GetByColor(string dataTableName, ConsoleApp.ColorT color)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSplitSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSplitSample>(dataTableName);
         return table?.m_Index2.TryGetValue(color, out var result) == true ? result : null;
     }
 
@@ -201,7 +196,7 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetByColor(string dataTableName, ConsoleApp.ColorT color, out DRDataTableSplitSample? result)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSplitSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSplitSample>(dataTableName);
         result = null;
         return table != null && table.m_Index2.TryGetValue(color, out result);
     }
@@ -212,14 +207,9 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ContainsColor(string dataTableName, ConsoleApp.ColorT color)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSplitSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSplitSample>(dataTableName);
         return table?.m_Index2.ContainsKey(color) == true;
     }
-
-    [Obsolete("Use GetByColor instead.")]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static DRDataTableSplitSample? GetRowByColor(ConsoleApp.ColorT color) => GetByColor(color);
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -228,7 +218,7 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static DRDataTableSplitSample? GetByIdAndInt16Value(string dataTableName, int id, short int16Value)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSplitSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSplitSample>(dataTableName);
         return table?.m_Index3.TryGetValue((id, int16Value), out var result) == true ? result : null;
     }
 
@@ -238,7 +228,7 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetByIdAndInt16Value(string dataTableName, int id, short int16Value, out DRDataTableSplitSample? result)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSplitSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSplitSample>(dataTableName);
         result = null;
         return table != null && table.m_Index3.TryGetValue((id, int16Value), out result);
     }
@@ -249,14 +239,9 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ContainsIdAndInt16Value(string dataTableName, int id, short int16Value)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSplitSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSplitSample>(dataTableName);
         return table?.m_Index3.ContainsKey((id, int16Value)) == true;
     }
-
-    [Obsolete("Use GetByIdAndInt16Value instead.")]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static DRDataTableSplitSample? GetRowByIdAndInt16Value(int id, short int16Value) => GetByIdAndInt16Value(id, int16Value);
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -265,7 +250,7 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IReadOnlyList<DRDataTableSplitSample>? GetManyByNameAndBoolValue(string dataTableName, string name, bool boolValue)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSplitSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSplitSample>(dataTableName);
         return table?.m_Index4.TryGetValue((name, boolValue), out var result) == true ? result : null;
     }
 
@@ -275,14 +260,9 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ContainsNameAndBoolValue(string dataTableName, string name, bool boolValue)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSplitSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSplitSample>(dataTableName);
         return table?.m_Index4.ContainsKey((name, boolValue)) == true;
     }
-
-    [Obsolete("Use GetManyByNameAndBoolValue instead.")]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<DRDataTableSplitSample>? GetRowsGroupByNameAndBoolValue(string name, bool boolValue) => GetManyByNameAndBoolValue(name, boolValue) as List<DRDataTableSplitSample>;
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -291,7 +271,7 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IReadOnlyList<DRDataTableSplitSample>? GetManyByName(string dataTableName, string name)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSplitSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSplitSample>(dataTableName);
         return table?.m_Index5.TryGetValue(name, out var result) == true ? result : null;
     }
 
@@ -301,14 +281,9 @@ public sealed partial class DTDataTableSplitSample : DataTable<DRDataTableSplitS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ContainsName(string dataTableName, string name)
     {
-        var table = DataTableManager.GetDataTableInternal<DTDataTableSplitSample>(dataTableName);
+        var table = DataTableManager.GetCached<DTDataTableSplitSample>(dataTableName);
         return table?.m_Index5.ContainsKey(name) == true;
     }
-
-    [Obsolete("Use GetManyByName instead.")]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<DRDataTableSplitSample>? GetRowsGroupByName(string name) => GetManyByName(name) as List<DRDataTableSplitSample>;
 
     #endregion
 }

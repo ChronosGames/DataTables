@@ -172,7 +172,7 @@ using DataTables;<# if (!string.IsNullOrEmpty(Using)) { #><#= Environment.NewLin
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static <#= GenerationContext.DataRowClassName #>? GetBy<#= suffix #>(string <#= tableNameParameter #>, <#= parameters #>)
     {
-        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
+        var table = DataTableManager.GetCached<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
         return table?.m_Index<#= i + 1 #>.TryGetValue(<#= key #>, out var result) == true ? result : null;
     }
 
@@ -182,7 +182,7 @@ using DataTables;<# if (!string.IsNullOrEmpty(Using)) { #><#= Environment.NewLin
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetBy<#= suffix #>(string <#= tableNameParameter #>, <#= parameters #>, out <#= GenerationContext.DataRowClassName #>? result)
     {
-        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
+        var table = DataTableManager.GetCached<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
         result = null;
         return table != null && table.m_Index<#= i + 1 #>.TryGetValue(<#= key #>, out result);
     }
@@ -193,14 +193,9 @@ using DataTables;<# if (!string.IsNullOrEmpty(Using)) { #><#= Environment.NewLin
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Contains<#= suffix #>(string <#= tableNameParameter #>, <#= parameters #>)
     {
-        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
+        var table = DataTableManager.GetCached<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
         return table?.m_Index<#= i + 1 #>.ContainsKey(<#= key #>) == true;
     }
-
-    [Obsolete("Use GetBy<#= suffix #> instead.")]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static <#= GenerationContext.DataRowClassName #>? GetRowBy<#= suffix #>(<#= parameters #>) => GetBy<#= suffix #>(<#= arguments #>);
 <#
     }
     for (var i = 0; i < GenerationContext.GroupIndexDefinitions.Count; i++)
@@ -220,7 +215,7 @@ using DataTables;<# if (!string.IsNullOrEmpty(Using)) { #><#= Environment.NewLin
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IReadOnlyList<<#= GenerationContext.DataRowClassName #>>? GetManyBy<#= suffix #>(string <#= tableNameParameter #>, <#= parameters #>)
     {
-        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
+        var table = DataTableManager.GetCached<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
         return table?.m_Index<#= dictNo #>.TryGetValue(<#= key #>, out var result) == true ? result : null;
     }
 
@@ -230,14 +225,9 @@ using DataTables;<# if (!string.IsNullOrEmpty(Using)) { #><#= Environment.NewLin
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Contains<#= suffix #>(string <#= tableNameParameter #>, <#= parameters #>)
     {
-        var table = DataTableManager.GetDataTableInternal<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
+        var table = DataTableManager.GetCached<<#= GenerationContext.DataTableClassName #>>(<#= tableNameParameter #>);
         return table?.m_Index<#= dictNo #>.ContainsKey(<#= key #>) == true;
     }
-
-    [Obsolete("Use GetManyBy<#= suffix #> instead.")]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<<#= GenerationContext.DataRowClassName #>>? GetRowsGroupBy<#= suffix #>(<#= parameters #>) => GetManyBy<#= suffix #>(<#= arguments #>) as List<<#= GenerationContext.DataRowClassName #>>;
 <#
     }
 #>

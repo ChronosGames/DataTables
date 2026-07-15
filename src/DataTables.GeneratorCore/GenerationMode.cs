@@ -4,4 +4,5 @@ public enum GenerationMode
 {
     CodeAndData,
     DataOnly,
+    ValidateOnly,
 }

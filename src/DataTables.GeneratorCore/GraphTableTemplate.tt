@@ -181,7 +181,7 @@
         WL("    public bool ContainsNode(string nodeId) => GetDataRowsGroupByFrom(nodeId) != null || GetDataRowsGroupByTo(nodeId) != null;");
         WL("    public string? GetNode(string nodeId) => ContainsNode(nodeId) ? nodeId : null;");
         WL();
-        WL($"    private static {table}? GetGraphTableStatic(string dataTableName) => DataTableManager.GetDataTableInternal<{table}>(dataTableName);");
+        WL($"    private static {table}? GetGraphTableStatic(string dataTableName) => DataTableManager.GetCached<{table}>(dataTableName);");
         WL($"    public static int EdgeCountStatic => GetEdgeCountStatic(string.Empty);");
         WL($"    public static int GetEdgeCountStatic(string dataTableName) => GetGraphTableStatic(dataTableName)?.EdgeCount ?? 0;");
         WL($"    public static int NodeCountStatic => GetNodeCountStatic(string.Empty);");

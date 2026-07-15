@@ -351,8 +351,8 @@ namespace DataTables.Tests
             DataTableManager.UseDataSource(new FastMockDataSource());
 
             // Act - 测试内联优化的内部方法
-            var table1 = DataTableManager.GetDataTableInternal<MockDataTable>();
-            var table2 = DataTableManager.GetDataTableInternal<MockDataTable>();
+            var table1 = DataTableManager.GetCached<MockDataTable>();
+            var table2 = DataTableManager.GetCached<MockDataTable>();
 
             // Assert
             if (table1 != null && table2 != null)

@@ -56,7 +56,11 @@ docs/
 │   └── binary-format-v3.md
 ├── migration/                        # 版本迁移文档
 │   └── migration-to-v3.md
+├── adr/                              # 长期架构决策记录
+│   └── README.md
 └── planning/                         # 阶段性计划和历史优化记录
+    ├── README.md
+    ├── agent-engineering-review-2026-07.md
     └── optimization-plan-2026-07.md
 ```
 
@@ -66,6 +70,7 @@ docs/
 - 新增表类型、生成策略或架构方案放入 `docs/designs/`。
 - 二进制格式、协议、稳定 API 说明放入 `docs/reference/`。
 - 版本升级、破坏性变更处理放入 `docs/migration/`。
-- Roadmap、优化计划、阶段性调研放入 `docs/planning/`。
+- 长期架构决策放入 `docs/adr/`。
+- Roadmap、优化计划、阶段性调研放入 `docs/planning/`，并在 `docs/planning/README.md` 标注状态。
 - 文档间链接使用相对路径；移动文件后必须同步更新链接。
 - 根目录只保留项目级入口文档，例如 `README.md`、`CHANGELOG.md`、`ROADMAP.md` 和许可证。

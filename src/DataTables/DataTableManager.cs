@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,53 +16,28 @@ namespace DataTables
         All = Critical | Normal | Lazy
     }
 
-    [Obsolete("Unused compatibility type.")]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public enum DataTableStatus
-    {
-        NotLoaded,
-        LoadedEmpty,
-        LoadedWithData
-    }
-
     public readonly struct CacheStats
     {
         public readonly int TotalItems;
 
-        [Obsolete("Use EstimatedMemoryUsageBytes instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public readonly long MemoryUsage;
+        public readonly long EstimatedMemoryUsageBytes;
         public readonly long AccessCount;
         public readonly long HitCount;
         public readonly float HitRate;
 
-        [Obsolete("Use EstimatedBudgetUsageRate instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public readonly float MemoryUsageRate;
+        public readonly float EstimatedBudgetUsageRate;
         public readonly DateTime LastAccessed;
 
-#pragma warning disable CS0618 // Compatibility fields back the clearer estimated-budget aliases.
-        /// <summary>
-        /// Estimated cache-entry bytes calculated by the configured estimator.
-        /// </summary>
-        public long EstimatedMemoryUsageBytes => MemoryUsage;
-
-        /// <summary>
-        /// Ratio of estimated cache-entry bytes to the configured estimated budget.
-        /// </summary>
-        public float EstimatedBudgetUsageRate => MemoryUsageRate;
-
-        public CacheStats(int totalItems, long memoryUsage, long accessCount, long hitCount, float memoryUsageRate, DateTime lastAccessed)
+        public CacheStats(int totalItems, long estimatedMemoryUsageBytes, long accessCount, long hitCount, float estimatedBudgetUsageRate, DateTime lastAccessed)
         {
             TotalItems = totalItems;
-            MemoryUsage = memoryUsage;
+            EstimatedMemoryUsageBytes = estimatedMemoryUsageBytes;
             AccessCount = accessCount;
             HitCount = hitCount;
             HitRate = accessCount > 0 ? (float)hitCount / accessCount : 0f;
-            MemoryUsageRate = memoryUsageRate;
+            EstimatedBudgetUsageRate = estimatedBudgetUsageRate;
             LastAccessed = lastAccessed;
         }
-#pragma warning restore CS0618
     }
 
     public readonly struct LoadStats
@@ -105,26 +78,13 @@ namespace DataTables
 
     public readonly struct TableRegistration
     {
-        private readonly Func<CancellationToken, ValueTask<DataTableBase?>>? m_LoadAsync;
         private readonly Func<DataTableContext, CancellationToken, ValueTask<DataTableBase?>>? m_ContextLoadAsync;
-
-        [Obsolete("Use the context-aware TableRegistration constructor instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public TableRegistration(Type tableType, string name, Priority priority, Func<CancellationToken, ValueTask<DataTableBase?>> loadAsync)
-        {
-            TableType = tableType ?? throw new ArgumentNullException(nameof(tableType));
-            Name = name ?? string.Empty;
-            Priority = priority;
-            m_LoadAsync = loadAsync ?? throw new ArgumentNullException(nameof(loadAsync));
-            m_ContextLoadAsync = null;
-        }
 
         public TableRegistration(Type tableType, string name, Priority priority, Func<DataTableContext, CancellationToken, ValueTask<DataTableBase?>> loadAsync)
         {
             TableType = tableType ?? throw new ArgumentNullException(nameof(tableType));
             Name = name ?? string.Empty;
             Priority = priority;
-            m_LoadAsync = null;
             m_ContextLoadAsync = loadAsync ?? throw new ArgumentNullException(nameof(loadAsync));
         }
 
@@ -132,15 +92,11 @@ namespace DataTables
         public string Name { get; }
         public Priority Priority { get; }
 
-        [Obsolete("Use LoadAsync(context, cancellationToken) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public ValueTask<DataTableBase?> LoadAsync(CancellationToken cancellationToken = default)
-            => LoadAsync(DataTableManager.DefaultContextInternal, cancellationToken);
-
         public ValueTask<DataTableBase?> LoadAsync(DataTableContext context, CancellationToken cancellationToken = default)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
-            return m_ContextLoadAsync != null ? m_ContextLoadAsync(context, cancellationToken) : m_LoadAsync!(cancellationToken);
+            if (m_ContextLoadAsync == null) throw new InvalidOperationException("Table registration is not initialized.");
+            return m_ContextLoadAsync(context, cancellationToken);
         }
     }
 
@@ -157,13 +113,9 @@ namespace DataTables
         private static readonly DataTableContext s_DefaultContext = new();
         private static readonly object s_DefaultInitializationGate = new();
 
-        internal static DataTableContext DefaultContextInternal => s_DefaultContext;
         public static int Count => s_DefaultContext.Count;
         public static bool IsEstimatedMemoryBudgetEnabled => s_DefaultContext.IsEstimatedMemoryBudgetEnabled;
 
-        [Obsolete("Use IsEstimatedMemoryBudgetEnabled instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static bool IsMemoryManagementEnabled => IsEstimatedMemoryBudgetEnabled;
         public static DataTableParseExecution ParseExecution
         {
             get => s_DefaultContext.ParseExecution;
@@ -172,23 +124,13 @@ namespace DataTables
 
         public static void UseFileSystem(string dataDirectory) => s_DefaultContext.UseFileSystem(dataDirectory);
         public static void UseNetwork(string baseUrl) => s_DefaultContext.UseNetwork(baseUrl);
-        [Obsolete("Use UseDataSource(source) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static void UseCustomSource(IDataSource dataSource) => UseDataSource(dataSource);
         public static void UseDataSource(IDataSource source) => s_DefaultContext.UseDataSource(source);
         public static void UseCompositeSource(params IDataSource[] sources) => s_DefaultContext.UseCompositeSource(sources);
         public static void EnableEstimatedMemoryBudget(int maxEstimatedMemoryMB, Func<DataTableBase, long>? estimatedSizeProvider = null)
             => s_DefaultContext.EnableEstimatedMemoryBudget(maxEstimatedMemoryMB, estimatedSizeProvider);
 
-        [Obsolete("Use EnableEstimatedMemoryBudget(maxEstimatedMemoryMB, estimatedSizeProvider) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static void EnableMemoryManagement(int maxMemoryMB) => EnableEstimatedMemoryBudget(maxMemoryMB);
-
         public static void DisableEstimatedMemoryBudget() => s_DefaultContext.DisableEstimatedMemoryBudget();
 
-        [Obsolete("Use DisableEstimatedMemoryBudget() instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static void DisableMemoryManagement() => DisableEstimatedMemoryBudget();
         public static void EnableProfiling(Action<LoadStats> onPerformanceReport) => s_DefaultContext.EnableProfiling(onPerformanceReport);
         public static void RegisterTables(IReadOnlyList<TableRegistration> registrations) => s_DefaultContext.RegisterTables(registrations);
         public static void ClearTableRegistrations() => s_DefaultContext.ClearTableRegistrations();
@@ -218,17 +160,9 @@ namespace DataTables
             return s_DefaultContext.LoadAsync<T>(name, cancellationToken);
         }
 
-        [Obsolete("Use LoadAsync<T>(name, cancellationToken) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static ValueTask<T?> LoadAsync<T>(CancellationToken cancellationToken) where T : DataTableBase
-            => LoadAsync<T>(string.Empty, cancellationToken);
-
         public static T? GetCached<T>(string name = "") where T : DataTableBase => s_DefaultContext.GetCached<T>(name);
         public static bool IsLoaded<T>(string name = "") where T : DataTableBase => s_DefaultContext.IsLoaded<T>(name);
 
-        [Obsolete("Use IsLoaded<T>(name) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static bool HasDataTable<T>() where T : DataTableBase => IsLoaded<T>();
         public static void OnLoaded<T>(Action<T> onLoaded) where T : DataTableBase => s_DefaultContext.OnLoaded(onLoaded);
         public static void OnAnyLoaded(Action<DataTableBase> onLoaded) => s_DefaultContext.OnAnyLoaded(onLoaded);
         public static void ClearHooks() => s_DefaultContext.ClearHooks();
@@ -236,65 +170,7 @@ namespace DataTables
         public static CacheStats? GetCacheStats() => s_DefaultContext.GetCacheStats();
         public static void ClearCache() => s_DefaultContext.ClearCache();
 
-        [Obsolete("Use LoadAsync<T>(name, cancellationToken) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static ValueTask<T?> GetOrCreateDataTableAsync<T>() where T : DataTableBase
-            => LoadAsync<T>();
-
-        [Obsolete("Use LoadAsync<T>(name, cancellationToken) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static ValueTask<T?> GetOrCreateDataTableAsync<T>(string name, CancellationToken cancellationToken = default) where T : DataTableBase
-            => LoadAsync<T>(name, cancellationToken);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static T? GetDataTableInternal<T>(string name = "") where T : DataTableBase => s_DefaultContext.GetCached<T>(name);
-
-        [Obsolete("Use LoadAsync<T>(name, cancellationToken) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static ValueTask<T?> CreateDataTableAsync<T>(string name = "", CancellationToken cancellationToken = default) where T : DataTableBase
-            => LoadAsync<T>(name, cancellationToken);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        [Obsolete("Use LoadAsync<T>(name, cancellationToken) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static void CreateDataTable<T>(Action onCompleted) where T : DataTableBase
-        {
-            EnsureDefaultContextInitialized();
-            _ = CompleteLegacyCreateAsync<T>(string.Empty, onCompleted);
-        }
-
-        [Obsolete("Use LoadAsync<T>(name, cancellationToken) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static void CreateDataTable<T>(string name, Action onCompleted) where T : DataTableBase
-        {
-            EnsureDefaultContextInitialized();
-            _ = CompleteLegacyCreateAsync<T>(name, onCompleted);
-        }
-
         public static bool DestroyDataTable<T>(string name = "") where T : DataTableBase => s_DefaultContext.DestroyDataTable<T>(name);
-
-        [Obsolete("请使用 GetCached<T>() 或 LoadAsync<T>() 替代")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static T? GetDataTable<T>() where T : DataTableBase => GetCached<T>();
-
-        private static async Task CompleteLegacyCreateAsync<T>(string name, Action? onCompleted) where T : DataTableBase
-        {
-            try
-            {
-                await LoadAsync<T>(name, CancellationToken.None);
-            }
-            catch (Exception exception)
-            {
-                Log.Error($"Failed to load table {typeof(T).FullName}.{name}: {exception.Message}", exception);
-            }
-            finally
-            {
-                try { onCompleted?.Invoke(); }
-                catch (Exception exception) { Log.Error($"Data table completion callback failed: {exception.Message}", exception); }
-            }
-        }
-
         private static void EnsureDefaultContextInitialized()
         {
             if (s_DefaultContext.HasDataSource) return;

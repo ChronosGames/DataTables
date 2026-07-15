@@ -52,8 +52,8 @@
 ```csharp
 DTGameConfig.MaxLevel
 DTGameConfig.EnablePvp
-DataTableManager.GetDataTable<DTGameConfig>()?.GetValue<int>("MaxLevel")
-DataTableManager.GetDataTable<DTGameConfig>()?.TryGetValue("EnablePvp", out bool? enablePvp)
+DataTableManager.GetCached<DTGameConfig>()?.GetValue<int>("MaxLevel")
+DataTableManager.GetCached<DTGameConfig>()?.TryGetValue("EnablePvp", out bool? enablePvp)
 ```
 
 当前校验与生成规则：

@@ -118,57 +118,6 @@ namespace DataTables.Tests
             DataTableManager.GetCached<MockDataTable>().Should().BeNull();
             (await DataTableManager.LoadAsync<MockDataTable>()).Should().NotBeNull("销毁后的新请求应能重新加载");
         }
-
-        [Fact]
-        public async Task LegacyCreateDuringClear_ShouldNotRepublishTheTable()
-        {
-            ResetDataTableManager();
-            var source = new BlockingCountingDataSource();
-            DataTableManager.UseDataSource(source);
-            var completed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-#pragma warning disable CS0618 // This test intentionally exercises the callback compatibility layer.
-            DataTableManager.CreateDataTable<MockDataTable>(() => completed.TrySetResult(true));
-#pragma warning restore CS0618
-            await source.FirstLoadStarted.Task;
-
-            DataTableManager.ClearCache();
-            source.Release();
-            await completed.Task;
-
-            DataTableManager.GetCached<MockDataTable>().Should().BeNull();
-        }
-
-        [Fact]
-        public async Task LegacyCreateAndLoadAsync_ShouldShareOneSourceLoad()
-        {
-            ResetDataTableManager();
-            var source = new BlockingCountingDataSource();
-            DataTableManager.UseDataSource(source);
-            var callbackCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var callbackCount = 0;
-
-            try
-            {
-#pragma warning disable CS0618 // This test intentionally exercises the callback compatibility layer.
-                DataTableManager.CreateDataTable<MockDataTable>(() =>
-                {
-                    Interlocked.Increment(ref callbackCount);
-                    callbackCompleted.TrySetResult(true);
-                });
-#pragma warning restore CS0618
-                await source.FirstLoadStarted.Task;
-
-                var loading = DataTableManager.LoadAsync<MockDataTable>().AsTask();
-                source.LoadCount.Should().Be(1);
-
-                source.Release();
-                (await loading).Should().NotBeNull();
-                await callbackCompleted.Task;
-
-                Volatile.Read(ref callbackCount).Should().Be(1);
-                source.LoadCount.Should().Be(1);
-            }
             finally
             {
                 source.Release();

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -30,9 +29,7 @@ namespace DataTables
     /// <summary>
     /// 独立的数据表运行时上下文。每个实例拥有自己的数据源、加载任务、缓存、生命周期和 Hook。
     /// </summary>
-#pragma warning disable CS0618
-    public sealed class DataTableContext : IDataTableContext, IDataTableManager, IDisposable
-#pragma warning restore CS0618
+    public sealed class DataTableContext : IDataTableContext, IDisposable
     {
         private readonly ConcurrentDictionary<TypeNamePair, DataTableBase> m_DataTables = new();
         private readonly ConcurrentDictionary<TypeNamePair, TaskCompletionSource<DataTableBase?>> m_LoadingTables = new();
@@ -85,10 +82,6 @@ namespace DataTables
                 }
             }
         }
-
-        [Obsolete("Use IsEstimatedMemoryBudgetEnabled instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public bool IsMemoryManagementEnabled => IsEstimatedMemoryBudgetEnabled;
 
         /// <summary>
         /// Gets or sets where synchronous payload deserialization executes. Payload I/O is always asynchronous.
@@ -174,10 +167,6 @@ namespace DataTables
             previousCache?.Dispose();
         }
 
-        [Obsolete("Use EnableEstimatedMemoryBudget(maxEstimatedMemoryMB, estimatedSizeProvider) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public void EnableMemoryManagement(int maxMemoryMB) => EnableEstimatedMemoryBudget(maxMemoryMB);
-
         public void DisableEstimatedMemoryBudget()
         {
             ThrowIfDisposed();
@@ -195,10 +184,6 @@ namespace DataTables
             }
             cache.Dispose();
         }
-
-        [Obsolete("Use DisableEstimatedMemoryBudget() instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public void DisableMemoryManagement() => DisableEstimatedMemoryBudget();
 
         public void EnableProfiling(Action<LoadStats> onPerformanceReport)
         {
@@ -276,21 +261,6 @@ namespace DataTables
             return result as T;
         }
 
-        [Obsolete("Use LoadAsync<T>(name, cancellationToken) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public ValueTask<T?> LoadAsync<T>(CancellationToken cancellationToken) where T : DataTableBase
-            => LoadAsync<T>(string.Empty, cancellationToken);
-
-        [Obsolete("Use LoadAsync<T>(name, cancellationToken) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public ValueTask<T?> GetOrCreateDataTableAsync<T>(string name = "", CancellationToken cancellationToken = default) where T : DataTableBase
-            => LoadAsync<T>(name, cancellationToken);
-
-        [Obsolete("Use LoadAsync<T>(name, cancellationToken) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public ValueTask<T?> CreateDataTableAsync<T>(string name = "", CancellationToken cancellationToken = default) where T : DataTableBase
-            => LoadAsync<T>(name, cancellationToken);
-
         public T? GetCached<T>(string name = "") where T : DataTableBase
         {
             ThrowIfDisposed();
@@ -301,38 +271,6 @@ namespace DataTables
         }
 
         public bool IsLoaded<T>(string name = "") where T : DataTableBase => GetCached<T>(name) != null;
-
-        [Obsolete("Compatibility API. Prefer IsLoaded<T>(name).")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public bool HasDataTable(Type dataTableType, string name = "")
-        {
-            if (dataTableType == null) throw new ArgumentNullException(nameof(dataTableType));
-            ThrowIfDisposed();
-            lock (m_Gate)
-            {
-                return TryGetDataTableUnsafe(new TypeNamePair(dataTableType, name ?? string.Empty), out _);
-            }
-        }
-
-        [Obsolete("Use IsLoaded<T>(name) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public bool HasDataTable<T>(string name = "") where T : DataTableBase => IsLoaded<T>(name);
-
-        [Obsolete("Use GetCached<T>(name) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public T? GetDataTable<T>(string name = "") where T : DataTableBase => GetCached<T>(name);
-
-        [Obsolete("Compatibility API. Prefer GetCached<T>(name).")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public DataTableBase? GetDataTable(Type dataTableType, string name = "")
-        {
-            if (dataTableType == null) throw new ArgumentNullException(nameof(dataTableType));
-            ThrowIfDisposed();
-            lock (m_Gate)
-            {
-                return TryGetDataTableUnsafe(new TypeNamePair(dataTableType, name ?? string.Empty), out var table) ? table : null;
-            }
-        }
 
         public DataTableBase[] GetAllDataTables()
         {
@@ -348,36 +286,6 @@ namespace DataTables
             if (results == null) throw new ArgumentNullException(nameof(results));
             results.Clear();
             results.AddRange(GetAllDataTables());
-        }
-
-        [Obsolete("Use LoadAsync<T>(name, cancellationToken) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public void CreateDataTable<T>(Action onCompleted) where T : DataTableBase
-        {
-            _ = CompleteLegacyCreateAsync(new TypeNamePair(typeof(T), string.Empty), onCompleted);
-        }
-
-        [Obsolete("Use the generic LoadAsync<T>(name, cancellationToken) API instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public void CreateDataTable(Type dataTableType, Action onCompleted)
-        {
-            if (dataTableType == null) throw new ArgumentNullException(nameof(dataTableType));
-            _ = CompleteLegacyCreateAsync(new TypeNamePair(dataTableType, string.Empty), onCompleted);
-        }
-
-        [Obsolete("Use LoadAsync<T>(name, cancellationToken) instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public void CreateDataTable<T>(string name, Action onCompleted) where T : DataTableBase
-        {
-            _ = CompleteLegacyCreateAsync(new TypeNamePair(typeof(T), name ?? string.Empty), onCompleted);
-        }
-
-        [Obsolete("Use the generic LoadAsync<T>(name, cancellationToken) API instead.")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public void CreateDataTable(Type dataTableType, string name, Action onCompleted)
-        {
-            if (dataTableType == null) throw new ArgumentNullException(nameof(dataTableType));
-            _ = CompleteLegacyCreateAsync(new TypeNamePair(dataTableType, name ?? string.Empty), onCompleted);
         }
 
         public bool DestroyDataTable(DataTableBase dataTable)
@@ -547,23 +455,6 @@ namespace DataTables
             {
                 ((ICollection<KeyValuePair<TypeNamePair, TaskCompletionSource<DataTableBase?>>>)m_LoadingTables)
                     .Remove(new KeyValuePair<TypeNamePair, TaskCompletionSource<DataTableBase?>>(pair, completion));
-            }
-        }
-
-        private async Task CompleteLegacyCreateAsync(TypeNamePair pair, Action? onCompleted)
-        {
-            try
-            {
-                await GetOrCreateDataTableAsync(pair, CancellationToken.None);
-            }
-            catch (Exception exception)
-            {
-                Log.Error($"Failed to load table {pair}: {exception.Message}", exception);
-            }
-            finally
-            {
-                try { onCompleted?.Invoke(); }
-                catch (Exception exception) { Log.Error($"Data table completion callback failed: {exception.Message}", exception); }
             }
         }
 

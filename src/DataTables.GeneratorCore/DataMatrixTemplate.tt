@@ -77,7 +77,7 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
 
     public static DT<#= GenerationContext.ClassName #> GetTable(string dataTableName)
     {
-        var table = DataTableManager.GetDataTableInternal<DT<#= GenerationContext.ClassName #>>(dataTableName);
+        var table = DataTableManager.GetCached<DT<#= GenerationContext.ClassName #>>(dataTableName);
         if (table == null)
         {
             throw new InvalidOperationException($"DT<#= GenerationContext.ClassName #> '{dataTableName}' is not loaded. Call DataTableManager.LoadAsync<DT<#= GenerationContext.ClassName #>>(dataTableName) first.");
@@ -90,7 +90,7 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
     /// </summary>
     public static DT<#= GenerationContext.ClassName #>? TableOrNull => GetTableOrNull(string.Empty);
 
-    public static DT<#= GenerationContext.ClassName #>? GetTableOrNull(string dataTableName) => DataTableManager.GetDataTableInternal<DT<#= GenerationContext.ClassName #>>(dataTableName);
+    public static DT<#= GenerationContext.ClassName #>? GetTableOrNull(string dataTableName) => DataTableManager.GetCached<DT<#= GenerationContext.ClassName #>>(dataTableName);
 
     /// <summary>
     /// 检查数据矩阵是否已加载 (静态方法)
@@ -108,7 +108,7 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static <#= BuildTypeString(kValue) #>? GetRow(string dataTableName, <#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2)
     {
-        var table = DataTableManager.GetDataTableInternal<DT<#= GenerationContext.ClassName #>>(dataTableName);
+        var table = DataTableManager.GetCached<DT<#= GenerationContext.ClassName #>>(dataTableName);
         return table?.Get(key1, key2);
     }
 
@@ -121,7 +121,7 @@ public sealed partial class DT<#= GenerationContext.ClassName #> : DataMatrixBas
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static <#= BuildTypeString(kValue) #> GetRowOrDefault(string dataTableName, <#= BuildTypeString(kKey1) #> key1, <#= BuildTypeString(kKey2) #> key2)
     {
-        var table = DataTableManager.GetDataTableInternal<DT<#= GenerationContext.ClassName #>>(dataTableName);
+        var table = DataTableManager.GetCached<DT<#= GenerationContext.ClassName #>>(dataTableName);
         return table != null ? table.Get(key1, key2)! : default!;
     }
 

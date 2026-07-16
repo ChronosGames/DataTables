@@ -34,14 +34,11 @@ namespace DataTables.Tests
         }
 
         [Test]
-        public void MissingResource_MapsToStructuredDataSourceException()
+        public async Task MissingResource_MapsToStructuredDataSourceException()
         {
             var source = new StreamingAssetsDataSource(AppendPath(Application.streamingAssetsPath, "DataTablesTests"));
 
-            var exception = Assert.ThrowsAsync<DataSourceException>(async () =>
-            {
-                await source.OpenReadAsync("Missing", CancellationToken.None);
-            });
+            var exception = await ThrowsAsync<DataSourceException>(() => source.OpenReadAsync("Missing", CancellationToken.None).AsTask());
 
             Assert.That(exception.SourceType, Is.EqualTo(DataSourceType.StreamingAssets));
             Assert.That(exception.Operation, Is.EqualTo(DataSourceOperation.OpenRead));
@@ -51,16 +48,36 @@ namespace DataTables.Tests
 
 #if UNITY_ANDROID || UNITY_WEBGL
         [Test]
-        public void InFlightRequestCancellation_AbortsAndRemainsOperationCanceledException()
+        public async Task InFlightRequestCancellation_AbortsAndRemainsOperationCanceledException()
         {
             using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var source = new StreamingAssetsDataSource("https://example.invalid/datatables-tests");
             Task pending = source.OpenReadAsync("Never", cancellation.Token).AsTask();
             cancellation.Cancel();
 
-            Assert.ThrowsAsync<OperationCanceledException>(async () => await pending);
+            await ThrowsAsync<OperationCanceledException>(() => pending);
         }
 #endif
+
+        private static async Task<TException> ThrowsAsync<TException>(Func<Task> action)
+            where TException : Exception
+        {
+            try
+            {
+                await action();
+            }
+            catch (TException exception)
+            {
+                return exception;
+            }
+            catch (Exception exception)
+            {
+                Assert.Fail($"Expected {typeof(TException).Name} but caught {exception.GetType().Name}.");
+            }
+
+            Assert.Fail($"Expected {typeof(TException).Name} to be thrown.");
+            throw new AssertionException("Unreachable");
+        }
 
         private static string AppendPath(string root, string segment)
             => root.Replace('\\', '/').TrimEnd('/') + "/" + Uri.EscapeDataString(segment);

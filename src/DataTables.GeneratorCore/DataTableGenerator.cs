@@ -88,13 +88,9 @@ public sealed class DataTableGenerator
                         continue;
                     }
 
-                    // 支持的 Excel/CSV 扩展名：
-                    //   .xlsx — OOXML（Excel 2007+）
-                    //   .xlsm — OOXML 启用宏（结构与 xlsx 相同，仅多出 vbaProject.bin，NPOI XSSFWorkbook 完全兼容）
-                    //   .xlsb — Excel 二进制工作簿
-                    //   .xls  — 旧版 BIFF
-                    //   .csv  — 逗号分隔
-                    if (!(fileName.EndsWith(".xlsx", StringComparison.Ordinal) || fileName.EndsWith(".xlsm", StringComparison.Ordinal) || fileName.EndsWith(".xlsb", StringComparison.Ordinal) || fileName.EndsWith(".xls", StringComparison.Ordinal) || fileName.EndsWith(".csv", StringComparison.Ordinal)))
+                    // Only process formats backed by the current generator pipeline:
+                    // .xlsx/.xlsm use NPOI workbooks directly; .csv is mapped to one in-memory worksheet.
+                    if (!IsSupportedInputFile(fileName))
                     {
                         continue;
                     }
@@ -497,6 +493,126 @@ public sealed class DataTableGenerator
         return fullPath;
     }
 
+    private static bool IsSupportedInputFile(string fileName)
+    {
+        var extension = Path.GetExtension(fileName);
+        return extension.Equals(".xlsx", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".xlsm", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".csv", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static XSSFWorkbook CreateWorkbook(string filePath, Stream stream)
+    {
+        if (!Path.GetExtension(filePath).Equals(".csv", StringComparison.OrdinalIgnoreCase))
+        {
+            return new XSSFWorkbook(stream);
+        }
+
+        // CSV inputs represent a single logical worksheet and then reuse the existing workbook parser.
+        var workbook = new XSSFWorkbook();
+        var sheet = workbook.CreateSheet(GetCsvSheetName(filePath));
+        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
+        var rowIndex = 0;
+        foreach (var fields in ReadCsvRows(reader))
+        {
+            var row = sheet.CreateRow(rowIndex++);
+            for (var columnIndex = 0; columnIndex < fields.Count; columnIndex++)
+            {
+                row.CreateCell(columnIndex, CellType.String).SetCellValue(fields[columnIndex]);
+            }
+        }
+
+        return workbook;
+    }
+
+    private static string GetCsvSheetName(string filePath)
+    {
+        var sheetName = Path.GetFileNameWithoutExtension(filePath);
+        if (string.IsNullOrWhiteSpace(sheetName))
+        {
+            return "CSV";
+        }
+
+        var invalidChars = new HashSet<char>(new[] { ':', '\\', '/', '?', '*', '[', ']' });
+        var sanitized = new string(sheetName.Select(ch => invalidChars.Contains(ch) ? '_' : ch).ToArray()).Trim('\'');
+        if (string.IsNullOrWhiteSpace(sanitized))
+        {
+            sanitized = "CSV";
+        }
+
+        return sanitized.Length <= 31 ? sanitized : sanitized.Substring(0, 31);
+    }
+
+    private static IEnumerable<IReadOnlyList<string>> ReadCsvRows(TextReader reader)
+    {
+        var row = new List<string>();
+        var field = new StringBuilder();
+        var inQuotes = false;
+        int value;
+        while ((value = reader.Read()) != -1)
+        {
+            var ch = (char)value;
+            if (inQuotes)
+            {
+                if (ch == '"')
+                {
+                    if (reader.Peek() == '"')
+                    {
+                        reader.Read();
+                        field.Append('"');
+                    }
+                    else
+                    {
+                        inQuotes = false;
+                    }
+                }
+                else
+                {
+                    field.Append(ch);
+                }
+
+                continue;
+            }
+
+            if (ch == '"' && field.Length == 0)
+            {
+                inQuotes = true;
+            }
+            else if (ch == ',')
+            {
+                row.Add(field.ToString());
+                field.Clear();
+            }
+            else if (ch == '\r' || ch == '\n')
+            {
+                if (ch == '\r' && reader.Peek() == '\n')
+                {
+                    reader.Read();
+                }
+
+                row.Add(field.ToString());
+                field.Clear();
+                yield return row;
+                row = new List<string>();
+            }
+            else
+            {
+                field.Append(ch);
+            }
+        }
+
+        if (inQuotes)
+        {
+            throw new FormatException("CSV contains an unterminated quoted field.");
+        }
+
+        if (field.Length > 0 || row.Count > 0)
+        {
+            row.Add(field.ToString());
+            yield return row;
+        }
+    }
+
     private async Task GenerateExcel(string filePath, string usingNamespace, string prefixClassName, string[] usingStrings, string codeOutputDir, string finalCodeOutputDir, string dataOutputDir, string finalDataOutputDir, bool forceOverwrite, ConcurrentBag<GenerationContext> list, Action<string> log, ParseOptions options, Action<Diagnostic> collectDiagnostic, Action<DiagnosticsMetrics> collectMetrics, Action<GenerationContext> collectContext, bool generateCode, bool renderCode, bool validateOnly, OutputClaimRegistry outputClaims, ConcurrentBag<GenerationFailure> failures)
     {
         using (var logger = new ILogger(log))
@@ -506,7 +622,7 @@ public sealed class DataTableGenerator
                 XSSFWorkbook xssWorkbook;
                 try
                 {
-                    xssWorkbook = new XSSFWorkbook(stream);
+                    xssWorkbook = CreateWorkbook(filePath, stream);
                 }
                 catch (Exception e)
                 {

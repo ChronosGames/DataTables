@@ -1,7 +1,7 @@
 # DataTables.Generator
 数据表生成工具 - 适用于C#和Unity。
 
-可用于将游戏数据表（Excel格式）转化为代码文件与数据文件，然后，在游戏内直接读取二进制数据文件，自动解析为对应类，后续可直接使用。
+可用于将游戏数据表（Excel/CSV 格式）转化为代码文件与数据文件，然后，在游戏内直接读取二进制数据文件，自动解析为对应类，后续可直接使用。
 
 ## 数据布局类型
 
@@ -25,10 +25,10 @@ A1 可声明 `tags=`，例如 `dtgen=table,class=Item,tags=S&C`。命令行 `-t`
 
 ## Validate-only / CI 校验
 
-使用 `validate` 子命令可以解析 Excel、执行 schema/诊断校验并渲染代码模板，但不写入 C#、`.bytes` 或 manifest，适合 CI 或预提交检查：
+使用 `validate` 子命令可以解析 Excel/CSV、执行 schema/诊断校验并渲染代码模板，但不写入 C#、`.bytes` 或 manifest，适合 CI 或预提交检查：
 
 ```bash
-dotnet dtgen validate -i ./Tables -patterns "*.xlsx" -n MyGame -p DR --diagnostics-json-output ./artifacts/diagnostics.json
+dotnet dtgen validate -i ./Tables -patterns "*.xlsx" -patterns "*.xlsm" -patterns "*.csv" -n MyGame -p DR --diagnostics-json-output ./artifacts/diagnostics.json
 ```
 
 普通导出与 `data` 子命令会在数据目录事务性写出运行时 `manifest.json`。部署时把它和 `.bytes` 一起复制；生成失败或输出提交冲突时保留上一版。生成器自己的 `.dtgen-manifest.json` / `.dtgen-data-manifest.json` 使用 v2 稳定相对标识，不应作为运行时资源。

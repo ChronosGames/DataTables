@@ -72,11 +72,10 @@ namespace DataTables.Tests
             }
             catch (Exception exception)
             {
-                Assert.Fail($"Expected {typeof(TException).Name} but caught {exception.GetType().Name}.");
+                throw new AssertionException($"Expected {typeof(TException).Name} but caught {exception.GetType().Name}.");
             }
 
-            Assert.Fail($"Expected {typeof(TException).Name} to be thrown.");
-            throw new AssertionException("Unreachable");
+            throw new AssertionException($"Expected {typeof(TException).Name} to be thrown.");
         }
 
         private static string AppendPath(string root, string segment)

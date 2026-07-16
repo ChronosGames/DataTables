@@ -8,13 +8,11 @@
     GenerationEnvironment.Clear();
     var text = base.TransformText();
     GenerationEnvironment.Clear();
-    var marker = "    #endregion" + Environment.NewLine + "}";
     var insert = BuildTreeApi();
-    var idx = text.IndexOf(marker, StringComparison.Ordinal);
-    if (idx < 0 && Environment.NewLine != "\n")
+    var idx = text.IndexOf("    #endregion\r\n}", StringComparison.Ordinal);
+    if (idx < 0)
     {
-        marker = "    #endregion\n}";
-        idx = text.IndexOf(marker, StringComparison.Ordinal);
+        idx = text.IndexOf("    #endregion\n}", StringComparison.Ordinal);
     }
     Write(idx < 0 ? text : text.Insert(idx, insert));
 #><#

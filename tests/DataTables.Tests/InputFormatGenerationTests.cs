@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
 using DataTables.GeneratorCore;
 using FluentAssertions;
 using NPOI.XSSF.UserModel;

@@ -28,7 +28,7 @@ public class InputFormatGenerationTests
 
         result.Succeeded.Should().BeTrue();
         File.Exists(Path.Combine(paths.Code, "DRItem.cs")).Should().BeTrue();
-        File.Exists(Path.Combine(paths.Data, "DRItem.bytes")).Should().BeTrue();
+        File.Exists(Path.Combine(paths.Data, "Tests.DTItem.bytes")).Should().BeTrue();
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public class InputFormatGenerationTests
 
         result.Succeeded.Should().BeTrue();
         File.Exists(Path.Combine(paths.Code, "DRItem.cs")).Should().BeTrue();
-        File.Exists(Path.Combine(paths.Data, "DRItem.bytes")).Should().BeTrue();
+        File.Exists(Path.Combine(paths.Data, "Tests.DTItem.bytes")).Should().BeTrue();
     }
 
     private static Task<GenerationResult> GenerateAsync(TestPaths paths, string[] searchPatterns)

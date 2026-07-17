@@ -6,7 +6,7 @@ internal static class SheetInfoParser
 {
     public static bool Parse(string cellString, GenerationContext context)
     {
-        var arr = cellString.Split(',');
+        var arr = cellString.Split([',', ';']);
         foreach (var pair in arr)
         {
             var args = pair.Split('=');

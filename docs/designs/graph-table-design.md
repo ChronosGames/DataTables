@@ -8,7 +8,7 @@
 - 支持有向图和无向图的基础建模。
 - 在生成期发现重复节点、非法边引用和不符合项目规则的环。
 - 生成强类型图查询 API，支持节点集合、入边、出边、关联边、前驱、后继、两点边、路径和遍历。
-- 通过注册 parser、validator、writer 和模板实现，不在 `DataTableProcessor` 主流程中硬编码 graph 分支。
+- 通过统一表类型描述符注册 parser、materializer、validator、serialization plan 和模板，不在 `DataTableProcessor` 主流程中硬编码 graph 分支。
 
 ## 推荐 Excel 格式
 
@@ -77,6 +77,8 @@ DTLevelGraph.TryGetEdge(context, "E001", out var edge);
 - 项目声明为无环图时检测到环。
 - 业务字段或 JSON payload 不能按声明类型解析。
 
+普通导出与 `ValidateOnly` 会基于同一份 materialized snapshot 执行这些生成期规则；校验模式不会写出代码、bytes 或 manifest。
+
 ### 可以警告
 
 - 节点没有任何入边或出边。
@@ -124,8 +126,8 @@ DTLevelGraph.TryGetEdge(context, "E001", out var edge);
 ## 实现步骤建议
 
 1. 已新增 `GraphTableParser`，基于普通行表解析边列表并注册内建索引。
-2. 已新增生成期行校验，检查 `EdgeId`、`From`、`To` 和可选 `Weight`。
-3. 已复用普通表二进制写出流程，运行时通过内建索引构建邻接查询。
+2. 已新增独立的生成期行验证阶段，检查 `EdgeId`、`From`、`To` 和可选 `Weight`。
+3. 已复用通用 materialized snapshot 和 serialization plan，运行时通过内建索引构建邻接查询。
 4. 已新增 graph 代码生成模板，输出节点集合、边、邻接、前驱/后继、两点边、路径和 BFS 遍历 API。
 5. 已为 `DTGen=graph` 注册 parser 和模板。
 6. 已增加 parser 与模板测试；后续可继续补充节点 Sheet、环检测和路径 API 测试。

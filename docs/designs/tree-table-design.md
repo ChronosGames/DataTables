@@ -5,10 +5,10 @@
 ## 目标
 
 - 用表格方式表达稳定的父子层级关系。
-- 在生成期发现缺失必需字段、非法字段类型和普通行表可发现的数据错误；孤儿节点、循环引用和非法根节点校验可作为后续增强。
+- 在生成期发现缺失必需字段、非法字段类型、孤儿节点、循环引用和普通行表可发现的数据错误。
 - 生成强类型查询 API，支持按节点、父节点、子节点和根节点查询。
-- 支持客户端或服务端通过预热提前加载树表；完整结构校验可作为后续增强。
-- 通过已注册的 parser 和模板实现，不在 `DataTableProcessor` 主流程中硬编码 tree 分支。
+- 支持客户端或服务端通过预热提前加载树表；完整父子引用与循环校验在写出前完成。
+- 通过统一表类型描述符注册 parser、materializer、validator、serialization plan 和模板，不在 `DataTableProcessor` 主流程中硬编码 tree 分支。
 
 ## 推荐 Excel 格式
 
@@ -22,7 +22,7 @@
 推荐约定：
 
 - `Id` 必填、唯一，并且作为树节点主键。
-- `ParentId` 为空表示根节点；当前解析器会按 `ParentId` 建立分组索引，但不在解析阶段检查非空 `ParentId` 是否引用已存在的 `Id`。
+- `ParentId` 为空表示根节点；生成期关系校验会检查非空 `ParentId` 是否引用已存在的 `Id`。
 - `Order` 可选；字段类型留空时会默认为 `int`。当前生成的 `GetChildren` 返回分组索引顺序，不额外按 `Order` 排序。
 - `Name`、`Type`、`Payload` 为业务字段，可以按项目需要扩展。
 - `Comment` 可选，只用于说明，不进入运行时 payload。
@@ -68,15 +68,18 @@ foreach (var node in DTQuestTree.TraverseDepthFirst(context, "Root"))
 
 - 缺少 `Id` 或 `ParentId` 字段。
 - `Id` 或 `ParentId` 显式声明为非 `string` 类型。
-- `Id` 重复会通过内建唯一索引写出/加载流程报错。
+- `Id` 为空或重复。
+- 非空 `ParentId` 引用不存在。
+- 检测到父子循环引用，并输出完整循环路径。
 - `Order` 存在且值不能按 `int` 或显式声明类型解析。
 - 业务字段不能按声明类型解析。
 
 ### 后续可增强
 
-- 校验非空 `ParentId` 是否引用已存在的 `Id`。
-- 校验循环引用和根节点数量。
+- 校验根节点数量。
 - 对同一父节点下重复 `Order`、过深节点等输出项目级警告。
+
+普通导出与 `ValidateOnly` 消费同一份 materialized snapshot，并执行相同的 tree 验证阶段；`ValidateOnly` 不通过模拟文件写出来触发校验，也不会产生任何代码或数据文件。
 
 ## 诊断信息
 
@@ -113,9 +116,9 @@ foreach (var node in DTQuestTree.TraverseDepthFirst(context, "Root"))
 
 ## 后续实现建议
 
-1. 新增更完整的 `TreeTableValidator`，实现引用完整性、循环检测和项目级根节点规则。
-2. 如有需要，新增 tree serialization plan 或 writer，写出节点数据和关系索引。
-3. 增加正常树、多根树、孤儿节点、重复节点和循环引用测试。
+1. 增加项目级根节点数量、同级 `Order` 和最大深度规则，并通过审计模式评估兼容性。
+2. 如有需要，新增 tree 专用 serialization plan，写出节点数据和关系索引。
+3. 继续补充正常树、多根树、孤儿节点、重复节点和循环引用的端到端 fixture。
 
 ## 非目标
 

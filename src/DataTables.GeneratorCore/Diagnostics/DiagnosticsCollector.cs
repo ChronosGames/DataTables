@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DataTables.GeneratorCore;
 
@@ -33,6 +34,8 @@ public sealed class DiagnosticsCollector
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, DiagnosticsMetrics> m_Metrics = new();
 
 	public IReadOnlyList<Diagnostic> Items => m_Diagnostics;
+
+	public int ErrorCount => m_Diagnostics.Count(item => item.Severity == DiagnosticSeverity.Error);
 
     public DiagnosticsMetrics GetMetrics(string file, string sheet)
     {
@@ -74,6 +77,8 @@ public sealed class DiagnosticsMetrics
     public int TagFilteredFieldCount { get; set; }
     public int SkippedColumnCount { get; set; }
     public int MatrixDefaultSkippedCount { get; set; }
+    public int SnapshotRowCount { get; set; }
+    public long SnapshotEstimatedBytes { get; set; }
     public long ParseElapsedMs { get; set; }
     public long GenerateElapsedMs { get; set; }
 }

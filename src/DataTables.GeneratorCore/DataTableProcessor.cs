@@ -1,6 +1,5 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using System.IO;
 using NPOI.SS.UserModel;
 
 namespace DataTables.GeneratorCore;
@@ -60,43 +59,6 @@ public sealed partial class DataTableProcessor : IDisposable
     public void CreateGenerationContext(ISheet sheet)
     {
         m_FirstDataRowIndex = new TableSchemaService(m_Context, m_Options, m_Diagnostics).CreateGenerationContext(sheet);
-    }
-
-    // 是否有效行
-    private bool IgnoreDataRow(IRow? row)
-    {
-        if (row == null || row.FirstCellNum < 0)
-        {
-            return false;
-        }
-
-        // 此行是否被注释
-        foreach (var field in m_Context.Fields)
-        {
-            if (!field.IsComment)
-            {
-                continue;
-            }
-
-            var cellString = GetCellString(row.GetCell(field.Index));
-            if (!string.IsNullOrEmpty(cellString) && cellString == "#")
-            {
-                return false;
-            }
-        }
-
-        // 是否空行
-        foreach (var field in m_Context.Fields)
-        {
-            if (field.IsIgnore) { continue; }
-
-            if (!string.IsNullOrEmpty(GetCellString(row.GetCell(field.Index))))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private string GetCellString(ICell? cell)
@@ -199,16 +161,54 @@ public sealed partial class DataTableProcessor : IDisposable
     }
 
 
-    internal void GenerateDataFile(string outputDir, string comparisonOutputDir, bool forceOverwrite, ISheet sheet, ILogger logger)
+    internal TableDataSnapshot MaterializeData(ISheet sheet)
     {
-        new DataTableBinaryWriter(m_Context, WriteDataRows).GenerateDataFile(outputDir, comparisonOutputDir, forceOverwrite, sheet, logger);
+        var descriptor = GetTableTypeDescriptor();
+        var snapshot = descriptor.DataMaterializer.Materialize(new TableDataMaterializationContext(
+            m_Context,
+            sheet,
+            m_FirstDataRowIndex,
+            m_Diagnostics,
+            GetCellString));
+        var metrics = m_Diagnostics.GetMetrics(m_Context.FileName, m_Context.SheetName);
+        metrics.SnapshotRowCount = snapshot.Rows.Count;
+        metrics.SnapshotEstimatedBytes = snapshot.EstimatedSizeInBytes;
+        return snapshot;
     }
 
-    internal int WriteDataRows(ISheet sheet, BinaryWriter writer)
+    internal bool ValidateData(TableDataSnapshot snapshot)
     {
-        return new DataRowBinarySerializer(m_Context, m_FirstDataRowIndex, m_Diagnostics, GetCellString, IgnoreDataRow).WriteDataRows(sheet, writer);
+        var descriptor = GetTableTypeDescriptor();
+        var validationContext = new TableDataValidationContext(m_Context, snapshot, m_Diagnostics);
+        var errorCount = m_Diagnostics.ErrorCount;
+        foreach (var validationPass in descriptor.ValidationPasses)
+        {
+            validationPass.Validate(validationContext);
+            if (m_Diagnostics.ErrorCount > errorCount)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
+    internal void GenerateDataFile(string outputDir, string comparisonOutputDir, bool forceOverwrite, TableDataSnapshot snapshot, ILogger logger)
+    {
+        var descriptor = GetTableTypeDescriptor();
+        new DataTableBinaryWriter(m_Context, descriptor.SerializationPlan)
+            .GenerateDataFile(outputDir, comparisonOutputDir, forceOverwrite, snapshot, logger);
+    }
+
+    private TableTypeDescriptor GetTableTypeDescriptor()
+    {
+        if (!TableTypeDescriptorRegistry.Default.TryGetDescriptor(m_Context.DataSetType, out var descriptor))
+        {
+            throw new InvalidOperationException($"未注册 DTGen={m_Context.DataSetType} 的表类型描述符。");
+        }
+
+        return descriptor;
+    }
 
     internal static DataProcessor GetDataProcessorForSerialization(string type)
     {
@@ -241,27 +241,6 @@ public sealed partial class DataTableProcessor : IDisposable
     public static string GetLanguageValue(XField field, string text)
     {
         return DataProcessorUtility.GetDataProcessor(field.TypeName).GenerateTypeValue(text);
-    }
-
-    private static string GetRowColString(int row, int col)
-    {
-        return string.Format("{0}{1}", ConvertToDigit(col), row + 1);
-    }
-
-    private static string ConvertToDigit(int num)
-    {
-        if (num < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(num));
-        }
-        else if (num < 26)
-        {
-            return Convert.ToString((char)('A' + num));
-        }
-        else
-        {
-            return ConvertToDigit(num / 26 - 1) + ConvertToDigit(num % 26);
-        }
     }
 
     /// <summary>

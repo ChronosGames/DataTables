@@ -5,7 +5,7 @@ namespace DataTables.GeneratorCore;
 
 public sealed class TableSchemaService : ITableSchemaService
 {
-    private static readonly ITableSchemaParserRegistry s_TableSchemaParserRegistry = TableSchemaParserRegistry.CreateDefault();
+    private static readonly TableTypeDescriptorRegistry s_TableTypeDescriptorRegistry = TableTypeDescriptorRegistry.Default;
 
     private readonly GenerationContext m_Context;
     private readonly ParseOptions m_Options;
@@ -60,10 +60,10 @@ public sealed class TableSchemaService : ITableSchemaService
             }
         }
 
-        if (!s_TableSchemaParserRegistry.TryGetParser(m_Context.DataSetType, out var parser))
+        if (!s_TableTypeDescriptorRegistry.TryGetDescriptor(m_Context.DataSetType, out var descriptor))
         {
-            var supportedTypes = string.Join(", ", s_TableSchemaParserRegistry.SupportedDataSetTypes);
-            var reservedTypes = string.Join(", ", s_TableSchemaParserRegistry.ReservedDataSetTypes);
+            var supportedTypes = string.Join(", ", s_TableTypeDescriptorRegistry.SupportedDataSetTypes);
+            var reservedTypes = string.Join(", ", s_TableTypeDescriptorRegistry.ReservedDataSetTypes);
             m_Diagnostics.Error(
                 m_Context.FileName,
                 m_Context.SheetName,
@@ -72,7 +72,7 @@ public sealed class TableSchemaService : ITableSchemaService
             return -1;
         }
 
-        int nextIndex = parser.Parse(new NpoiSheetReader(sheet), m_Context, m_Options, m_Diagnostics);
+        int nextIndex = descriptor.SchemaParser.Parse(new NpoiSheetReader(sheet), m_Context, m_Options, m_Diagnostics);
         if (nextIndex == -1)
         {
             m_Diagnostics.Warn(m_Context.FileName, m_Context.SheetName, string.Empty, "表头或字段信息不完整，解析终止");

@@ -281,6 +281,51 @@ public sealed class GenerationTransactionTests
         logs.Should().Contain(message => message.Contains("数据表校验完成"));
     }
 
+    [Theory]
+    [InlineData("tree", "ParentId 引用不存在")]
+    [InlineData("graph", "To 为空")]
+    public async Task ValidateOnlyGeneration_ShouldRunTableDataValidators(string dataSetType, string expectedError)
+    {
+        var root = CreateTempDirectory();
+        var input = Directory.CreateDirectory(Path.Combine(root, "input")).FullName;
+        var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
+        var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
+        await CreateWorkbookAsync(Path.Combine(input, $"{dataSetType}.xlsx"), workbook =>
+        {
+            if (dataSetType == "tree") AddInvalidTreeSheet(workbook);
+            else AddInvalidGraphSheet(workbook);
+        });
+
+        var result = await GenerateAsync(input, code, data, generationMode: GenerationMode.ValidateOnly);
+
+        result.Succeeded.Should().BeFalse();
+        result.Failures.Should().ContainSingle(x => x.Exception.Message.Contains(expectedError));
+        Directory.GetFiles(code, "*", SearchOption.AllDirectories).Should().BeEmpty();
+        Directory.GetFiles(data, "*", SearchOption.AllDirectories).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ValidateOnlyGeneration_ShouldRejectDuplicateUniqueIndexBeforeWritingOutputs()
+    {
+        var root = CreateTempDirectory();
+        var input = Directory.CreateDirectory(Path.Combine(root, "input")).FullName;
+        var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
+        var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
+        await CreateWorkbookAsync(Path.Combine(input, "duplicates.xlsx"), workbook =>
+        {
+            AddTableSheet(workbook, "Items", "Item", 7);
+            workbook.GetSheet("Items").GetRow(0).GetCell(0).SetCellValue("dtgen=table, class=Item, index=Id");
+            workbook.GetSheet("Items").CreateRow(5).CreateCell(0, CellType.Numeric).SetCellValue(7);
+        });
+
+        var result = await GenerateAsync(input, code, data, generationMode: GenerationMode.ValidateOnly);
+
+        result.Succeeded.Should().BeFalse();
+        result.Failures.Should().ContainSingle(x => x.Exception.Message.Contains("唯一索引值重复"));
+        Directory.GetFiles(code, "*", SearchOption.AllDirectories).Should().BeEmpty();
+        Directory.GetFiles(data, "*", SearchOption.AllDirectories).Should().BeEmpty();
+    }
+
     [Fact]
     public async Task ValidateOnlyGeneration_ShouldReportTemplateAndSchemaConflictsWithoutTouchingOutputs()
     {
@@ -600,6 +645,32 @@ public sealed class GenerationTransactionTests
         sheet.GetRow(2).CreateCell(1, CellType.String).SetCellValue("Name");
         sheet.GetRow(3).CreateCell(1, CellType.String).SetCellValue("string");
         sheet.GetRow(4).CreateCell(1, CellType.String).SetCellValue("Item");
+    }
+
+    private static void AddInvalidTreeSheet(XSSFWorkbook workbook)
+    {
+        var sheet = workbook.CreateSheet("Tree");
+        sheet.CreateRow(0).CreateCell(0).SetCellValue("dtgen=tree, class=TreeNode");
+        SetRow(sheet, 1, "Identifier", "Parent");
+        SetRow(sheet, 2, "Id", "ParentId");
+        SetRow(sheet, 3, "string", "string");
+        SetRow(sheet, 4, "child", "missing-parent");
+    }
+
+    private static void AddInvalidGraphSheet(XSSFWorkbook workbook)
+    {
+        var sheet = workbook.CreateSheet("Graph");
+        sheet.CreateRow(0).CreateCell(0).SetCellValue("dtgen=graph, class=GraphEdge");
+        SetRow(sheet, 1, "Identifier", "Source", "Target");
+        SetRow(sheet, 2, "EdgeId", "From", "To");
+        SetRow(sheet, 3, "string", "string", "string");
+        SetRow(sheet, 4, "edge-1", "node-a", string.Empty);
+    }
+
+    private static void SetRow(ISheet sheet, int rowIndex, params string[] values)
+    {
+        var row = sheet.CreateRow(rowIndex);
+        for (var i = 0; i < values.Length; i++) row.CreateCell(i).SetCellValue(values[i]);
     }
 
     private static string CreateTempDirectory()

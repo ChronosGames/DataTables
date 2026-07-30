@@ -1,8 +1,20 @@
 # 表类型数据校验器设计
 
-> 状态：proposed（2026-07-28 深度评审修订）<br>
+> 状态：active（2026-07-29 开始实施首个 P0/P1 切片）<br>
 > 初稿日期：2026-07-27<br>
 > 范围：生成期/`validate` 命令的数据合理性与语义校验；不改变 v3 `.bytes` 运行时协议。
+
+## 实施进度
+
+首个实施切片已建立内部 `ITableDataValidator` 注册与统一调用点，并完成以下迁移：
+
+- `ValidateOnly` 与正常生成都会在渲染代码和写出 `.bytes` 前运行数据 validator；
+- `tree` 的 Id 唯一、ParentId 引用、循环与 Order 数字校验已从 serializer 迁出；
+- `graph` 的 EdgeId 唯一、端点必填与 Weight 数字校验已从 serializer 迁出；
+- 普通 `table` 的显式唯一 Index 会在生成期预校验，并报告首次行与重复行；
+- parser 的 supported/reserved 集合不再同时包含 `tree`。
+
+本切片尚未实现不可变 `TableDataSnapshot`、结构化诊断 v2、跨表 catalog 或声明式规则；当前 validator context 仍是内部过渡接口，不视为已冻结的公共 API。
 
 ## 1. 问题与目标
 

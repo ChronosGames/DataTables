@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using FluentAssertions;
 using NPOI.XSSF.UserModel;
 using Xunit;
@@ -243,4 +244,3 @@ public class ParserTests
 	}
 
 }
-

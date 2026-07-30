@@ -688,6 +688,10 @@ public sealed class DataTableGenerator
                             continue;
                         }
 
+                        // Validate data semantics before rendering or writing either half of the generated pair.
+                        // ValidateOnly intentionally runs the same validators as normal generation.
+                        processor.ValidateData(sheet);
+
                         var codeContent = renderCode ? RenderCodeFile(context) : null;
                         var codeContentHash = codeContent == null ? null : ComputeContentHash(codeContent);
                         if (!outputClaims.TryReserve(context, filePath, codeContentHash, out var writeCode, out var conflict))

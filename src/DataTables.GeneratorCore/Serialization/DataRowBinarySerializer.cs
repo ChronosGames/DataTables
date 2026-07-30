@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NPOI.SS.UserModel;
@@ -32,17 +31,7 @@ internal sealed class DataRowBinarySerializer
     {
         int dataRowCount = 0;
 
-        switch (m_Context.DataSetType)
-        {
-            case "tree":
-                ValidateTreeRows(sheet);
-                break;
-            case "graph":
-                ValidateGraphRows(sheet);
-                break;
-            case "kv":
-                return WriteKvBytes(writer);
-        }
+        if (m_Context.DataSetType == "kv") return WriteKvBytes(writer);
 
         if (m_Context.DataSetType == "column")
         {
@@ -210,83 +199,6 @@ internal sealed class DataRowBinarySerializer
             var cell = string.IsNullOrEmpty(field.TypeCell) ? string.Empty : field.TypeCell;
             m_Diagnostics.Error(m_Context.FileName, m_Context.SheetName, cell, $"字段 '{field.Name}' 类型 '{field.TypeName}' 解析失败: {ex.Message}");
             throw new FormatException($"类型解析失败: File='{m_Context.FileName}', Sheet='{m_Context.SheetName}', Field='{field.Name}', TypeCell='{cell}', FieldType='{field.TypeName}'. {ex.Message}", ex);
-        }
-    }
-
-    private void ValidateTreeRows(ISheet sheet)
-    {
-        var idField = m_Context.GetField("Id") ?? throw new InvalidOperationException("DTGen=tree 缺少 Id 字段");
-        var parentField = m_Context.GetField("ParentId") ?? throw new InvalidOperationException("DTGen=tree 缺少 ParentId 字段");
-        var orderField = m_Context.GetField("Order");
-        var nodes = new Dictionary<string, (string ParentId, int Row)>(StringComparer.Ordinal);
-
-        for (int i = m_FirstDataRowIndex; i <= sheet.LastRowNum; i++)
-        {
-            var row = sheet.GetRow(i);
-            if (!m_ShouldWriteDataRow(row)) continue;
-            var id = m_GetCellString(row!.GetCell(idField.Index));
-            var parentId = m_GetCellString(row.GetCell(parentField.Index));
-            if (string.IsNullOrWhiteSpace(id)) throw new FormatException($"DTGen=tree Id 为空: row={i + 1}, cell={GetRowColString(i, idField.Index)}");
-            if (!nodes.TryAdd(id, (parentId, i))) throw new FormatException($"DTGen=tree Id 重复: nodeId={id}, row={i + 1}, cell={GetRowColString(i, idField.Index)}");
-            if (orderField != null)
-            {
-                var orderText = m_GetCellString(row.GetCell(orderField.Index));
-                if (!string.IsNullOrWhiteSpace(orderText) && !decimal.TryParse(orderText, out _)) throw new FormatException($"DTGen=tree Order 不是合法数字: nodeId={id}, row={i + 1}, cell={GetRowColString(i, orderField.Index)}, value={orderText}");
-            }
-        }
-
-        foreach (var (id, node) in nodes)
-        {
-            if (!string.IsNullOrEmpty(node.ParentId) && !nodes.ContainsKey(node.ParentId)) throw new FormatException($"DTGen=tree ParentId 引用不存在: nodeId={id}, parentId={node.ParentId}, row={node.Row + 1}");
-        }
-
-        var visited = new HashSet<string>(StringComparer.Ordinal);
-        var visiting = new HashSet<string>(StringComparer.Ordinal);
-        var path = new List<string>();
-        foreach (var id in nodes.Keys) Visit(id);
-
-        void Visit(string id)
-        {
-            if (visited.Contains(id)) return;
-            if (!visiting.Add(id))
-            {
-                var start = path.IndexOf(id);
-                var cycle = start >= 0 ? path.Skip(start).Concat(new[] { id }) : new[] { id, id };
-                throw new FormatException($"DTGen=tree 检测到循环引用: {string.Join(" -> ", cycle)}");
-            }
-            path.Add(id);
-            var parentId = nodes[id].ParentId;
-            if (!string.IsNullOrEmpty(parentId) && nodes.ContainsKey(parentId)) Visit(parentId);
-            path.RemoveAt(path.Count - 1);
-            visiting.Remove(id);
-            visited.Add(id);
-        }
-    }
-
-    private void ValidateGraphRows(ISheet sheet)
-    {
-        var edgeIdField = m_Context.GetField("EdgeId") ?? throw new InvalidOperationException("DTGen=graph 缺少 EdgeId 字段");
-        var fromField = m_Context.GetField("From") ?? throw new InvalidOperationException("DTGen=graph 缺少 From 字段");
-        var toField = m_Context.GetField("To") ?? throw new InvalidOperationException("DTGen=graph 缺少 To 字段");
-        var weightField = m_Context.GetField("Weight");
-        var edgeIds = new HashSet<string>(StringComparer.Ordinal);
-
-        for (int i = m_FirstDataRowIndex; i <= sheet.LastRowNum; i++)
-        {
-            var row = sheet.GetRow(i);
-            if (!m_ShouldWriteDataRow(row)) continue;
-            var edgeId = m_GetCellString(row!.GetCell(edgeIdField.Index));
-            var from = m_GetCellString(row.GetCell(fromField.Index));
-            var to = m_GetCellString(row.GetCell(toField.Index));
-            if (string.IsNullOrWhiteSpace(edgeId)) throw new FormatException($"DTGen=graph EdgeId 为空: row={i + 1}, cell={GetRowColString(i, edgeIdField.Index)}");
-            if (!edgeIds.Add(edgeId)) throw new FormatException($"DTGen=graph EdgeId 重复: edgeId={edgeId}, row={i + 1}, cell={GetRowColString(i, edgeIdField.Index)}");
-            if (string.IsNullOrWhiteSpace(from)) throw new FormatException($"DTGen=graph From 为空: edgeId={edgeId}, row={i + 1}, cell={GetRowColString(i, fromField.Index)}");
-            if (string.IsNullOrWhiteSpace(to)) throw new FormatException($"DTGen=graph To 为空: edgeId={edgeId}, row={i + 1}, cell={GetRowColString(i, toField.Index)}");
-            if (weightField != null)
-            {
-                var weightText = m_GetCellString(row.GetCell(weightField.Index));
-                if (!string.IsNullOrWhiteSpace(weightText) && !decimal.TryParse(weightText, out _)) throw new FormatException($"DTGen=graph Weight 不是合法数字: edgeId={edgeId}, row={i + 1}, cell={GetRowColString(i, weightField.Index)}, value={weightText}");
-            }
         }
     }
 

@@ -191,7 +191,7 @@ public class ParserTests
 		diagnostic.Cell.Should().Be("A1");
 		diagnostic.Message.Should().Contain("声明值: unknown");
 		diagnostic.Message.Should().Contain("支持的类型: column, graph, kv, matrix, table, tree");
-		diagnostic.Message.Should().Contain("预留类型: localized, tree, partitioned, versioned, patch");
+		diagnostic.Message.Should().Contain("预留类型: localized, partitioned, versioned, patch");
 	}
 
 	[Fact]

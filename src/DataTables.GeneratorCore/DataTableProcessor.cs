@@ -7,6 +7,7 @@ namespace DataTables.GeneratorCore;
 
 public sealed partial class DataTableProcessor : IDisposable
 {
+    private static readonly TableDataValidatorRegistry s_TableDataValidatorRegistry = TableDataValidatorRegistry.CreateDefault();
     private readonly GenerationContext m_Context;
     private readonly IFormulaEvaluator m_FormulaEvaluator;
     private readonly string m_Tags;
@@ -148,6 +149,21 @@ public sealed partial class DataTableProcessor : IDisposable
     public bool ValidateGenerationContext()
     {
         return new TableSchemaValidator(m_Context, m_Options).Validate(m_FirstDataRowIndex);
+    }
+
+    internal void ValidateData(ISheet sheet)
+    {
+        if (!s_TableDataValidatorRegistry.TryGetValidator(m_Context.DataSetType, out var validator))
+        {
+            throw new InvalidOperationException($"DTGen={m_Context.DataSetType} 缺少数据校验器。");
+        }
+
+        validator.Validate(new TableDataValidationContext(
+            m_Context,
+            sheet,
+            m_FirstDataRowIndex,
+            GetCellString,
+            IgnoreDataRow));
     }
 
     private void ValidateFormulaCellString(ICell cell, string value)

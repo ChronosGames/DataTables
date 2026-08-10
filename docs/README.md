@@ -32,6 +32,7 @@
 1. 阅读 [Excel 模板与 Dicts 指南](../templates/README.md)。
 2. 阅读 [表类型指南](guides/table-types.md)。
 3. 根据使用的表类型阅读对应设计说明。
+4. 需要为配置增加合理性或跨表语义检查时，阅读 [表类型数据校验器设计](designs/table-validation-design.md)。
 
 ### 程序/工具链维护者
 
@@ -51,6 +52,7 @@ docs/
 │   ├── graph-table-design.md
 │   ├── kv-table-design.md
 │   ├── localized-table-design.md
+│   ├── table-validation-design.md
 │   └── tree-table-design.md
 ├── reference/                        # 稳定协议、格式和 API 参考
 │   └── binary-format-v3.md

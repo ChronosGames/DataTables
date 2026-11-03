@@ -92,7 +92,6 @@ jobs:
       dry-run: ${{ inputs.dry-run }}
       commit-id: ${{ needs.update-packagejson.outputs.sha }}
       tag: ${{ inputs.tag }}
-      nuget-push: false
       release-upload: true
       release-asset-path: ./DataTables.Unity.${{ inputs.tag }}.unitypackage/DataTables.Unity.${{ inputs.tag }}.unitypackage
     secrets: inherit

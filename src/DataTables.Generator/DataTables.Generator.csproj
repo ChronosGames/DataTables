@@ -6,6 +6,9 @@
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>dotnet-dtgen</ToolCommandName>
         <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+        <!-- Allow the net8.0/net9.0 tool assets to roll forward to a newer major
+             runtime (e.g. run under .NET 10 when only that runtime is installed). -->
+        <RollForward>Major</RollForward>
     </PropertyGroup>
 
     <!-- NuGet informations -->

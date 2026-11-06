@@ -14,8 +14,6 @@ namespace DataTables.GeneratorCore;
 
 public sealed class DataTableGenerator
 {
-    private static readonly CodeTemplateRendererRegistry s_CodeTemplateRendererRegistry = CodeTemplateRendererRegistry.CreateDefault();
-
     private readonly ConcurrentDictionary<string, object> m_Locks;
 
     public DataTableGenerator()
@@ -265,7 +263,7 @@ public sealed class DataTableGenerator
 
             foreach (var m in metricsList)
             {
-                logger($"  - [{m.File}/{m.Sheet}] Ignored={m.IgnoredFieldCount}, TagFiltered={m.TagFilteredFieldCount}, SkippedCols={m.SkippedColumnCount}, MatrixSkipped={m.MatrixDefaultSkippedCount}, ParseMs={m.ParseElapsedMs}, GenMs={m.GenerateElapsedMs}");
+                logger($"  - [{m.File}/{m.Sheet}] Ignored={m.IgnoredFieldCount}, TagFiltered={m.TagFilteredFieldCount}, SkippedCols={m.SkippedColumnCount}, MatrixSkipped={m.MatrixDefaultSkippedCount}, SnapshotRows={m.SnapshotRowCount}, SnapshotBytes~={m.SnapshotEstimatedBytes}, ParseMs={m.ParseElapsedMs}, GenMs={m.GenerateElapsedMs}");
             }
         }
 
@@ -688,6 +686,14 @@ public sealed class DataTableGenerator
                             continue;
                         }
 
+                        // 数据只读取和类型转换一次。ValidateOnly 与实际导出共享同一份规范快照和验证阶段。
+                        var dataSnapshot = processor.MaterializeData(sheet);
+                        if (!processor.ValidateData(dataSnapshot))
+                        {
+                            context.Failed = true;
+                            continue;
+                        }
+
                         var codeContent = renderCode ? RenderCodeFile(context) : null;
                         var codeContentHash = codeContent == null ? null : ComputeContentHash(codeContent);
                         if (!outputClaims.TryReserve(context, filePath, codeContentHash, out var writeCode, out var conflict))
@@ -705,10 +711,10 @@ public sealed class DataTableGenerator
                             GenerateCodeFile(context, codeOutputDir, finalCodeOutputDir, codeContent!, forceOverwrite, logger);
                         }
 
-                        // 生成数据文件。ValidateOnly 模式只解析、校验并渲染代码模板，不写任何产物。
+                        // 生成数据文件。ValidateOnly 已完成相同的数据快照验证，但不写任何产物。
                         if (!validateOnly)
                         {
-                            processor.GenerateDataFile(dataOutputDir, finalDataOutputDir, forceOverwrite, sheet, logger);
+                            processor.GenerateDataFile(dataOutputDir, finalDataOutputDir, forceOverwrite, dataSnapshot, logger);
                         }
 
                         if (context.Failed)
@@ -766,12 +772,12 @@ public sealed class DataTableGenerator
 
     private static string RenderCodeFile(GenerationContext context)
     {
-        if (!s_CodeTemplateRendererRegistry.TryGetRenderer(context.DataSetType, out var renderer))
+        if (!TableTypeDescriptorRegistry.Default.TryGetDescriptor(context.DataSetType, out var descriptor))
         {
             throw new InvalidOperationException($"未注册 DTGen={context.DataSetType} 的代码生成模板。");
         }
 
-        return renderer.TransformText(context);
+        return descriptor.CodeRenderer.TransformText(context);
     }
 
     void GenerateCodeFile(GenerationContext context, string outputDir, string comparisonOutputDir, string content, bool forceOverwrite, ILogger logger)

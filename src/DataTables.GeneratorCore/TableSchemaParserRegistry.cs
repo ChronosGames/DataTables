@@ -6,16 +6,8 @@ namespace DataTables.GeneratorCore;
 
 public sealed class TableSchemaParserRegistry : ITableSchemaParserRegistry
 {
-    private static readonly string[] s_ReservedDataSetTypes =
-    [
-        "localized",
-        "tree",
-        "partitioned",
-        "versioned",
-        "patch"
-    ];
-
     private readonly Dictionary<string, ITableSchemaParser> m_Parsers;
+    private readonly IReadOnlyCollection<string> m_ReservedDataSetTypes;
 
     public TableSchemaParserRegistry(IEnumerable<ITableSchemaParser> parsers)
     {
@@ -25,24 +17,19 @@ public sealed class TableSchemaParserRegistry : ITableSchemaParserRegistry
             parser => parser.DataSetType,
             parser => parser,
             StringComparer.OrdinalIgnoreCase);
+        m_ReservedDataSetTypes = TableTypeDescriptorRegistry.Default.ReservedDataSetTypes
+            .Where(dataSetType => !m_Parsers.ContainsKey(dataSetType))
+            .ToArray();
     }
 
     public static ITableSchemaParserRegistry CreateDefault()
     {
-        return new TableSchemaParserRegistry(
-        [
-            new RowTableParser(),
-            new MatrixTableParser(),
-            new ColumnTableParser(),
-            new KvTableParser(),
-            new TreeTableParser(),
-            new GraphTableParser()
-        ]);
+        return new TableSchemaParserRegistry(TableTypeDescriptorRegistry.Default.Descriptors.Select(descriptor => descriptor.SchemaParser));
     }
 
     public IReadOnlyCollection<string> SupportedDataSetTypes => m_Parsers.Keys.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray();
 
-    public IReadOnlyCollection<string> ReservedDataSetTypes => s_ReservedDataSetTypes;
+    public IReadOnlyCollection<string> ReservedDataSetTypes => m_ReservedDataSetTypes;
 
     public bool TryGetParser(string dataSetType, out ITableSchemaParser parser)
     {

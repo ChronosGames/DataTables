@@ -281,6 +281,92 @@ public sealed class GenerationTransactionTests
         logs.Should().Contain(message => message.Contains("数据表校验完成"));
     }
 
+    [Theory]
+    [InlineData(GenerationMode.CodeAndData)]
+    [InlineData(GenerationMode.ValidateOnly)]
+    public async Task Generation_ShouldRejectInvalidCellValuesBeforeWritingOutputs(GenerationMode generationMode)
+    {
+        var root = CreateTempDirectory();
+        var input = Directory.CreateDirectory(Path.Combine(root, "input")).FullName;
+        var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
+        var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
+        await CreateWorkbookAsync(Path.Combine(input, "invalid-value.xlsx"), workbook =>
+            AddRowLayoutSheet(
+                workbook,
+                "Items",
+                "table",
+                "Item",
+                ["Id"],
+                ["int"],
+                ["not-an-int"]));
+
+        var result = await GenerateAsync(input, code, data, generationMode: generationMode);
+
+        result.Succeeded.Should().BeFalse();
+        result.Failures.Should().Contain(failure =>
+            failure.Exception.Message.Contains("字段 'Id' 的值无法按类型 'int' 解析", StringComparison.Ordinal));
+        Directory.GetFiles(code, "*", SearchOption.AllDirectories).Should().BeEmpty();
+        Directory.GetFiles(data, "*", SearchOption.AllDirectories).Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(GenerationMode.CodeAndData)]
+    [InlineData(GenerationMode.ValidateOnly)]
+    public async Task Generation_ShouldApplyTreeRelationshipValidationInEveryMode(GenerationMode generationMode)
+    {
+        var root = CreateTempDirectory();
+        var input = Directory.CreateDirectory(Path.Combine(root, "input")).FullName;
+        var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
+        var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
+        await CreateWorkbookAsync(Path.Combine(input, "tree-cycle.xlsx"), workbook =>
+            AddRowLayoutSheet(
+                workbook,
+                "Tree",
+                "tree",
+                "Node",
+                ["Id", "ParentId", "Order"],
+                ["string", "string", "int"],
+                ["A", "B", "1"],
+                ["B", "A", "2"]));
+
+        var result = await GenerateAsync(input, code, data, generationMode: generationMode);
+
+        result.Succeeded.Should().BeFalse();
+        result.Failures.Should().Contain(failure =>
+            failure.Exception.Message.Contains("DTGen=tree 检测到循环引用: A -> B -> A", StringComparison.Ordinal));
+        Directory.GetFiles(code, "*", SearchOption.AllDirectories).Should().BeEmpty();
+        Directory.GetFiles(data, "*", SearchOption.AllDirectories).Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(GenerationMode.CodeAndData)]
+    [InlineData(GenerationMode.ValidateOnly)]
+    public async Task Generation_ShouldApplyGraphRowValidationInEveryMode(GenerationMode generationMode)
+    {
+        var root = CreateTempDirectory();
+        var input = Directory.CreateDirectory(Path.Combine(root, "input")).FullName;
+        var code = Directory.CreateDirectory(Path.Combine(root, "code")).FullName;
+        var data = Directory.CreateDirectory(Path.Combine(root, "data")).FullName;
+        await CreateWorkbookAsync(Path.Combine(input, "graph-duplicate.xlsx"), workbook =>
+            AddRowLayoutSheet(
+                workbook,
+                "Graph",
+                "graph",
+                "LevelGraph",
+                ["EdgeId", "From", "To", "Weight"],
+                ["string", "string", "string", "float"],
+                ["E1", "A", "B", "1"],
+                ["E1", "B", "C", "2"]));
+
+        var result = await GenerateAsync(input, code, data, generationMode: generationMode);
+
+        result.Succeeded.Should().BeFalse();
+        result.Failures.Should().Contain(failure =>
+            failure.Exception.Message.Contains("DTGen=graph EdgeId 重复: edgeId=E1", StringComparison.Ordinal));
+        Directory.GetFiles(code, "*", SearchOption.AllDirectories).Should().BeEmpty();
+        Directory.GetFiles(data, "*", SearchOption.AllDirectories).Should().BeEmpty();
+    }
+
     [Fact]
     public async Task ValidateOnlyGeneration_ShouldReportTemplateAndSchemaConflictsWithoutTouchingOutputs()
     {
@@ -600,6 +686,39 @@ public sealed class GenerationTransactionTests
         sheet.GetRow(2).CreateCell(1, CellType.String).SetCellValue("Name");
         sheet.GetRow(3).CreateCell(1, CellType.String).SetCellValue("string");
         sheet.GetRow(4).CreateCell(1, CellType.String).SetCellValue("Item");
+    }
+
+    private static void AddRowLayoutSheet(
+        XSSFWorkbook workbook,
+        string sheetName,
+        string dataSetType,
+        string className,
+        string[] fieldNames,
+        string[] fieldTypes,
+        params string[][] dataRows)
+    {
+        fieldTypes.Should().HaveCount(fieldNames.Length);
+        var sheet = workbook.CreateSheet(sheetName);
+        sheet.CreateRow(0).CreateCell(0, CellType.String).SetCellValue($"dtgen={dataSetType}, class={className}");
+        var commentRow = sheet.CreateRow(1);
+        var nameRow = sheet.CreateRow(2);
+        var typeRow = sheet.CreateRow(3);
+        for (int columnIndex = 0; columnIndex < fieldNames.Length; columnIndex++)
+        {
+            commentRow.CreateCell(columnIndex, CellType.String).SetCellValue(fieldNames[columnIndex]);
+            nameRow.CreateCell(columnIndex, CellType.String).SetCellValue(fieldNames[columnIndex]);
+            typeRow.CreateCell(columnIndex, CellType.String).SetCellValue(fieldTypes[columnIndex]);
+        }
+
+        for (int rowIndex = 0; rowIndex < dataRows.Length; rowIndex++)
+        {
+            dataRows[rowIndex].Should().HaveCount(fieldNames.Length);
+            var row = sheet.CreateRow(rowIndex + 4);
+            for (int columnIndex = 0; columnIndex < fieldNames.Length; columnIndex++)
+            {
+                row.CreateCell(columnIndex, CellType.String).SetCellValue(dataRows[rowIndex][columnIndex]);
+            }
+        }
     }
 
     private static string CreateTempDirectory()

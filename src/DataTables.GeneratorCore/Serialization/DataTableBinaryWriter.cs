@@ -2,22 +2,21 @@ using System;
 using System.IO;
 using System.Text;
 using DataTables;
-using NPOI.SS.UserModel;
 
 namespace DataTables.GeneratorCore;
 
 internal sealed class DataTableBinaryWriter : IDataTableBinaryWriter
 {
     private readonly GenerationContext m_Context;
-    private readonly Func<ISheet, BinaryWriter, int> m_WriteDataRows;
+    private readonly ITableDataSerializationPlan m_SerializationPlan;
 
-    public DataTableBinaryWriter(GenerationContext context, Func<ISheet, BinaryWriter, int> writeDataRows)
+    public DataTableBinaryWriter(GenerationContext context, ITableDataSerializationPlan serializationPlan)
     {
         m_Context = context;
-        m_WriteDataRows = writeDataRows;
+        m_SerializationPlan = serializationPlan;
     }
 
-    public void GenerateDataFile(string outputDir, string comparisonOutputDir, bool forceOverwrite, ISheet sheet, ILogger logger)
+    public void GenerateDataFile(string outputDir, string comparisonOutputDir, bool forceOverwrite, TableDataSnapshot snapshot, ILogger logger)
     {
         int startTickCount = Environment.TickCount;
         string outputFileName = Path.Combine(outputDir, m_Context.GetDataOutputFilePath());
@@ -34,7 +33,7 @@ internal sealed class DataTableBinaryWriter : IDataTableBinaryWriter
                     GetGeneratorVersion(),
                     m_Context.DataTableClassFullName);
 
-                int dataRowCount = m_WriteDataRows(sheet, binaryWriter);
+                int dataRowCount = m_SerializationPlan.WriteDataRows(snapshot, binaryWriter);
 
                 DataTableBinaryFormat.PatchRowCount(binaryWriter, countPosition, dataRowCount);
             }

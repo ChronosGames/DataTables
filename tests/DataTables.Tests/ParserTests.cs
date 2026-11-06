@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using FluentAssertions;
 using NPOI.XSSF.UserModel;
 using Xunit;
@@ -165,7 +166,18 @@ public class ParserTests
 		new MatrixTableParser().DataSetType.Should().Be("matrix");
 		new ColumnTableParser().DataSetType.Should().Be("column");
 		new KvTableParser().DataSetType.Should().Be("kv");
+		new TreeTableParser().DataSetType.Should().Be("tree");
 		new GraphTableParser().DataSetType.Should().Be("graph");
+	}
+
+	[Fact]
+	public void DefaultRegistry_Should_Not_Report_Supported_Types_As_Reserved()
+	{
+		var registry = TableSchemaParserRegistry.CreateDefault();
+
+		registry.SupportedDataSetTypes.Intersect(registry.ReservedDataSetTypes).Should().BeEmpty();
+		registry.SupportedDataSetTypes.Should().Contain("tree");
+		registry.ReservedDataSetTypes.Should().NotContain("tree");
 	}
 
 	[Fact]
@@ -190,7 +202,8 @@ public class ParserTests
 		diagnostic.Cell.Should().Be("A1");
 		diagnostic.Message.Should().Contain("声明值: unknown");
 		diagnostic.Message.Should().Contain("支持的类型: column, graph, kv, matrix, table, tree");
-		diagnostic.Message.Should().Contain("预留类型: localized, tree, partitioned, versioned, patch");
+		diagnostic.Message.Should().Contain("预留类型: localized, partitioned, versioned, patch");
+		diagnostic.Message.Should().NotContain("预留类型: localized, tree");
 	}
 
 	[Fact]

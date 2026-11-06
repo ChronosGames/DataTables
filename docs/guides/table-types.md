@@ -6,6 +6,8 @@
 
 当前代码中的默认解析器注册了 `table`、`matrix`、`column`、`kv`、`tree` 和 `graph`；代码模板也为这些类型提供生成器。
 
+所有已支持类型都通过同一份表类型描述符组合 parser、数据 materializer、分阶段 validator、serialization plan 和代码 renderer。普通导出与 `ValidateOnly` 会读取并转换同一份不可变数据快照；`ValidateOnly` 会执行数据类型以及 tree/graph 结构校验，但不会写出代码、bytes 或增量 manifest。诊断 metrics 会记录 snapshot 的逻辑行数和近似字节量，供大型 matrix 或全量校验评估内存预算。
+
 所有类型的生成静态查询都是 context-first。默认表把 `DataTableContext` 放在第一参数；命名表把名称放在第二参数：
 
 ```csharp
